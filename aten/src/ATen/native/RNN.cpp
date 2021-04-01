@@ -2,6 +2,7 @@
 
 #include <ATen/ATen.h>
 #include <ATen/NativeFunctions.h>
+#include <ATen/Config.h>
 #include <ATen/core/op_registration/op_registration.h>
 #include <ATen/cpp_custom_type_hack.h>
 #include <ATen/native/quantized/cpu/packed_params.h>
@@ -24,6 +25,24 @@ bool use_miopen(const at::Tensor& input, const double dropout_state) {
                                 (dropout_state == 0.0) &&
                                 (at::globalContext().userEnabledCuDNN());
     return is_miopen_acceptable;
+}
+
+bool use_mkldnn(const Tensor& input, const bool batch_first,
+    const double dropout_p, const bool train) {
+#if AT_MKLDNN_ENABLED()
+  if (!at::globalContext().userEnabledMkldnn()) {
+    return false;
+  }
+  int64_t seq_length = batch_first ? input.size(1) : input.size(0);
+  // skip RNNCell in which sequence length equals to 1
+  if (seq_length == 1) {
+    return false;
+  }
+  return input.options().backend() == at::Backend::CPU &&
+      input.scalar_type() == kFloat &&
+      (!train || dropout_p == 0.0);
+#endif
+  return false;
 }
 
 template<typename T>
@@ -1465,6 +1484,10 @@ std::tuple<Tensor, Tensor, Tensor> lstm(
     lstm_miopen_stub(_input.device().type(), output, hy, cy, _input, hx, _params, has_biases,
               num_layers, dropout_p, train, bidirectional, batch_first);
     return std::make_tuple(std::move(output), std::move(hy), std::move(cy));
+  }
+  if (use_mkldnn(_input, batch_first, dropout_p, train)) {
+    return at::lstm_mkldnn_stub(_input, hx, _params, has_biases,
+        num_layers, dropout_p, train, bidirectional, batch_first);
   }
   check_attributes(_input, _params, hx);
   auto input = batch_first ? _input.transpose(0, 1) : _input;
