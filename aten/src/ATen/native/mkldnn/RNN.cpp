@@ -96,8 +96,8 @@ struct RNNParams {
   desc src_iter_desc(dtype dtype) const {
     return {{1, 1, mini_batch, hidden_size}, dtype, format::ldnc};
   }
-  desc src_iter_c_desc() const {
-    return {{1, 1, mini_batch, hidden_size}, dtype::f32, format::ldnc};
+  desc src_iter_c_desc(dtype dtype) const {
+    return {{1, 1, mini_batch, hidden_size}, dtype, format::ldnc};
   }
   // logical size described as ldigo
   desc weights_layer_desc(int64_t _input_size, dtype dtype) const {
@@ -106,8 +106,8 @@ struct RNNParams {
   desc weights_iter_desc(dtype dtype) const {
     return {{1, 1, hidden_size, num_gates, hidden_size}, dtype, format::ldgoi};
   }
-  desc bias_desc() const {
-    return {{1, 1, num_bias_gates, hidden_size}, dtype::f32, format::ldgo};
+  desc bias_desc(dtype dtype) const {
+    return {{1, 1, num_bias_gates, hidden_size}, dtype, format::ldgo};
   }
   desc dst_layer_desc(dtype dtype) const {
     return {{seq_length, mini_batch, hidden_size}, dtype, format::tnc};
@@ -115,8 +115,8 @@ struct RNNParams {
   desc dst_iter_desc(dtype dtype) const {
     return {{1, 1, mini_batch, hidden_size}, dtype, format::ldnc};
   }
-  desc dst_iter_c_desc() const {
-    return {{1, 1, mini_batch, hidden_size}, dtype::f32, format::ldnc};
+  desc dst_iter_c_desc(dtype dtype) const {
+    return {{1, 1, mini_batch, hidden_size}, dtype, format::ldnc};
   }
 };
 
@@ -201,24 +201,29 @@ Tensor mkldnn_rnn_layer(Tensor& hy_, Tensor& cy_,
   bool has_bias = weights.size() == 4;
   auto weight_ih = _shuffle_weight(weights[0], rnn.mode);
   auto weight_hh = _shuffle_weight(weights[1], rnn.mode);
-  auto bias = has_bias ? _shuffle_bias(weights[2], weights[3], rnn.mode)
+  auto bias_ = has_bias ? _shuffle_bias(weights[2], weights[3], rnn.mode)
                        : at::zeros({rnn.num_bias_gates * rnn.hidden_size}, weight_ih.options());
 
-  // bias = bias.to();
+  // bias should always be fp32 for mkldnn lstm
+  // When the user used: model.to(torch.bfloat16) from the front-end,
+  // both the weight and the bias has been transformed to bfloat16
+  // TODO: skip for fp32 LSTM
+  auto bias = at::empty(bias_.sizes(), bias_.options().dtype(ScalarType::Float));
+  bias.copy_(bias_);
 
   // per layer input size
   int64_t input_size = input.size(2);
 
-  // cx, cy, bias should always be fp32 for mkldnn lstm
+  // cx, cy should always be fp32 for mkldnn lstm
   auto x = get_mkldnn_tensor(input, rnn.src_layer_desc(input_size, get_mkldnn_dtype(input.scalar_type())));
   auto hx = get_mkldnn_tensor(hx_, rnn.src_iter_desc(get_mkldnn_dtype(hx_.scalar_type())));
-  auto cx = get_mkldnn_tensor(cx_, rnn.src_iter_c_desc());
+  auto cx = get_mkldnn_tensor(cx_, rnn.src_iter_c_desc(get_mkldnn_dtype(cx_.scalar_type())));
   auto w1 = get_mkldnn_tensor(weight_ih, rnn.weights_layer_desc(input_size, get_mkldnn_dtype(weight_ih.scalar_type())));
   auto w2 = get_mkldnn_tensor(weight_hh, rnn.weights_iter_desc(get_mkldnn_dtype(weight_hh.scalar_type())));
-  auto b = get_mkldnn_tensor(bias, rnn.bias_desc());
+  auto b = get_mkldnn_tensor(bias, rnn.bias_desc(get_mkldnn_dtype(bias.scalar_type())));
   auto y = get_mkldnn_tensor(output, rnn.dst_layer_desc(get_mkldnn_dtype(output.scalar_type())));
   auto hy = get_mkldnn_tensor(hy_, rnn.dst_iter_desc(get_mkldnn_dtype(hy_.scalar_type())));
-  auto cy = get_mkldnn_tensor(cy_, rnn.dst_iter_c_desc());
+  auto cy = get_mkldnn_tensor(cy_, rnn.dst_iter_c_desc(get_mkldnn_dtype(cy_.scalar_type())));
 
   ideep::lstm_forward_inference::compute(x, hx, cx, w1, w2, b, y, hy, cy, reverse);
 
