@@ -225,7 +225,7 @@ Tensor mkldnn_rnn_layer(Tensor& hy_, Tensor& cy_,
   auto hy = get_mkldnn_tensor(hy_, rnn.dst_iter_desc(get_mkldnn_dtype(hy_.scalar_type())));
   auto cy = get_mkldnn_tensor(cy_, rnn.dst_iter_c_desc(get_mkldnn_dtype(cy_.scalar_type())));
 
-  ideep::lstm_forward_inference::compute(x, hx, cx, w1, w2, b, y, hy, cy, reverse);
+  ideep::lstm_forward::compute(x, hx, cx, w1, w2, b, y, hy, cy, reverse);
 
   return output;
 }

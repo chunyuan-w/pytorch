@@ -35,7 +35,7 @@ bool use_mkldnn(const Tensor& input, const bool batch_first,
   }
   int64_t seq_length = batch_first ? input.size(1) : input.size(0);
   // skip RNNCell in which sequence length equals to 1
-  if (seq_length == 1) {
+  if (seq_length == 1 && input.scalar_type() == kFloat) {
     return false;
   }
   return input.options().backend() == at::Backend::CPU &&
