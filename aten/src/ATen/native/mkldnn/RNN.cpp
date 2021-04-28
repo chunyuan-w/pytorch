@@ -266,12 +266,21 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn(
   input = input.contiguous();
 
   auto hx = hx_.contiguous();
-  auto cx = cx_.defined() ? cx_.contiguous() : Tensor();
+  auto cx_tmp = cx_.defined() ? cx_.contiguous() : Tensor();
 
   auto hy = at::empty(_hidden_size(fn), hx.options());
   // NB: Not allowed to return undefined tensors
-  auto cy = cx.defined() ? at::empty(_hidden_size(fn), cx.options())
+  auto cy_tmp = cx_tmp.defined() ? at::empty(_hidden_size(fn), cx_tmp.options())
                          : at::empty({0}, hx.options());
+
+
+  auto cx = at::empty(cx_tmp.sizes(), cx_tmp.options().dtype(ScalarType::Float));
+  cx.copy_(cx_tmp);
+
+  auto cy = at::empty(cy_tmp.sizes(), cy_tmp.options().dtype(ScalarType::Float));
+  cy.copy_(cy_tmp);
+
+
 
   MatrixRef<Tensor> weights{weight, static_cast<size_t>(weight_stride0)};
 

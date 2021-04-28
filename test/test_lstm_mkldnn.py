@@ -34,7 +34,7 @@ class TestMkldnn(TestCase):
                         h0 = (hx0, cx0)
 
                         hx0_bf16 = copy.deepcopy(hx0).to(torch.bfloat16)
-                        cx0_bf16 = copy.deepcopy(cx0)
+                        cx0_bf16 = copy.deepcopy(cx0).to(torch.bfloat16)
                         h0_bf16 = (hx0_bf16, cx0_bf16)
 
                     rnn = mod(I, H, L, bidirectional=bidirectional).float().eval()
@@ -57,7 +57,8 @@ class TestMkldnn(TestCase):
     #     input = torch.randn(5, 3, 10)
     #     h0 = torch.randn(1, 3, 20)
     #     c0 = torch.randn(1, 3, 20)
-    #     output, (hn, cn) = rnn(input, (h0, c0))
+    #     # output, (hn, cn) = rnn(input, (h0, c0))
+    #     output, (hn, cn) = rnn(input)
 
     #     print(output)
     #     print(hn)
@@ -65,12 +66,14 @@ class TestMkldnn(TestCase):
 
     #     input_bf16 = input.to(torch.bfloat16)
     #     h0_bf16 = h0.to(torch.bfloat16)
+    #     # h0_bf16 = h0
         
-    #     # c0_bf16 = c0.to(torch.bfloat16)
-    #     c0_bf16 = c0
+    #     c0_bf16 = c0.to(torch.bfloat16)
+    #     # c0_bf16 = c0
         
     #     rnn = rnn.to(torch.bfloat16)
-    #     output, (hn, cn) = rnn(input_bf16, (h0_bf16, c0_bf16))
+    #     # output, (hn, cn) = rnn(input_bf16, (h0_bf16, c0_bf16))
+    #     output, (hn, cn) = rnn(input_bf16)
 
     #     print(output.float())
     #     print(hn.float())
