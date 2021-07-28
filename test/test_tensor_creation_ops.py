@@ -2302,6 +2302,14 @@ class TestTensorCreation(TestCase):
         self.assertEqual(res1[0], 1)
         self.assertEqual(res1[29], 9.7)
 
+        # BFloat16
+        res1 = torch.arange(0.6, 0.89, 0.1, dtype=torch.bfloat16)
+        self.assertEqual(res1, [0.6, 0.7, 0.8], atol=0.01, rtol=0)
+        res1 = torch.arange(1, 10, 0.3, dtype=torch.bfloat16)
+        self.assertEqual(res1.size(0), 30, atol=0.01, rtol=0)
+        self.assertEqual(res1[0], 1, atol=0.01, rtol=0)
+        self.assertEqual(res1[29], 9.7, atol=0.02, rtol=0)
+
         # Bool Input matching numpy semantics
         r = torch.arange(True)
         self.assertEqual(r[0], 0)
@@ -3292,8 +3300,12 @@ class TestRandomTensorCreation(TestCase):
         for n in (5, 100, 50000, 100000):
             # Ensure both integer and floating-point numbers are tested. Half follows an execution path that is
             # different from others on CUDA.
-            for dtype in (torch.long, torch.half, torch.float):
+            for dtype in (torch.long, torch.half, torch.float, torch.bfloat16):
                 if n > 2049 and dtype == torch.half:  # Large n for torch.half will raise an exception, do not test here.
+                    continue
+                if dtype == torch.bfloat16 and device != 'cpu':
+                    continue
+                if n > 256 and dtype == torch.bfloat16:
                     continue
                 with torch.random.fork_rng(devices=rng_device):
                     res1 = torch.randperm(n, dtype=dtype, device=device)

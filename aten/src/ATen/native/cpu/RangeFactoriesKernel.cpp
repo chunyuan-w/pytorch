@@ -16,7 +16,30 @@ namespace {
 using namespace vec;
 
 static void arange_kernel(TensorIterator& iter, const Scalar& scalar_start, const Scalar& scalar_steps, const Scalar& scalar_step) {
-  AT_DISPATCH_ALL_TYPES_AND(kBFloat16, iter.dtype(), "arange_cpu", [&]() {
+  if(iter.dtype() == kBFloat16){
+    float start = scalar_start.to<float>();
+    float steps = scalar_steps.to<float>();
+    float step = scalar_step.to<float>();
+    at::parallel_for(0, steps, internal::GRAIN_SIZE, [&](int64_t p_begin, int64_t p_end) {
+      int64_t idx(p_begin);
+      TensorIterator it(iter);
+      cpu_serial_kernel_vec(
+          it,
+          [start, step, &idx]() -> BFloat16 {
+            return start + step * (idx++);
+          },
+          [start, step, &idx]() -> Vectorized<BFloat16> {
+            Vectorized<float> res1;
+            Vectorized<float> res2;
+            res1 = Vectorized<float>::arange(start + step * idx, step);
+            idx += Vectorized<float>::size();
+            res2 = Vectorized<float>::arange(start + step * idx, step);
+            idx += Vectorized<float>::size();
+            return convert_float_bfloat16(res1, res2);
+          }, {p_begin, p_end});
+    });
+  } else {
+    AT_DISPATCH_ALL_TYPES(iter.dtype(), "arange_cpu", [&]() {
     using accscalar_t = at::acc_type<scalar_t, false>;
     auto start = scalar_start.to<accscalar_t>();
     auto steps = scalar_steps.to<accscalar_t>();
@@ -37,6 +60,7 @@ static void arange_kernel(TensorIterator& iter, const Scalar& scalar_start, cons
           }, {p_begin, p_end});
     });
   });
+  }
 }
 
 static void linspace_kernel(TensorIterator& iter, const Scalar& scalar_start, const Scalar& scalar_end, int64_t steps) {

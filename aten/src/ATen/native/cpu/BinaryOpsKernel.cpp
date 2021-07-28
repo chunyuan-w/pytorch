@@ -962,7 +962,20 @@ void igammac_kernel(TensorIteratorBase& iter) {
 }
 
 void nextafter_kernel(TensorIteratorBase& iter) {
-  AT_DISPATCH_FLOATING_TYPES(iter.dtype(), "nextafter_cpu", [&]() {
+  if (iter.dtype() == kBFloat16) {
+    cpu_kernel_vec(
+        iter,
+        [=](BFloat16 a, BFloat16 b) -> BFloat16 {
+            return std::nextafter(float(a), float(b));
+        },
+        [=](Vectorized<BFloat16> a, Vectorized<BFloat16> b) {
+            Vectorized<float> a0, a1, b0, b1;
+            std::tie(a0, a1) = convert_bfloat16_float(a);
+            std::tie(b0, b1) = convert_bfloat16_float(b);
+            return convert_float_bfloat16(a0.nextafter(b0), a1.nextafter(b1));
+        });
+  } else {
+    AT_DISPATCH_FLOATING_TYPES(iter.dtype(), "nextafter_cpu", [&]() {
     cpu_kernel_vec(
         iter,
         [=](scalar_t a, scalar_t b) -> scalar_t {
@@ -972,6 +985,8 @@ void nextafter_kernel(TensorIteratorBase& iter) {
             return a.nextafter(b);
         });
   });
+  }
+  
 }
 
 void heaviside_kernel(TensorIteratorBase& iter) {

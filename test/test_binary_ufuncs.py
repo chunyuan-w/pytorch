@@ -1798,6 +1798,30 @@ class TestBinaryUfuncs(TestCase):
         expected = np.nextafter(a.cpu().numpy(), b.cpu().numpy())
         self.assertEqual(actual, expected, atol=0, rtol=0)
 
+    @onlyCPU
+    @dtypes(torch.bfloat16)
+    def test_nextafter_bfloat16(self, device, dtype):
+        # Test special cases
+        t1 = torch.tensor([0, 0, 10], device=device, dtype=dtype)
+        t2 = torch.tensor([inf, -inf, 10], device=device, dtype=dtype)
+        actual = torch.nextafter(t1, t2)
+        expected = torch.nextafter(t1.float(), t2.float())
+        self.assertEqual(actual, expected.bfloat16(), atol=0.01, rtol=0)
+
+        actual = torch.nextafter(t2, t1)
+        expected = torch.nextafter(t2.float(), t1.float())
+        self.assertEqual(actual, expected.bfloat16(), atol=0.01, rtol=0)
+
+        t1 = torch.tensor([0, nan], device=device, dtype=dtype)
+        t2 = torch.tensor([nan, 0], device=device, dtype=dtype)
+        self.assertTrue(torch.nextafter(t1, t2).isnan().all())
+
+        a = torch.randn(100, device=device, dtype=dtype)
+        b = torch.randn(100, device=device, dtype=dtype)
+        actual = torch.nextafter(a, b)
+        expected = torch.nextafter(a.float(), b.float())
+        self.assertEqual(actual, expected.bfloat16(), atol=0.01, rtol=0)
+
     def _test_cop(self, torchfn, mathfn, dtype, device):
         def reference_implementation(res2):
             for i, j in iter_indices(sm1):
