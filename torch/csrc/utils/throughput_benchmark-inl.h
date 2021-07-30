@@ -9,6 +9,7 @@
 
 #include <aten/src/ATen/Parallel.h>
 #include <c10/util/irange.h>
+#include <c10/core/GradMode.h>
 
 namespace torch {
 namespace throughput_benchmark {
@@ -58,9 +59,14 @@ BenchmarkExecutionStats BenchmarkHelper<Input, Output, Model>::benchmark(
   std::atomic<int64_t> num_attempted_iters{0};
   std::vector<std::thread> callers;
 
+  bool grad_mode = at::GradMode::is_enabled();
+
   callers.reserve(config.num_calling_threads);
   for (const auto thread_id : c10::irange(config.num_calling_threads)) {
-    callers.emplace_back([&, thread_id]() {
+    callers.emplace_back([&, thread_id, grad_mode]() {
+
+      at::GradMode::set_enabled(grad_mode);
+
       // We use conditional variable as a barrier to make sure each thread
       // performs required warmeup iterations before we start measuring
       for (const auto j : c10::irange(config.num_warmup_iters)) {
