@@ -3,6 +3,8 @@
 #include <torch/csrc/jit/ir/ir.h>
 #include <torch/csrc/jit/passes/pass_manager.h>
 
+#include <ATen/Config.h>
+
 namespace torch {
 namespace jit {
 namespace fuser {
@@ -10,7 +12,9 @@ namespace onednn {
 
 static std::atomic<bool> onednn_enabled{true};
 
-TORCH_API std::atomic<bool>& getLlgaEnabled();
+static std::atomic<bool>& getLlgaEnabled() {
+  return onednn_enabled;
+}
 
 TORCH_API void fuseGraph(std::shared_ptr<Graph>& g);
 
@@ -20,6 +24,9 @@ TORCH_API void fuseGraph(std::shared_ptr<Graph>& g);
 struct TORCH_API RegisterLlgaFuseGraph
     : public PassManager<RegisterLlgaFuseGraph> {
   static bool setEnabled(bool enabled) {
+    TORCH_CHECK(
+        AT_MKLDNN_ENABLED(),
+        "Running oneDNN Graph fuser is only supported with MKLDNN builds.");
     bool oldState = fuser::onednn::getLlgaEnabled();
     fuser::onednn::getLlgaEnabled() = enabled;
     if (enabled) {

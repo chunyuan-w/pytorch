@@ -1,4 +1,4 @@
-#include <torch/csrc/jit/codegen/onednn/interface.h>
+#include <torch/csrc/jit/passes/onednn_graph_fuser.h>
 #include <torch/csrc/jit/runtime/profiling_record.h>
 
 namespace torch {
