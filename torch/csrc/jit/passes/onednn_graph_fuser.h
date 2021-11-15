@@ -10,12 +10,6 @@ namespace jit {
 namespace fuser {
 namespace onednn {
 
-static std::atomic<bool> onednn_enabled{true};
-
-static std::atomic<bool>& getLlgaEnabled() {
-  return onednn_enabled;
-}
-
 TORCH_API void fuseGraph(std::shared_ptr<Graph>& g);
 
 } // namespace onednn
@@ -27,36 +21,17 @@ struct C10_EXPORT RegisterLlgaFuseGraph
     TORCH_CHECK(
         AT_MKLDNN_ENABLED(),
         "Running oneDNN Graph fuser is only supported with MKLDNN builds.");
-    bool oldState = fuser::onednn::getLlgaEnabled();
-    fuser::onednn::getLlgaEnabled() = enabled;
+    bool oldState = PassManager::isRegistered();
     if (enabled) {
-      registerPass(fuser::onednn::fuseGraph);
+      PassManager::registerPass(fuser::onednn::fuseGraph);
     } else {
-      clearPass();
+      PassManager::clearPass();
     }
     return oldState;
   }
 
   static bool isEnabled() {
-    return fuser::onednn::getLlgaEnabled();
-  }
-
-  // override PassManager::registerPass to register pre-pass
-  static bool registerPass(GraphPass p) {
-    if (!isRegistered()) {
-      passID(registerPrePass(std::move(p)), true);
-      isRegistered(true);
-      return false;
-    }
-    return true;
-  }
-
-  // override PassManager::clearPass to clear pre-pass
-  static void clearPass() {
-    if (isRegistered()) {
-      clearPrePass(passID());
-      isRegistered(true);
-    }
+    return PassManager::isRegistered();
   }
 };
 
