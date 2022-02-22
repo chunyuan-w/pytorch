@@ -18,6 +18,7 @@ StmtPtr Tensor::constructStmt(
   StmtPtr s = alloc<Store>(buf_, indices, body);
 
   size_t ndim = buf()->ndim();
+  // size_t strides = buf()->strides();
   size_t reduce_ndim = reduce_dims.size();
 
   if (ndim == 0 && reduce_ndim == 0) {
@@ -39,9 +40,12 @@ StmtPtr Tensor::constructStmt(
     }
   }
 
-  for (const auto i : c10::irange(ndim)) {
-    // Going in reverse order: from innermost loop to the outermost
-    size_t dim_index = ndim - i - 1;
+  // for (const auto i : c10::irange(ndim)) {
+  //   // Going in reverse order: from innermost loop to the outermost
+  //   size_t dim_index = ndim - i - 1;
+
+  std::vector<size_t> irange = {1, 3, 2, 0};
+  for (auto dim_index : irange) {
     auto const& dim = buf()->dim(dim_index);
     s = alloc<For>(args[dim_index], immLike(dim, 0), dim, s);
   }
