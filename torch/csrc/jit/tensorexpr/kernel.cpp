@@ -1000,6 +1000,44 @@ std::vector<ExprHandle> TensorExprKernel::getInputStrides(
   return inputTensorStrides;
 }
 
+// TODO: put in same file as TensorType::contiguousStridesOf:
+// aten/src/ATen/core/jit_type.h
+static std::vector<int64_t> contiguousChannelsLastStridesOf(
+    at::IntArrayRef sizes) {
+  std::vector<int64_t> strides(sizes.size());
+  if (sizes.empty()) // zero-dim case
+    return strides;
+
+  TORCH_CHECK(sizes.size() == 4, "only support 4D for now");
+  strides[1] = 1;
+  strides[3] = strides[1] * sizes[1];
+  strides[2] = strides[3] * sizes[3];
+  strides[0] = strides[2] * sizes[2];
+  return strides;
+
+  return strides;
+}
+
+static bool isChannelsLastContiguous(const torch::jit::Value* v) {
+  auto const& tt = v->type()->cast<TensorType>();
+  if (!tt) {
+    return false;
+  }
+  if (!tt->isComplete()) {
+    return false;
+  }
+  auto const& sizes = tt->sizes().concrete_sizes();
+  auto const& strides = tt->strides().concrete_sizes();
+  if (!sizes || !strides) {
+    return false;
+  }
+  // TODO: support dim=4 for now
+  if (sizes->size() != 4) {
+    return false;
+  }
+  return *strides == contiguousChannelsLastStridesOf(*sizes);
+}
+
 Tensor TensorExprKernel::bindInput(const torch::jit::Value* input) {
   auto const& t = input->type();
   auto const& outputs = input->owningGraph()->outputs();
@@ -1030,6 +1068,14 @@ Tensor TensorExprKernel::bindInput(const torch::jit::Value* input) {
         bufs_.emplace(input, inBuffer.node());
         bufferArgs_.emplace_back(inBuffer);
         break;
+      }
+      if (isChannelsLastContiguous(input)) {
+        BufHandle inBuffer(
+            "t" + input_name_map_[input],
+            toExprHandles(*tt->sizes().concrete_sizes()),
+            ToDtype(static_cast<ScalarType>(*tt->scalarType())),
+            /*initializer*/ nullptr,
+            /*strides*/ toExprHandles(*tt->strides().concrete_sizes()));
       }
 
       // if the input isn't contiguous or is an output,
