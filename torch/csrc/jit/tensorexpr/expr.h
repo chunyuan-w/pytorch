@@ -197,6 +197,13 @@ class TORCH_API Buf : public ExprNode<Buf> {
       const std::string& name_hint,
       const std::vector<ExprHandle>& dims,
       Dtype dtype,
+      c10::optional<ExprPtr> initializer,
+      c10::optional<std::vector<ExprHandle>> strides);
+
+  static BufHandle make(
+      const std::string& name_hint,
+      const std::vector<ExprHandle>& dims,
+      Dtype dtype,
       c10::optional<ExprHandle> initializer = c10::nullopt,
       c10::optional<std::vector<ExprHandle>> strides = c10::nullopt,
       c10::optional<ExprHandle> qscale = c10::nullopt,
@@ -312,6 +319,14 @@ class TORCH_API BufHandle : public ExprHandle {
       const std::vector<ExprHandle>& dims,
       Dtype dtype)
       : ExprHandle(Buf::make(name_hint, dims, dtype)) {}
+
+  BufHandle(
+      const std::string& name_hint,
+      const std::vector<ExprHandle>& dims,
+      Dtype dtype,
+      ExprPtr initializer,
+      std::vector<ExprHandle> strides)
+      : ExprHandle(Buf::make(name_hint, dims, dtype, initializer, strides)) {}
 
   BufHandle(const std::vector<ExprHandle>& dims, Dtype dtype)
       : ExprHandle(Buf::make("_", dims, dtype)) {}
