@@ -2,6 +2,7 @@
 
 #include <c10/util/Logging.h>
 #include <c10/util/irange.h>
+#include <torch/csrc/jit/tensorexpr/ir_simplifier.h>
 #include <torch/csrc/jit/tensorexpr/reduction.h>
 
 namespace torch {
@@ -18,7 +19,15 @@ StmtPtr Tensor::constructStmt(
   StmtPtr s = alloc<Store>(buf_, indices, body);
 
   size_t ndim = buf()->ndim();
-  // size_t strides = buf()->strides();
+
+  std::vector<ExprPtr> dims = buf()->dims();
+  auto dimsC = to<LongImm>(IRSimplifier::simplify(dims[1]))->value();
+  printf("dimsC: %ld\n", dimsC);
+
+  std::vector<ExprPtr> strides = buf()->strides();
+  auto stridesC = to<LongImm>(IRSimplifier::simplify(strides[1]))->value();
+  printf("stridesC: %ld\n", stridesC);
+
   size_t reduce_ndim = reduce_dims.size();
 
   if (ndim == 0 && reduce_ndim == 0) {
