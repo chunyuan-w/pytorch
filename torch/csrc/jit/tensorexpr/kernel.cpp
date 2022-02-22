@@ -1076,6 +1076,9 @@ Tensor TensorExprKernel::bindInput(const torch::jit::Value* input) {
             ToDtype(static_cast<ScalarType>(*tt->scalarType())),
             /*initializer*/ nullptr,
             /*strides*/ toExprHandles(*tt->strides().concrete_sizes()));
+        bufs_.emplace(input, inBuffer.node());
+        bufferArgs_.emplace_back(inBuffer);
+        break;
       }
 
       // if the input isn't contiguous or is an output,
