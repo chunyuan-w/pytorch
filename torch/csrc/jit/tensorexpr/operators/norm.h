@@ -9,6 +9,7 @@ namespace tensorexpr {
 Tensor computeBatchNorm(
     const std::vector<ArgValue>& inputs,
     const std::vector<ExprHandle>& outputShape,
+    const std::vector<ExprHandle>& outputStride,
     const c10::optional<ScalarType>& outputType,
     at::Device device);
 

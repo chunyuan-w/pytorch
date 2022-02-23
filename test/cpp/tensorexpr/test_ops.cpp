@@ -24,12 +24,15 @@ TEST(Ops, Sum) {
   constexpr int N = 16;
   std::vector<IntList> testDims = {{0}, {1}, {0, 1}};
   std::vector<std::vector<ExprHandle>> outputShapes = {{N}, {M}, {}};
+  std::vector<std::vector<ExprHandle>> outputStrides = {{M}, {1}, {}};
   for (int idx = 0; idx < testDims.size(); idx++) {
     const auto& dims = testDims[idx];
     const auto& outShape = outputShapes[idx];
+    const auto& outStride = outputStrides[idx];
 
     BufHandle a("a", {M, N}, kFloat);
-    Tensor b = computeSum({a, dims, false}, outShape, c10::kFloat, at::kCPU);
+    Tensor b = computeSum(
+        {a, dims, false}, outShape, outStride, c10::kFloat, at::kCPU);
     auto cg = compile({a}, {b});
 
     auto at = at::arange(M * N, at::kFloat).view({M, N});

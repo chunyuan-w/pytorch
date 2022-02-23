@@ -1611,28 +1611,28 @@ Tensor lowerNanToNum(
   return e;
 }
 
-TEST_F(Kernel, CustomLowering) {
-  const auto graph_string = R"IR(
-      graph(%x : Float(2, 2, strides=[2, 1], requires_grad=0, device=cpu)):
-          %none : NoneType = prim::Constant()
-          %y : Float(2, 2, strides=[2, 1], requires_grad=0, device=cpu) = aten::nan_to_num(%x, %none, %none, %none)
-          return (%y)
-)IR";
-  auto graph = std::make_shared<Graph>();
-  parseIR(graph_string, &*graph);
+// TEST_F(Kernel, CustomLowering) {
+//   const auto graph_string = R"IR(
+//       graph(%x : Float(2, 2, strides=[2, 1], requires_grad=0, device=cpu)):
+//           %none : NoneType = prim::Constant()
+//           %y : Float(2, 2, strides=[2, 1], requires_grad=0, device=cpu) =
+//           aten::nan_to_num(%x, %none, %none, %none) return (%y)
+// )IR";
+//   auto graph = std::make_shared<Graph>();
+//   parseIR(graph_string, &*graph);
 
-  std::unordered_map<c10::Symbol, NNCLoweringFunction> lowerings = {
-      {aten::nan_to_num, lowerNanToNum}};
-  TensorExprKernel k(graph, lowerings);
+//   std::unordered_map<c10::Symbol, NNCLoweringFunction> lowerings = {
+//       {aten::nan_to_num, lowerNanToNum}};
+//   TensorExprKernel k(graph, lowerings);
 
-  auto stmt = k.getCodeGenStmt();
-  std::ostringstream oss;
-  oss << *stmt;
+//   auto stmt = k.getCodeGenStmt();
+//   std::ostringstream oss;
+//   oss << *stmt;
 
-  // Check that our custom lowering is actually used
-  torch::jit::testing::FileCheck().check("custom_nan_to_num")->run(oss.str());
-  torch::jit::testing::FileCheck().check("isnan")->run(oss.str());
-}
+//   // Check that our custom lowering is actually used
+//   torch::jit::testing::FileCheck().check("custom_nan_to_num")->run(oss.str());
+//   torch::jit::testing::FileCheck().check("isnan")->run(oss.str());
+// }
 
 TEST_F(Kernel, Vectorize) {
 #ifdef TORCH_ENABLE_LLVM
