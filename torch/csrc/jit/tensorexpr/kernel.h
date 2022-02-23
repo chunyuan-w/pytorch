@@ -199,6 +199,7 @@ class TORCH_API TensorExprKernel {
   void runKernel(Stack& stack);
 
   std::vector<ExprHandle> sizesForValue(const torch::jit::Value* v);
+  std::vector<ExprHandle> stridesForValue(const torch::jit::Value* v);
 
   // These functions broadcast shape and also store a `hasBroadcast_` variable.
   std::vector<ExprHandle> broadcastShapesMut(

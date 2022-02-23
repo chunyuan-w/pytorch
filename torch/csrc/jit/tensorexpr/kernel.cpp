@@ -429,6 +429,44 @@ std::vector<ExprHandle> TensorExprKernel::sizesForValue(
   throw malformed_input(msg);
 }
 
+template <typename T>
+static std::vector<ExprHandle> toExprHandles(const std::vector<T>& sizes) {
+  std::vector<ExprHandle> dims;
+  dims.reserve(sizes.size());
+  for (auto const& size : sizes) {
+    dims.emplace_back(size);
+  }
+  return dims;
+}
+
+std::vector<ExprHandle> TensorExprKernel::stridesForValue(
+    const torch::jit::Value* v) {
+  if (known_sizes_.count(v)) {
+    return known_sizes_.at(v);
+  }
+
+  // If the shape is present in the type info, just extract it from here. No
+  // need to infer it.
+  if (v->type()->kind() == TypeKind::TensorType) {
+    auto tt = v->type()->cast<TensorType>();
+    return toExprHandles(*tt->strides().concrete_sizes());
+  }
+
+  if (v->type()->isSubtypeOf(*FloatType::get()) ||
+      v->type()->isSubtypeOf(*BoolType::get()) ||
+      v->type()->isSubtypeOf(*IntType::get())) {
+    return {};
+  }
+  if (v->type()->isSubtypeOf(*NoneType::get())) {
+    return {};
+  }
+  GRAPH_DEBUG("Unknown sizes for the node: ", *v->node());
+  GRAPH_DEBUG("Full fusion group graph:\n", *v->node()->owningGraph());
+  std::string msg = std::string("Unhandled node kind (in sizesForValue): ") +
+      v->node()->kind().toQualString();
+  throw malformed_input(msg);
+}
+
 c10::optional<ScalarType> findDtypeForValue(const torch::jit::Value* v) {
   if (v->type()->kind() == TypeKind::TensorType) {
     auto tt = v->type()->cast<TensorType>();
@@ -478,6 +516,11 @@ Tensor TensorExprKernel::computeValue(const torch::jit::Value* v) {
   auto outputType = findDtypeForValue(v);
   // TODO: need outputShape + outputStride here
   std::vector<ExprHandle> outputShape = sizesForValue(v);
+  std::vector<ExprHandle> outputStride = stridesForValue(v);
+
+  printf(
+      "outputStride[0]: %ld\n",
+      to<LongImm>(IRSimplifier::simplify(outputStride[0].node()))->value());
 
   std::vector<ArgValue> argInputs;
   if (op == prim::ConstantChunk) {
@@ -892,16 +935,6 @@ void TensorExprKernel::genInputDebugNames() {
     name_set.insert(sanitized_name);
   }
   input_name_map_ = std::move(value_to_name);
-}
-
-template <typename T>
-static std::vector<ExprHandle> toExprHandles(const std::vector<T>& sizes) {
-  std::vector<ExprHandle> dims;
-  dims.reserve(sizes.size());
-  for (auto const& size : sizes) {
-    dims.emplace_back(size);
-  }
-  return dims;
 }
 
 ExprHandle TensorExprKernel::getStrideArg(
