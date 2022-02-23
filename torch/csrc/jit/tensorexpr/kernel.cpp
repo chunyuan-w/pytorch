@@ -476,6 +476,7 @@ Tensor TensorExprKernel::computeValue(const torch::jit::Value* v) {
   }
 
   auto outputType = findDtypeForValue(v);
+  // TODO: need outputShape + outputStride here
   std::vector<ExprHandle> outputShape = sizesForValue(v);
 
   std::vector<ArgValue> argInputs;

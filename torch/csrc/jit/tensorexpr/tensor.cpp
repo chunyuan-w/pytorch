@@ -21,12 +21,30 @@ StmtPtr Tensor::constructStmt(
   size_t ndim = buf()->ndim();
 
   std::vector<ExprPtr> dims = buf()->dims();
-  auto dimsC = to<LongImm>(IRSimplifier::simplify(dims[1]))->value();
-  printf("dimsC: %ld\n", dimsC);
+  // auto dimsC = to<LongImm>(IRSimplifier::simplify(dims[1]))->value();
+  printf(
+      "dimsC[0]: %ld\n", to<LongImm>(IRSimplifier::simplify(dims[0]))->value());
+  printf(
+      "dimsC[1]: %ld\n", to<LongImm>(IRSimplifier::simplify(dims[1]))->value());
+  printf(
+      "dimsC[2]: %ld\n", to<LongImm>(IRSimplifier::simplify(dims[2]))->value());
+  printf(
+      "dimsC[3]: %ld\n", to<LongImm>(IRSimplifier::simplify(dims[3]))->value());
 
   std::vector<ExprPtr> strides = buf()->strides();
-  auto stridesC = to<LongImm>(IRSimplifier::simplify(strides[1]))->value();
-  printf("stridesC: %ld\n", stridesC);
+  // auto stridesC = to<LongImm>(IRSimplifier::simplify(strides[2]))->value();
+  printf(
+      "stridesC[0]: %ld\n",
+      to<LongImm>(IRSimplifier::simplify(strides[0]))->value());
+  printf(
+      "stridesC[1]: %ld\n",
+      to<LongImm>(IRSimplifier::simplify(strides[1]))->value());
+  printf(
+      "stridesC[2]: %ld\n",
+      to<LongImm>(IRSimplifier::simplify(strides[2]))->value());
+  printf(
+      "stridesC[3]: %ld\n",
+      to<LongImm>(IRSimplifier::simplify(strides[3]))->value());
 
   size_t reduce_ndim = reduce_dims.size();
 

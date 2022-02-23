@@ -416,9 +416,11 @@ Buf::Buf(
       base_handle_(var),
       dims_(std::move(dims)),
       strides_(
-          strides
-              ? *strides
-              : make_contiguous_strides(ExprVectorToExprHandleVector(dims_))),
+          strides ? *strides
+                  : (ndim() == 4 ? make_channels_last_strides(
+                                       ExprVectorToExprHandleVector(dims_))
+                                 : make_contiguous_strides(
+                                       ExprVectorToExprHandleVector(dims_)))),
       initializer_(std::move(initializer)),
       qscale_(std::move(qscale)),
       qzero_(std::move(qzero)) {
