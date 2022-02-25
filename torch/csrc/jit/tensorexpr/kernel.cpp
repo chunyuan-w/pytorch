@@ -1281,6 +1281,12 @@ Tensor TensorExprKernel::convertStaticShapeOutputToCorrectStrides(
   if (strides == default_strides) {
     return Tensor(buf, nullptr);
   }
+  std::vector<int64_t> channels_last_default_strides =
+      contiguousChannelsLastStridesOf(sizes);
+  if (strides == channels_last_default_strides) {
+    return Tensor(buf, nullptr);
+  }
+
   // If the tensor is not dense or overlaps, we have
   // no way of matching the profiled striding
   if (!denseAndNonOverlapping(sizes, strides)) {
