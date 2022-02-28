@@ -1,0 +1,144 @@
+diff --git a/torch/csrc/jit/tensorexpr/expr.cpp b/torch/csrc/jit/tensorexpr/expr.cpp
+index fb47c58f3e..ff33566365 100644
+--- a/torch/csrc/jit/tensorexpr/expr.cpp
++++ b/torch/csrc/jit/tensorexpr/expr.cpp
+@@ -429,6 +429,26 @@ BufHandle Buf::make(const std::vector<ExprHandle>& dims, Dtype dtype) {
+   return Buf::make("", dims, dtype);
+ }
+ 
++BufHandle Buf::make(
++    const std::string& name_hint,
++    const std::vector<ExprHandle>& dims,
++    Dtype dtype,
++    c10::optional<ExprPtr> initializer,
++    c10::optional<std::vector<ExprHandle>> strides) {
++  c10::optional<std::vector<ExprPtr>> opt_strides;
++  if (strides) {
++    opt_strides = ExprHandleVectorToExprVector(*strides);
++  }
++  return BufHandle(alloc<Buf>(
++      name_hint,
++      ExprHandleVectorToExprVector(dims),
++      dtype,
++      nullptr,
++      opt_strides,
++      nullptr,
++      nullptr));
++}
++
+ BufHandle Buf::make(
+     const std::string& name_hint,
+     const std::vector<ExprHandle>& dims,
+diff --git a/torch/csrc/jit/tensorexpr/expr.h b/torch/csrc/jit/tensorexpr/expr.h
+index cf75e634ce..e8b8ad51f5 100644
+--- a/torch/csrc/jit/tensorexpr/expr.h
++++ b/torch/csrc/jit/tensorexpr/expr.h
+@@ -193,6 +193,13 @@ class TORCH_API Buf : public ExprNode<Buf> {
+  public:
+   static BufHandle make(const std::vector<ExprHandle>& dims, Dtype dtype);
+ 
++  static BufHandle make(
++      const std::string& name_hint,
++      const std::vector<ExprHandle>& dims,
++      Dtype dtype,
++      c10::optional<ExprPtr> initializer,
++      c10::optional<std::vector<ExprHandle>> strides);
++
+   static BufHandle make(
+       const std::string& name_hint,
+       const std::vector<ExprHandle>& dims,
+@@ -313,6 +320,14 @@ class TORCH_API BufHandle : public ExprHandle {
+       Dtype dtype)
+       : ExprHandle(Buf::make(name_hint, dims, dtype)) {}
+ 
++  BufHandle(
++      const std::string& name_hint,
++      const std::vector<ExprHandle>& dims,
++      Dtype dtype,
++      ExprPtr initializer,
++      std::vector<ExprHandle> strides)
++      : ExprHandle(Buf::make(name_hint, dims, dtype, initializer, strides)) {}
++
+   BufHandle(const std::vector<ExprHandle>& dims, Dtype dtype)
+       : ExprHandle(Buf::make("_", dims, dtype)) {}
+ 
+diff --git a/torch/csrc/jit/tensorexpr/kernel.cpp b/torch/csrc/jit/tensorexpr/kernel.cpp
+index 8b9dafaae9..73ee6c520a 100644
+--- a/torch/csrc/jit/tensorexpr/kernel.cpp
++++ b/torch/csrc/jit/tensorexpr/kernel.cpp
+@@ -1000,6 +1000,44 @@ std::vector<ExprHandle> TensorExprKernel::getInputStrides(
+   return inputTensorStrides;
+ }
+ 
++// TODO: put in same file as TensorType::contiguousStridesOf:
++// aten/src/ATen/core/jit_type.h
++static std::vector<int64_t> contiguousChannelsLastStridesOf(
++    at::IntArrayRef sizes) {
++  std::vector<int64_t> strides(sizes.size());
++  if (sizes.empty()) // zero-dim case
++    return strides;
++
++  TORCH_CHECK(sizes.size() == 4, "only support 4D for now");
++  strides[1] = 1;
++  strides[3] = strides[1] * sizes[1];
++  strides[2] = strides[3] * sizes[3];
++  strides[0] = strides[2] * sizes[2];
++  return strides;
++
++  return strides;
++}
++
++static bool isChannelsLastContiguous(const torch::jit::Value* v) {
++  auto const& tt = v->type()->cast<TensorType>();
++  if (!tt) {
++    return false;
++  }
++  if (!tt->isComplete()) {
++    return false;
++  }
++  auto const& sizes = tt->sizes().concrete_sizes();
++  auto const& strides = tt->strides().concrete_sizes();
++  if (!sizes || !strides) {
++    return false;
++  }
++  // TODO: support dim=4 for now
++  if (sizes->size() != 4) {
++    return false;
++  }
++  return *strides == contiguousChannelsLastStridesOf(*sizes);
++}
++
+ Tensor TensorExprKernel::bindInput(const torch::jit::Value* input) {
+   auto const& t = input->type();
+   auto const& outputs = input->owningGraph()->outputs();
+@@ -1031,6 +1069,17 @@ Tensor TensorExprKernel::bindInput(const torch::jit::Value* input) {
+         bufferArgs_.emplace_back(inBuffer);
+         break;
+       }
++      if (isChannelsLastContiguous(input)) {
++        BufHandle inBuffer(
++            "t" + input_name_map_[input],
++            toExprHandles(*tt->sizes().concrete_sizes()),
++            ToDtype(static_cast<ScalarType>(*tt->scalarType())),
++            /*initializer*/ nullptr,
++            /*strides*/ toExprHandles(*tt->strides().concrete_sizes()));
++        bufs_.emplace(input, inBuffer.node());
++        bufferArgs_.emplace_back(inBuffer);
++        break;
++      }
+ 
+       // if the input isn't contiguous or is an output,
+       // write strided input into  contiguous buffer that is
+@@ -1232,6 +1281,12 @@ Tensor TensorExprKernel::convertStaticShapeOutputToCorrectStrides(
+   if (strides == default_strides) {
+     return Tensor(buf, nullptr);
+   }
++  std::vector<int64_t> channels_last_default_strides =
++      contiguousChannelsLastStridesOf(sizes);
++  if (strides == channels_last_default_strides) {
++    return Tensor(buf, nullptr);
++  }
++
+   // If the tensor is not dense or overlaps, we have
+   // no way of matching the profiled striding
+   if (!denseAndNonOverlapping(sizes, strides)) {
