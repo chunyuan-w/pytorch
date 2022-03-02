@@ -525,6 +525,10 @@ llvm::Type* LLVMCodeGenImpl::dtypeToLLVM(Dtype dtype) {
       return ByteTy_;
       break;
 
+    case ScalarType::BFloat16:
+      return ShortTy_;
+      break;
+
     default:
       throw unsupported_dtype();
   }
