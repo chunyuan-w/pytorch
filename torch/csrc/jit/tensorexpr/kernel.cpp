@@ -1875,18 +1875,22 @@ StmtPtr TensorExprKernel::getCodeGenStmt() {
 }
 
 void TensorExprKernel::runKernel(Stack& stack) {
+  torch::jit::tensorexpr::TimeEvent::record("prepareRunArgs<<<<<");
+
   // Set up arguments (inputs, then outputs) for kernel call.
   auto inputs = last(stack, nInputs_);
   std::vector<at::Tensor> outputs;
 
   std::vector<CodeGen::CallArg> runArgs = prepareRunArgs(inputs, outputs);
 
-  // torch::jit::tensorexpr::TimeEvent::record("codegen_call<<<<<");
+torch::jit::tensorexpr::TimeEvent::record("prepareRunArgs<<<<<");
+
+  torch::jit::tensorexpr::TimeEvent::record("codegen_call<<<<<");
   // Call the kernel.
   codegen_->call(runArgs);
-  // torch::jit::tensorexpr::TimeEvent::record("codegen_call>>>>>");
+  torch::jit::tensorexpr::TimeEvent::record("codegen_call>>>>>");
 
-
+torch::jit::tensorexpr::TimeEvent::record("output<<<<<");
   // Update the stack.
   drop(stack, nInputs_);
 
@@ -1900,6 +1904,9 @@ void TensorExprKernel::runKernel(Stack& stack) {
       push_one(stack, std::move(o));
     }
   }
+
+  torch::jit::tensorexpr::TimeEvent::record("output>>>>>");
+
 }
 
 void TensorExprKernel::runFast(
