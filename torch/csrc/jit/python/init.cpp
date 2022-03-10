@@ -751,6 +751,14 @@ void initJITBindings(PyObject* module) {
       .def("_jit_texpr_fallback_allowed", &tensorexpr::fallbackAllowed)
       .def("_jit_texpr_set_fallback_allowed", &tensorexpr::setFallbackAllowed)
       .def("_jit_set_texpr_reductions_enabled", &setTexprReductionsEnabled)
+      
+      .def("_start_recording_time_event", &tensorexpr::TimeEvent::start)
+      .def("_stop_recording_time_event", &tensorexpr::TimeEvent::stop)
+      .def("_pause_recording_time_event", &tensorexpr::TimeEvent::pause)
+      .def("_resume_recording_time_event", &tensorexpr::TimeEvent::resume)
+      .def("_output_time_event", &tensorexpr::TimeEvent::output_time_event)   
+          
+      
       .def(
           "_jit_set_texpr_dynamic_shape_enabled",
           &setTensorExprDynamicShapeFusionEnabled)

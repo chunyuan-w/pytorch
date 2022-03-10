@@ -14,6 +14,16 @@ namespace torch {
 namespace jit {
 namespace tensorexpr {
 
+class TimeEvent {
+ public:
+  TORCH_API static void start();
+  TORCH_API static void stop();
+  TORCH_API static void pause();
+  TORCH_API static void resume();
+  TORCH_API static void record(const char* id_str);
+  TORCH_API static void output_time_event();
+};
+
 struct SmallSizeTPairHash {
  public:
   std::size_t operator()(const std::pair<size_t, size_t>& x) const {

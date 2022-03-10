@@ -25,6 +25,59 @@ namespace torch {
 namespace jit {
 namespace tensorexpr {
 
+enum REC_STATE { RUN, STOP, PAUSE };
+static REC_STATE current_state = REC_STATE::STOP;
+#define COLUMN_WIDTH 50
+#define TIME_EVENT_MAX_NUMBER 10240
+static int64_t current_idx = 0;
+static int64_t record_len = 0;
+static const char* id_string[TIME_EVENT_MAX_NUMBER];
+static int64_t time_event[TIME_EVENT_MAX_NUMBER];
+
+void TimeEvent::start() {
+  current_idx = 0;
+  current_state = REC_STATE::RUN;
+}
+
+void TimeEvent::stop() {
+  current_idx = 0;
+  current_state = REC_STATE::STOP;
+}
+
+void TimeEvent::pause() {
+  current_state = REC_STATE::PAUSE;
+}
+
+void TimeEvent::resume() {
+  current_state = REC_STATE::RUN;
+}
+
+void TimeEvent::record(const char* id_str) {
+  if (current_state != REC_STATE::RUN)
+    return;
+  id_string[current_idx] = id_str;
+  time_event[current_idx] =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::system_clock::now().time_since_epoch())
+          .count();
+  current_idx++;
+  record_len++;
+}
+
+void TimeEvent::output_time_event() {
+  printf(
+      "%*s | %*s\n", -COLUMN_WIDTH, "Event Name", COLUMN_WIDTH, "Time Stamp");
+  printf("%*s | %*s\n", -COLUMN_WIDTH, "----", COLUMN_WIDTH, "-----");
+  for (int i = 0; i < current_idx; i++) {
+    printf(
+        "%*s | %*ld\n",
+        -COLUMN_WIDTH,
+        id_string[i],
+        COLUMN_WIDTH,
+        time_event[i]);
+  }
+}
+
 std::string buildErrorMessage(const std::string& s) {
   static const std::string generic_error_message =
       "This error occured in the fuser. You can turn off the fuser with "
@@ -1828,8 +1881,11 @@ void TensorExprKernel::runKernel(Stack& stack) {
 
   std::vector<CodeGen::CallArg> runArgs = prepareRunArgs(inputs, outputs);
 
+  // torch::jit::tensorexpr::TimeEvent::record("codegen_call<<<<<");
   // Call the kernel.
   codegen_->call(runArgs);
+  // torch::jit::tensorexpr::TimeEvent::record("codegen_call>>>>>");
+
 
   // Update the stack.
   drop(stack, nInputs_);
