@@ -776,7 +776,7 @@ struct LSTMCell : Cell<std::tuple<Tensor, Tensor>, cell_params> {
       // Slice off the workspace argument (it's needed only for AD).
       return std::make_tuple(std::move(hy), std::move(std::get<1>(result)));
     }
-
+  printf("enter lstm cell\n");
     const auto gates = params.linear_hh(hx).add_(
         pre_compute_input ? input : params.linear_ih(input));
     auto chunked_gates = gates.unsafe_chunk(4, 1);
@@ -869,10 +869,13 @@ struct FullLayer : Layer<Tensor, hidden_type, cell_params> {
       bool pre_compute_input = false) const {
     std::vector<Tensor> step_outputs;
     auto hidden = input_hidden;
+    printf("before FullLayer\n");
     for (const auto& input : step_inputs) {
       hidden = cell_(input, hidden, params, pre_compute_input);
       step_outputs.emplace_back(hidden_as_output(hidden));
     }
+    printf("after FullLayer\n");
+
     return {step_outputs, hidden};
   }
 
@@ -911,19 +914,35 @@ struct FullBidirectionalLayer
       const Tensor& input,
       const hidden_type& input_hidden,
       const param_type& params) const override {
+
+        printf("FullBidirectionalLayer\n");
+
+
+
     std::vector<Tensor> step_inputs;
     if (input.device().is_cpu()) {
+
+
+std::cout << "input.sizes(): " << input.sizes() << "\n";
+
       auto input_w = params.first.linear_ih(input);
       step_inputs = input_w.unbind(0);
+      printf("before fw_result\n");
       auto fw_result = layer_(
           step_inputs, input_hidden.first, params.first, true);
+      printf("after fw_result\n");
+
       TORCH_CHECK(fw_result.outputs.size() > 0, "Expected sequence length to be larger than 0 in RNN");
       auto fw_output = at::stack(fw_result.outputs, 0);
       input_w = params.second.linear_ih(input);
       step_inputs = input_w.unbind(0);
       auto rev_step_inputs = reverse(std::move(step_inputs));
+      printf("before rev_result\n");
+      
       auto rev_result =
           layer_(rev_step_inputs, input_hidden.second, params.second, true);
+      printf("after rev_result\n");
+
       std::reverse(rev_result.outputs.begin(), rev_result.outputs.end());
       auto rev_output = at::stack(rev_result.outputs, 0);
       return {at::cat({fw_output, rev_output}, fw_output.dim() - 1),
@@ -977,6 +996,7 @@ struct PackedLayer : Layer<PackedSequence, hidden_type, cell_params> {
     if (input.data.device().is_cpu()) {
       input_w = params.linear_ih(input.data);
       input_ptr = &input_w;
+      printf("PackedLayer pre_compute_input\n");
       pre_compute_input = true;
     }
 
@@ -1036,6 +1056,8 @@ struct ReversedPackedLayer : Layer<PackedSequence, hidden_type, cell_params> {
     if (input.data.device().is_cpu()) {
       input_w = params.linear_ih(input.data);
       input_ptr = &input_w;
+      printf("ReversedPackedLayer pre_compute_input\n");
+
       pre_compute_input = true;
     }
 
@@ -1081,6 +1103,7 @@ struct PackedBidirectionalLayer
       const PackedSequence& input,
       const hidden_type& input_hidden,
       const param_type& params) const override {
+        printf("PackedBidirectionalLayer\n");
     auto fw_result = layer_(input, input_hidden.first, params.first);
     auto rev_result = rev_layer_(input, input_hidden.second, params.second);
     PackedSequence output{
@@ -1117,7 +1140,7 @@ apply_layer_stack(const Layer<io_type, hidden_type, weight_type>& layer, const i
                   int64_t num_layers, double dropout_p, bool train) {
   TORCH_CHECK(num_layers == (int64_t)hiddens.size(), "Expected more hidden states in stacked_rnn");
   TORCH_CHECK(num_layers == (int64_t)weights.size(), "Expected more weights in stacked_rnn");
-
+printf("in apply_layer_stack\n");
   auto layer_input = input;
   auto hidden_it = hiddens.begin();
   auto weight_it = weights.begin();
@@ -1131,6 +1154,7 @@ apply_layer_stack(const Layer<io_type, hidden_type, weight_type>& layer, const i
       layer_input = dropout(layer_input, dropout_p);
     }
   }
+printf("out apply_layer_stack\n");
 
   return {layer_input, final_hiddens};
 }
@@ -1493,7 +1517,7 @@ std::tuple<Tensor, Tensor, Tensor> lstm(
           "LSTM with projections is not supported with MIOpen. Using default implementation.");
     }
   }
-
+printf("enter lstm kernel\n");
   check_attributes(_input, _params, hx);
   auto input = batch_first ? _input.transpose(0, 1) : _input;
   auto params = gather_params(_params, has_biases, has_projections);
