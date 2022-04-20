@@ -283,6 +283,65 @@ void removeTensorTypeSpecializations(Block* block) {
   }
 }
 
+void prepareNodeForBFloat16(Node* node) {
+  // skip to
+  // TODO: use schema to match dtype to
+  if (node->kind() == aten::to) {
+    return;
+  }
+
+  static const OperatorSet cpu_compute_heavy_set{
+      "aten::conv2d(Tensor input, Tensor weight, Tensor? bias=None, int[2] stride=1, int[2] padding=0, int[2] dilation=1, int groups=1) -> Tensor",
+      "aten::matmul(Tensor self, Tensor other) -> Tensor",
+  };
+  // skip compute heavy set
+  // TODO: hard code for ipex_prepack::convolution_run
+  if (node->isMemberOf(cpu_compute_heavy_set) ||
+      node->kind() == Symbol::fromQualString("ipex_prepack::convolution_run")) {
+    return;
+  }
+  GRAPH_DEBUG("checking node, ", node->kind().toQualString());
+  for (const Value* v : node->inputs()) {
+    if (auto const& tt = v->type()->cast<TensorType>()) {
+      auto const& st = tt->scalarType();
+      auto const& device = tt->device();
+
+      if ((*st == c10::ScalarType::BFloat16) && *device == c10::kCPU) {
+        printf("bf16 pass\n");
+        node->dump();
+
+        WithInsertPoint guard(node);
+        auto g = node->owningGraph();
+        auto split_value = g->insert(
+            aten::to, {node->input(0), /*ScalarType=Float*/ 6, false, false});
+
+        auto old_type = node->input(0)->type()->expect<TensorType>();
+        auto new_type = old_type->withScalarType(at::ScalarType::Float);
+        split_value->setType(new_type);
+
+        node->replaceInputWith(node->input(0), split_value);
+
+        printf("create to\n");
+        g->dump();
+      }
+    }
+  }
+}
+
+void prepareForBFloat16(Block* block) {
+  GRAPH_DEBUG("In prepareForBFloat16");
+  for (Node* n : block->nodes()) {
+    for (Block* b : n->blocks()) {
+      prepareForBFloat16(b);
+    }
+    prepareNodeForBFloat16(n);
+  }
+}
+
+void prepareForBFloat16(std::shared_ptr<Graph>& graph) {
+  prepareForBFloat16(graph->block());
+}
+
 void RemoveTensorTypeSpecializations(std::shared_ptr<Graph>& graph) {
   removeTensorTypeSpecializations(graph->block());
 }
@@ -382,6 +441,9 @@ void insertTypeGuard(
   for (Value* output : guarded_node->outputs()) {
     true_block->registerOutput(output);
   }
+  printf("dump subgraph\n");
+  subgraph->dump();
+  prepareForBFloat16(subgraph);
 }
 
 namespace {
@@ -919,11 +981,11 @@ class TensorExprFuser {
         // but on top of that Float16 has a few kinks on LLVM.  Thus, on CPU we
         // additionally disable it until we either move to a more stable version
         // or find workarounds.
-        if ((*st == c10::ScalarType::Half ||
-             *st == c10::ScalarType::BFloat16) &&
-            *device == c10::kCPU) {
-          return false;
-        }
+        // if ((*st == c10::ScalarType::Half ||
+        //      *st == c10::ScalarType::BFloat16) &&
+        //     *device == c10::kCPU) {
+        //   return false;
+        // }
 
         // These operators only support floats, because integer divisors need to
         // raise ZeroDivisionError.
