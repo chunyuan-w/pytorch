@@ -72,12 +72,6 @@ namespace tensorexpr {
 
 OperatorSet& getCustomOperatorSet() {
   static OperatorSet _g_custom_operator_set{};
-
-#if AT_MKLDNN_ENABLED()
-  _g_custom_operator_set.insert(
-      {"mkldnn_prepacked::conv2d_run(Tensor X, __torch__.torch.classes.mkldnn.Conv2dOpContext W_prepack) -> (Tensor Y)"});
-#endif // AT_MKLDNN_ENABLED()
-
   return _g_custom_operator_set;
 }
 
@@ -90,6 +84,17 @@ static const OperatorSet& supported_non_eltwise_set() {
   };
   // clang-format on
   return supported_non_eltwise_set;
+};
+
+static const OperatorSet& supported_mkldnn_fusion_op_set() {
+  // clang-format off
+  static const OperatorSet supported_mkldnn_fusion_op_set{
+#if AT_MKLDNN_ENABLED()    
+      "mkldnn_prepacked::conv2d_run(Tensor X, __torch__.torch.classes.mkldnn.Conv2dOpContext W_prepack) -> (Tensor Y)",
+#endif // AT_MKLDNN_ENABLED()      
+  };
+  // clang-format on
+  return supported_mkldnn_fusion_op_set;
 };
 
 bool isSupported(Node* node) {
@@ -114,6 +119,8 @@ bool isSupported(Node* node) {
       node->isMemberOf(supported_non_eltwise_set()) ||
       node->isMemberOf(supported_misc_set) ||
       node->isMemberOf(getCustomOperatorSet()) ||
+      (node->isMemberOf(supported_mkldnn_fusion_op_set()) &&
+       mkldnnConv2dFusionIsSupported(node)) ||
       (texpr_reductions_enabled && node->isMemberOf(supported_reduction_set))) {
     // We only insert guards on Tensor types, so we rely on the output
     // of a node being uniquely determined by its input types.
