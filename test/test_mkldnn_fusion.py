@@ -51,10 +51,17 @@ class TestMkldnnFusion(JitTestCase):
                 res = self.conv(x)
                 return res
 
-        m = M(3, 10, kernel_size=(3, 3))
-        x = torch.randn(1, 3, 224, 224)
-        graph = self._check_model(m, x)
-        self.assertAllFused(graph)
+        for memory_format, enabled in [
+            [torch.contiguous_format, True],
+            [torch.channels_last, False], # TODO: enable support on channels_last
+        ]:
+            m = M(3, 10, kernel_size=(3, 3)).to(memory_format=memory_format)
+            x = torch.randn(1, 3, 224, 224).to(memory_format=memory_format)
+            graph = self._check_model(m, x)
+            if enabled:
+                self.assertAllFused(graph)
+            else:
+                self.assertGraphContains(graph, kind='aten::conv2d')
 
     def test_conv_eltwise(self):
         class M(nn.Module):

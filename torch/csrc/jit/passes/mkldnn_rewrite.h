@@ -24,8 +24,8 @@ struct PostOp {
 };
 
 const static std::map<std::string, PostOp> fusion_attr_map = {
-      {"none", {ideep::attr_t()}},
-      {"relu", {ideep::attr_t::fuse_relu()}},
+    {"none", {ideep::attr_t()}},
+    {"relu", {ideep::attr_t::fuse_relu()}},
 };
 
 } // namespace mkldnn

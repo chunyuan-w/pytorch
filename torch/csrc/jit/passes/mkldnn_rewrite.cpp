@@ -37,32 +37,45 @@ c10::VaryingShape<int64_t> getSizesOf(Node* n, size_t idx) {
   return tt->sizes();
 }
 
-bool ndimEquals(c10::VaryingShape<int64_t> sizes, size_t value) {
-  if (!sizes.concrete_sizes()) {
+bool isContiguous(Value* v) {
+  auto const& tt = v->type()->cast<TensorType>();
+  if (!tt) {
     return false;
   }
-  auto concrete_sizes = *sizes.concrete_sizes();
-  if (concrete_sizes.size() != value) {
+  if (!tt->isComplete()) {
     return false;
   }
-  return true;
+  auto const& sizes = tt->sizes().concrete_sizes();
+  auto const& strides = tt->strides().concrete_sizes();
+  if (!sizes || !strides) {
+    return false;
+  }
+  int ndims = (*sizes).size();
+  // TODO: only support 4D input for now
+  if (ndims != 4) {
+    return false;
+  }
+
+  // TODO: currently only support contiguous input. Channels last contiguous
+  // will be supported as a next step
+  return *strides == TensorType::contiguousStridesOf(*sizes);
 }
 
 void insertPrePackedConvOpForNode(Node* n) {
-  // Need to know all the shapes of input and weight
-  auto input_sizes = getSizesOf(n, /*idx*/ 0);
-  if (!ndimEquals(input_sizes, 4)) {
+  constexpr int POS_INPUT = 0;
+  constexpr int POS_WEIGHT = 1;
+  if (!isContiguous(n->input(POS_INPUT))) {
     return;
   }
 
-  auto weight_sizes = getSizesOf(n, /*idx*/ 1);
-  if (!ndimEquals(weight_sizes, 4)) {
+  if (!isContiguous(n->input(POS_WEIGHT))) {
     return;
   }
 
   WithInsertPoint guard(n);
   auto graph = n->owningGraph();
 
+  auto input_sizes = getSizesOf(n, POS_INPUT);
   IValue input_size_value(*input_sizes.concrete_sizes());
   auto input_size = graph->insertConstant(input_size_value);
 
