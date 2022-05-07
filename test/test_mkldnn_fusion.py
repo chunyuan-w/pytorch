@@ -53,7 +53,7 @@ class TestMkldnnFusion(JitTestCase):
 
         for memory_format, enabled in [
             [torch.contiguous_format, True],
-            [torch.channels_last, False], # TODO: enable support on channels_last
+            [torch.channels_last, False],  # TODO: enable support on channels_last
         ]:
             m = M(3, 10, kernel_size=(3, 3)).to(memory_format=memory_format)
             x = torch.randn(1, 3, 224, 224).to(memory_format=memory_format)
@@ -76,7 +76,7 @@ class TestMkldnnFusion(JitTestCase):
                 return x
 
         for eltwise in ["relu"]:
-            for inplace in [False]:
+            for inplace in [False, True]:
                 eltwise_fn_name = eltwise + "_" if inplace else eltwise
                 eltwise_fn = get_eltwise_fn(eltwise_fn_name)
 
