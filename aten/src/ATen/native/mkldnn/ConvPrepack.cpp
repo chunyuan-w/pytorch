@@ -91,24 +91,19 @@ ContextConv create(
       std::move(attr)};
 }
 
-ideep::tensor _mkldnn_convolution(
+void _mkldnn_convolution_out(
     const ideep::tensor& x,
+    ideep::tensor& y,
     const ideep::tensor& w,
     const c10::optional<ideep::tensor>& b,
     IntArrayRef padding,
     IntArrayRef stride,
     IntArrayRef dilation,
+    IntArrayRef output_sizes,
     int64_t groups,
     const ideep::attr_t& attr = ideep::attr_t()) {
-  auto kernel_size = w.get_dims();
-
-  std::vector<int64_t> input_size = x.get_dims();
-  std::vector<int64_t> output_sizes =
-      conv_output_size(input_size, kernel_size, padding, stride, dilation);
-
-  ideep::tensor y;
   if (b.has_value()) {
-    ideep::convolution_forward::compute(
+    ideep::convolution_forward::compute<true>(
         x,
         w,
         b.value(),
@@ -124,7 +119,7 @@ ideep::tensor _mkldnn_convolution(
         ideep::scale_t(),
         attr);
   } else {
-    ideep::convolution_forward::compute(
+    ideep::convolution_forward::compute<true>(
         x,
         w,
         {output_sizes.cbegin(), output_sizes.cend()},
@@ -139,16 +134,17 @@ ideep::tensor _mkldnn_convolution(
         ideep::scale_t(),
         attr);
   }
-  return y;
 }
 
-Tensor mkldnn_convolution(
+void mkldnn_convolution_out(
     const Tensor& input,
+    ideep::tensor& mkldnn_output,
     const ideep::tensor& mkldnn_weight,
     const c10::optional<Tensor>& bias_opt,
     IntArrayRef padding,
     IntArrayRef stride,
     IntArrayRef dilation,
+    IntArrayRef output_sizes,
     int64_t groups,
     const ideep::attr_t& attr = ideep::attr_t()) {
   c10::MaybeOwned<Tensor> bias_maybe_owned =
@@ -162,30 +158,72 @@ Tensor mkldnn_convolution(
     mkldnn_bias = itensor_from_tensor(bias);
   }
 
-  ideep::tensor mkldnn_output = _mkldnn_convolution(
+  _mkldnn_convolution_out(
       mkldnn_input,
+      mkldnn_output,
       mkldnn_weight,
       mkldnn_bias,
       padding,
       stride,
       dilation,
+      output_sizes,
       groups,
       attr);
+}
 
-  return mkldnn_to_dense(new_with_itensor_mkldnn(
-      std::move(mkldnn_output),
-      optTypeMetaToScalarType(input.options().dtype_opt()),
-      input.options().device_opt()));
+std::vector<int64_t> get_output_sizes(
+    ContextConv& context,
+    const Tensor& input) {
+  const ideep::tensor& mkldnn_weight = context.weight_packed_;
+  IntArrayRef padding = context.padding_;
+  IntArrayRef stride = context.stride_;
+  IntArrayRef dilation = context.dilation_;
+
+  auto kernel_size = mkldnn_weight.get_dims();
+
+  std::vector<int64_t> input_size = input.sizes().vec();
+  return conv_output_size(input_size, kernel_size, padding, stride, dilation);
 }
 
 Tensor run(ContextConv& context, const Tensor& input) {
-  return mkldnn_convolution(
+  std::vector<int64_t> output_sizes = get_output_sizes(context, input);
+
+  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  auto output = at::empty(
+      output_sizes,
+      input.options().memory_format(input.suggest_memory_format()));
+  ideep::tensor mkldnn_output = itensor_view_from_dense(output);
+
+  mkldnn_convolution_out(
       input,
+      mkldnn_output,
       context.weight_packed_,
       context.at_bias_,
       context.padding_,
       context.stride_,
       context.dilation_,
+      output_sizes,
+      context.groups_,
+      context.attr_);
+  return output;
+}
+
+void run(ContextConv& context, const Tensor& input, void* output) {
+  std::vector<int64_t> output_sizes = get_output_sizes(context, input);
+
+  ideep::tensor::desc o_desc = {
+      output_sizes, get_mkldnn_dtype(input.scalar_type())};
+  ideep::tensor mkldnn_output = {o_desc, output};
+
+  mkldnn_convolution_out(
+      input,
+      mkldnn_output,
+      context.weight_packed_,
+      context.at_bias_,
+      context.padding_,
+      context.stride_,
+      context.dilation_,
+      output_sizes,
       context.groups_,
       context.attr_);
 }

@@ -38,6 +38,8 @@ ContextConv create(
 
 Tensor run(ContextConv& context, const Tensor& input);
 
+void run(ContextConv& context, const Tensor& input, void* output);
+
 } // namespace convolution
 } // namespace internal
 } // namespace mkldnn
