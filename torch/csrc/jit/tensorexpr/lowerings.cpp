@@ -4,6 +4,7 @@
 #include <torch/csrc/jit/tensorexpr/operators/operators.h>
 
 #include <ATen/native/Activation.h>
+#include <ATen/native/mkldnn/Common.h>
 
 namespace torch {
 namespace jit {
@@ -44,9 +45,11 @@ int nnc_lowerings_lazy_registration() {
       computePrepackedLinearClampRun);
 #endif
 
+#if AT_MKLDNN_ENABLED()
   RegisterNNCLoweringsFunction mkldnn_prepacked_conv2d_run(
       {"mkldnn_prepacked::conv2d_run(Tensor X, __torch__.torch.classes.mkldnn.ConvOpContext W_prepack) -> (Tensor Y)"},
       computeMkldnnPrepackedConvRun);
+#endif // AT_MKLDNN_ENABLED()
 
   RegisterNNCLoweringsFunction aten_sub(
       {"aten::sub.Scalar(Tensor self, Scalar other, Scalar alpha=1) -> (Tensor)",
