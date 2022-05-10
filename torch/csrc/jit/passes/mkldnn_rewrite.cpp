@@ -244,9 +244,10 @@ void FoldPrePackingOps(std::shared_ptr<Graph>& graph) {
   PrePackingOpsFolder(graph->block());
 }
 
-void FuseMkldnn(std::shared_ptr<Graph>& graph) {
+void FuseConvWithEltwise(std::shared_ptr<Graph>& graph) {
   GRAPH_DEBUG(
-      "Before insertMkldnnPrePackedOps. Beginning of FuseMkldnn\n", *graph);
+      "Before insertMkldnnPrePackedOps. Beginning of FuseConvWithEltwise\n",
+      *graph);
   insertMkldnnPrePackedOps(graph);
   GRAPH_DEBUG(
       "After insertMkldnnPrePackedOps, before FuseReluWithPackedOps\n", *graph);
@@ -254,12 +255,12 @@ void FuseMkldnn(std::shared_ptr<Graph>& graph) {
   GRAPH_DEBUG(
       "After FuseReluWithPackedOps, before FoldPrePackingOps\n", *graph);
   FoldPrePackingOps(graph);
-  GRAPH_DEBUG("After FoldPrePackingOps. End of FuseMkldnn\n", *graph);
+  GRAPH_DEBUG("After FoldPrePackingOps. End of FuseConvWithEltwise\n", *graph);
 }
 
 #else
 
-void FuseMkldnn(std::shared_ptr<Graph>& graph) {
+void FuseConvWithEltwise(std::shared_ptr<Graph>& graph) {
   GRAPH_DUMP("MKLDNN Not enabled", graph);
 }
 

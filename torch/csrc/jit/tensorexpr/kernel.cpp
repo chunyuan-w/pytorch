@@ -1489,7 +1489,7 @@ void TensorExprKernel::compile() {
   device_ = *pickDeviceType(graph_);
   OptimizeCat(graph_);
 
-  FuseMkldnn(graph_);
+  FuseConvWithEltwise(graph_);
 
   has_symbolic_shapes_ = !symbolic_shape_inputs_.empty();
   nInputs_ = graph_->inputs().size();

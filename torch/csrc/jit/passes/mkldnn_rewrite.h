@@ -32,7 +32,7 @@ const static std::map<std::string, PostOp> fusion_attr_map = {
 
 #endif // AT_MKLDNN_ENABLED()
 
-TORCH_API void FuseMkldnn(std::shared_ptr<Graph>& graph);
+void FuseConvWithEltwise(std::shared_ptr<Graph>& graph);
 
 } // namespace jit
 } // namespace torch
