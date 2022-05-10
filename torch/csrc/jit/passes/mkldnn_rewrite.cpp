@@ -1,5 +1,4 @@
 #include <ATen/Config.h>
-#include <ATen/Parallel.h>
 #include <ATen/code_template.h>
 #include <ATen/core/jit_type.h>
 #include <ATen/native/ConvUtils.h>
@@ -63,48 +62,6 @@ bool isContiguous(Value* v) {
   return *strides == TensorType::contiguousStridesOf(*sizes);
 }
 
-bool useMkldnnForConvShape(Node* n) {
-  constexpr int POS_INPUT = 0;
-  constexpr int POS_WEIGHT = 1;
-  constexpr int POS_STRIDE = 3;
-  constexpr int POS_PADDING = 4;
-  constexpr int POS_DILATION = 5;
-  constexpr int POS_GROUPS = 6;
-  if (n->kind() != aten::conv2d) {
-    return false;
-  }
-  auto const& input_sizes = getSizesOf(n, POS_INPUT).concrete_sizes();
-  auto const& weight_sizes = getSizesOf(n, POS_WEIGHT).concrete_sizes();
-  if (!input_sizes || !weight_sizes) {
-    return false;
-  }
-
-  auto concrete_input_sizes = input_sizes.value();
-  auto concrete_weight_sizes = weight_sizes.value();
-
-  std::vector<int64_t> stride = toIValue(n->input(POS_STRIDE))->toIntVector();
-  std::vector<int64_t> padding = toIValue(n->input(POS_PADDING))->toIntVector();
-  std::vector<int64_t> dilation =
-      toIValue(n->input(POS_DILATION))->toIntVector();
-  int64_t groups = toIValue(n->input(POS_GROUPS))->toInt();
-
-  at::native::ConvParams params;
-  params.stride = stride;
-  params.padding = padding;
-  params.dilation = dilation;
-  params.groups = groups;
-
-  return (params.is_strided() || params.is_dilated() ||
-          concrete_input_sizes[0] >= 16 || concrete_weight_sizes[2] != 1 ||
-          concrete_weight_sizes[3] != 1 || at::get_num_threads() > 1) &&
-      (params.groups > 1 ||
-       (concrete_weight_sizes[2] > 3 && concrete_weight_sizes[3] > 3) ||
-       concrete_input_sizes[0] > 1 ||
-       concrete_input_sizes[0] * concrete_input_sizes[1] *
-               concrete_input_sizes[2] * concrete_input_sizes[3] >
-           20480);
-}
-
 void insertPrePackedConvOpForNode(Node* n) {
   constexpr int POS_INPUT = 0;
   constexpr int POS_WEIGHT = 1;
@@ -113,11 +70,6 @@ void insertPrePackedConvOpForNode(Node* n) {
   }
 
   if (!isContiguous(n->input(POS_WEIGHT))) {
-    return;
-  }
-
-  // Exclude cases where MKLDNN performs worse than native
-  if (!useMkldnnForConvShape(n)) {
     return;
   }
 

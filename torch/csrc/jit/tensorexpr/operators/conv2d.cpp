@@ -301,12 +301,14 @@ bool conv2dIsSupported(
   params.dilation = dilation;
   params.groups = groups;
 
-  return (params.is_strided() || params.is_dilated() || input.dims[0] >= 16 ||
-          weight.dims[2] != 1 || weight.dims[3] != 1 ||
-          at::get_num_threads() > 1) &&
+  bool use_mkldnn = (params.is_strided() || params.is_dilated() ||
+                     input.dims[0] >= 16 || weight.dims[2] != 1 ||
+                     weight.dims[3] != 1 || at::get_num_threads() > 1) &&
       (params.groups > 1 || (weight.dims[2] > 3 && weight.dims[3] > 3) ||
        input.dims[0] > 1 ||
        input.dims[0] * input.dims[1] * input.dims[2] * input.dims[3] > 20480);
+  GRAPH_DEBUG("conv2dIsSupported: ", use_mkldnn);
+  return use_mkldnn;
 #endif
   auto Cin = input.dims[1];
   auto Cout = weight.dims[0];
