@@ -26,8 +26,6 @@ struct SmallSizeTPairHash {
 bool conv2dIsSupportedJit(const Node* node);
 // Returns true if the TE fuser supports this matmul.
 bool matmulIsSupported(const Node* node);
-// Returns true if the TE fuser supports this MKLDNN conv2d fusion
-bool mkldnnConvFusionIsSupported(const torch::jit::Node* node);
 template <typename T>
 inline std::vector<int64_t> bufferSizes(const T& t) {
   std::vector<int64_t> sizes;

@@ -1,6 +1,5 @@
 #include <torch/csrc/jit/passes/tensorexpr_fuser.h>
 
-#include <ATen/Config.h>
 #include <ATen/core/interned_strings.h>
 #include <ATen/core/symbol.h>
 #include <ATen/record_function.h>
@@ -87,17 +86,6 @@ static const OperatorSet& supported_non_eltwise_set() {
   return supported_non_eltwise_set;
 };
 
-static const OperatorSet& supported_mkldnn_fusion_op_set() {
-  // clang-format off
-  static const OperatorSet supported_mkldnn_fusion_op_set{
-#if AT_MKLDNN_ENABLED()
-      "mkldnn_prepacked::conv2d_run(Tensor X, __torch__.torch.classes.mkldnn.ConvOpContext W_prepack) -> (Tensor Y)",
-#endif // AT_MKLDNN_ENABLED()
-  };
-  // clang-format on
-  return supported_mkldnn_fusion_op_set;
-};
-
 bool isSupported(Node* node) {
   // For Block codegen we allow limited ops.
   if (tensorexpr::getTEGenerateBlockCode()) {
@@ -120,8 +108,6 @@ bool isSupported(Node* node) {
       node->isMemberOf(supported_non_eltwise_set()) ||
       node->isMemberOf(supported_misc_set) ||
       node->isMemberOf(getCustomOperatorSet()) ||
-      (node->isMemberOf(supported_mkldnn_fusion_op_set()) &&
-       mkldnnConvFusionIsSupported(node)) ||
       (texpr_reductions_enabled && node->isMemberOf(supported_reduction_set))) {
     // We only insert guards on Tensor types, so we rely on the output
     // of a node being uniquely determined by its input types.
