@@ -8,6 +8,7 @@ from . import attention      # noqa: F401
 from . import broadcast      # noqa: F401
 from . import concat         # noqa: F401
 # from . import conv           # noqa: F401
+from . import conv_eltwise # noqa: F401
 from . import elementwise    # noqa: F401
 from . import matmul         # noqa: F401
 # from . import normalization  # noqa: F401
@@ -155,6 +156,7 @@ Works only with Python3.\n A few examples:
     if args.cpu_fusion:
         import torch
         torch._C._jit_override_can_fuse_on_cpu(True)
+        torch._C._debug_set_fusion_group_inlining(False)
     else:
         import torch
         torch._C._jit_override_can_fuse_on_cpu(False)
