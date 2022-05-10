@@ -121,6 +121,9 @@ class Benchmark(object):
 
     def run(self, args):
         self.print_ir = args.print_ir
+        if args.cpu_fusion:
+            torch._C._jit_set_texpr_fuser_enabled(True)
+            return self.run_impl(True)        
         if args.cuda_fuser == "old" :
             torch._C._jit_override_can_fuse_on_gpu(True)
             if args.print_kernel :
@@ -148,11 +151,11 @@ class Benchmark(object):
             return self.run_impl(False)
 
     def run_impl(self, use_fuser):
-        warmups = 10
+        warmups = 50
         if self.device == "cuda":
             iters = 1000
         else:
-            iters = 10
+            iters = 1000
         engine = tensor_engine.get_engine()
 
         self.bm_jit = None
@@ -164,9 +167,18 @@ class Benchmark(object):
 
             if i == 0:
                 if self.jit_mode == "trace" and use_fuser :
-                    self.bm_jit = torch.jit.trace(
-                        self.forward, example_inputs=self.inputs, check_trace=False
-                    )
+                    if self.mode == "fwd":
+                        with torch.no_grad():
+                            self.bm_jit = torch.jit.script(
+                                self.module_layer
+                            )
+                            self.bm_jit = torch.jit.freeze(self.bm_jit.eval())
+                    else:
+                        self.bm_jit = torch.jit.trace(
+                            self.forward, example_inputs=self.inputs, check_trace=False
+                        )
+                    # self.bm_jit.graph_for(*self.inputs)
+                    # print(self.bm_jit.graph_for(*self.inputs))
                 if callable(getattr(self, "reference", None)):
                     self.check()
                 else:
