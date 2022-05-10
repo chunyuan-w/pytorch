@@ -45,7 +45,7 @@ class TestMkldnnFusion(JitTestCase):
         class M(nn.Module):
             def __init__(self, in_channels, out_channels, **kwargs):
                 super(M, self).__init__()
-                self.conv = torch.nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
+                self.conv = torch.nn.Conv2d(in_channels, out_channels, bias=True, **kwargs)
 
             def forward(self, x):
                 res = self.conv(x)
@@ -67,7 +67,7 @@ class TestMkldnnFusion(JitTestCase):
         class M(nn.Module):
             def __init__(self, eltwise_fn, in_channels, out_channels, **kwargs):
                 super(M, self).__init__()
-                self.conv = torch.nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
+                self.conv = torch.nn.Conv2d(in_channels, out_channels, bias=True, **kwargs)
                 self.eltwise = eltwise_fn
 
             def forward(self, x):
@@ -76,7 +76,7 @@ class TestMkldnnFusion(JitTestCase):
                 return x
 
         for eltwise in ["relu"]:
-            for inplace in [False, True]:
+            for inplace in [False]:
                 eltwise_fn_name = eltwise + "_" if inplace else eltwise
                 eltwise_fn = get_eltwise_fn(eltwise_fn_name)
 
