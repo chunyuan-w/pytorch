@@ -98,11 +98,11 @@ class ConvEltwise(benchmark.Benchmark):
             params_dict = {
                 "kernel_size": [2, 3],
                 "N": [1, 128],
-                "iC": [3, 128, 256],
-                "H": [16, 32],
-                "W": [16, 32],
-                "oC": [10, 128, 256],
-                "groups": [1, 2],
+                "iC": [3, 128],
+                "H": [16],
+                "W": [16],
+                "oC": [10, 256],
+                "groups": [1],
             }
 
             params_list = []
