@@ -95,20 +95,29 @@ class ConvEltwise(benchmark.Benchmark):
     @staticmethod
     def default_configs():
         def _conv_params_list():
-            params_dict = {
-                "kernel_size": [3],
-                "N": [1],
-                "iC": [128, 256],
-                "H": [32],
-                "W": [32],
-                "oC": [128],
-                "groups": [1, 2],
-            }
+            return [
+                [7, 1, 3, 224, 224, 64, 1],
+                [1, 1, 64, 56, 56, 256, 1],
+                [3, 1, 256, 56, 56, 256, 32],
+                [3, 1, 2048, 7, 7, 2048, 32],
+                [1, 1, 64, 56, 56, 64, 1],
+                [1, 1, 512, 28, 28, 128, 1],
+                [3, 1, 64, 56, 56, 64, 1],
+            ]
+            # params_dict = {
+            #     "kernel_size": [3],
+            #     "N": [1],
+            #     "iC": [128, 256],
+            #     "H": [28],
+            #     "W": [28],
+            #     "oC": [128, 256],
+            #     "groups": [1, 2],
+            # }
 
-            params_list = []
-            for key, value in params_dict.items():
-                params_list.append(value)
-            return itertools.product(*params_list)
+            # params_list = []
+            # for key, value in params_dict.items():
+            #     params_list.append(value)
+            # return itertools.product(*params_list)
 
         return _conv_params_list()
 
