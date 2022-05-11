@@ -1,3 +1,4 @@
+import argparse 
 import pandas as pd
 
 columns = ["shape", "time (us)"]
@@ -31,11 +32,24 @@ def compare(df1, df2):
     df["Gain"] = (df["Gain"] * 100).round(2).astype(str) + "%"
     print(df)
     
+def main(file_path_fusion, file_path_no_fusion):
+    # file_path_fusion = "with_fusion.log"
+    # file_path_no_fusion = "no_fusion.log"
 
-file_path_fusion = "with_fusion.log"
-file_path_no_fusion = "no_fusion.log"
+    df1 = parse_file(file_path_fusion)
+    df2 = parse_file(file_path_no_fusion)
 
-df1 = parse_file(file_path_fusion)
-df2 = parse_file(file_path_no_fusion)
+    compare(df1, df2)
 
-compare(df1, df2)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Compare perf of two files')
+    parser.add_argument('--file', '-f', nargs='+', action='append', help='[label:]filepath')
+    parser.add_argument('--delimiter', '-d', default='')
+    
+    args = parser.parse_args()
+    
+    file_a = args.file[0][0]
+    file_b = args.file[1][0]
+    
+    main(file_a, file_b)
+    
