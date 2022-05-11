@@ -16,9 +16,9 @@ def get_eltwise_fn(name):
 
 
 class M(torch.nn.Module):
-    def __init__(self, eltwise_fn, in_channels, out_channels, kernel_size, **kwargs):
+    def __init__(self, eltwise_fn, in_channels, out_channels, kernel_size, groups, **kwargs):
         super(M, self).__init__()
-        self.conv = torch.nn.Conv2d(in_channels, out_channels, kernel_size, bias=True, **kwargs)
+        self.conv = torch.nn.Conv2d(in_channels, out_channels, kernel_size, groups=groups, bias=True, **kwargs)
         self.eltwise = eltwise_fn
 
     def forward(self, x):
@@ -38,7 +38,7 @@ class ConvEltwise(benchmark.Benchmark):
         self.groups = groups
         self.inputs = [torch.randn(N, iC, H, W, device=device, requires_grad=self.requires_grad)]
 
-        self.module_layer = M(get_eltwise_fn("relu"), iC, oC, kernel_size)
+        self.module_layer = M(get_eltwise_fn("relu"), iC, oC, kernel_size, groups)
 
     def config(self):
         return [self.kernel_size, self.N, self.iC, self.H, self.W, self.oC, self.groups]
@@ -96,13 +96,13 @@ class ConvEltwise(benchmark.Benchmark):
     def default_configs():
         def _conv_params_list():
             params_dict = {
-                "kernel_size": [2, 3],
-                "N": [1, 128],
-                "iC": [3, 128],
-                "H": [16],
-                "W": [16],
-                "oC": [10, 256],
-                "groups": [1],
+                "kernel_size": [3],
+                "N": [1],
+                "iC": [128, 256],
+                "H": [32],
+                "W": [32],
+                "oC": [128, 256],
+                "groups": [1, 2],
             }
 
             params_list = []
