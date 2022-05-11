@@ -1,6 +1,8 @@
 import argparse 
 import pandas as pd
 
+pd.options.display.max_colwidth = 80
+
 columns = ["shape", "time (us)"]
 def parse_file(file):
     with open(file) as f:
