@@ -101,7 +101,7 @@ class ConvEltwise(benchmark.Benchmark):
                 "iC": [128, 256],
                 "H": [32],
                 "W": [32],
-                "oC": [128, 256],
+                "oC": [128],
                 "groups": [1, 2],
             }
 
@@ -114,3 +114,7 @@ class ConvEltwise(benchmark.Benchmark):
 
 
 benchmark.register_benchmark_class(ConvEltwise)
+
+# TODO: ref path
+# conv_eltwise_fwd_cpu_3_1_128_32_32_256_1
+# onednn_verbose,exec,cpu,convolution,ref:any,forward_training,src_f32::blocked:abcd:f0 wei_f32::blocked:ABcd16b16a:f0 bia_f32::blocked:a:f0 dst_f32::blocked:abcd:f0,attr-scratchpad:user attr-post-ops:eltwise_relu ,alg:convolution_direct,mb1_ic128oc256_ih32oh30kh3sh1dh0ph0_iw32ow30kw3sw1dw0pw0,266.258
