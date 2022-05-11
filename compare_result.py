@@ -1,4 +1,4 @@
-import argparse 
+import argparse
 import pandas as pd
 
 pd.options.display.max_colwidth = 80
