@@ -35,7 +35,7 @@ echo -e "### using $PREFIX\n"
 OMP_NUM_THREADS=1 $PREFIX python -m benchmarks.tensorexpr conv_eltwise  --device cpu --mode fwd --jit_mode trace --cpu_fusion 2>&1 | tee "1thread_$FILE_SUFFIX.log"
 
 ### 4 thread test
-echo -e "\n### using OMP_NUM_THREADS=1"
+echo -e "\n### using OMP_NUM_THREADS=4"
 PREFIX="numactl --physcpubind=0-3 --membind=0"
 echo -e "### using $PREFIX\n"
 OMP_NUM_THREADS=1 $PREFIX python -m benchmarks.tensorexpr conv_eltwise  --device cpu --mode fwd --jit_mode trace --cpu_fusion 2>&1 | tee "4thread_$FILE_SUFFIX.log"
