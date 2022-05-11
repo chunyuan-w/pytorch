@@ -45,14 +45,15 @@ def parse_line(line):
     kh = height.split("kh")[1].split("sh")[0]
     sh = height.split("sh")[1].split("dh")[0]
     dh = height.split("dh")[1].split("ph")[0]
-    ph = height.split("dh")[1]
+    ph = height.split("ph")[1]
     
-    print(ic)
-    print(oc)
-    print(ih)
-    print(kh)
+    print("#" * 50)
+    print(sh)
+    print(dh)
+    print(ph)
     # kernel_size, N, iC, H, W, oC, groups
     return [int(kh), mb, int(ic), int(ih), int(ih), int(oc)]
+    # return [int(kh), mb, int(ic), int(ih), int(ih), int(oc), int(ph), int(sh), int(dh)]
 
 
 def extract_shapes(df):
