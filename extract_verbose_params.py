@@ -44,7 +44,9 @@ def parse_line(line):
     ih = height.split("ih")[1].split("oh")[0]
     kh = height.split("kh")[1].split("sh")[0]
     sh = height.split("sh")[1].split("dh")[0]
+    # PT dilates = oneDNN dilates + 1
     dh = height.split("dh")[1].split("ph")[0]
+    
     ph = height.split("ph")[1]
     
     print("#" * 50)
@@ -52,8 +54,9 @@ def parse_line(line):
     print(dh)
     print(ph)
     # kernel_size, N, iC, H, W, oC, groups
-    return [int(kh), mb, int(ic), int(ih), int(ih), int(oc)]
-    # return [int(kh), mb, int(ic), int(ih), int(ih), int(oc), int(ph), int(sh), int(dh)]
+    # return [int(kh), mb, int(ic), int(ih), int(ih), int(oc)]
+    # kernel_size, N, iC, H, W, oC, padding, stride, dilation
+    return [int(kh), mb, int(ic), int(ih), int(ih), int(oc), int(ph), int(sh), int(dh)+1]
 
 
 def extract_shapes(df):

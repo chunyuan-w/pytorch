@@ -27,7 +27,7 @@ class M(torch.nn.Module):
         return x
 
 class ConvEltwise(benchmark.Benchmark):
-    def __init__(self, mode, device, dtype, kernel_size, N, iC, H, W, oC, groups):
+    def __init__(self, mode, device, dtype, kernel_size, N, iC, H, W, oC, padding, stride, dilation, groups):
         super().__init__(mode, device, dtype)
         self.kernel_size = kernel_size
         self.N = N
@@ -35,13 +35,16 @@ class ConvEltwise(benchmark.Benchmark):
         self.H = H
         self.W = W
         self.oC = oC
+        self.padding = padding
+        self.stride = stride
+        self.dilation = dilation
         self.groups = groups
         self.inputs = [torch.randn(N, iC, H, W, device=device, requires_grad=self.requires_grad)]
 
-        self.module_layer = M(get_eltwise_fn("relu"), iC, oC, kernel_size, groups)
+        self.module_layer = M(get_eltwise_fn("relu"), iC, oC, kernel_size, groups, padding=padding, stride=stride, dilation=dilation)
 
     def config(self):
-        return [self.kernel_size, self.N, self.iC, self.H, self.W, self.oC, self.groups]
+        return [self.kernel_size, self.N, self.iC, self.H, self.W, self.oC, self.padding, self.stride, self.dilation, self.groups]
 
     def memory_workload(self):
         if self.mode == "fwd":
@@ -95,14 +98,62 @@ class ConvEltwise(benchmark.Benchmark):
     @staticmethod
     def default_configs():
         def _conv_params_list():
+            # kernel_size, N, iC, H, W, oC, padding, stride, dilation, groups
             return [
-                [7, 1, 3, 224, 224, 64, 1],
-                [1, 1, 64, 56, 56, 256, 1], # thnn
-                [3, 1, 256, 56, 56, 256, 32],
-                [3, 1, 2048, 7, 7, 2048, 32],
-                [1, 1, 64, 56, 56, 64, 1], # thnn
-                [1, 1, 512, 28, 28, 128, 1], # thnn
-                [3, 1, 64, 56, 56, 64, 1],
+                # resnet50 shapes
+                [7, 1, 3, 224, 224, 64, 3, 2, 1, 1], 
+                [1, 1, 64, 56, 56, 64, 0, 1, 1, 1], 
+                [3, 1, 64, 56, 56, 64, 1, 1, 1, 1], 
+                [1, 1, 64, 56, 56, 256, 0, 1, 1, 1], 
+                [1, 1, 256, 56, 56, 64, 0, 1, 1, 1], 
+                [1, 1, 256, 56, 56, 128, 0, 1, 1, 1], 
+                [3, 1, 128, 56, 56, 128, 1, 2, 1, 1], 
+                [1, 1, 128, 28, 28, 512, 0, 1, 1, 1], 
+                [1, 1, 256, 56, 56, 512, 0, 2, 1, 1], 
+                [1, 1, 512, 28, 28, 128, 0, 1, 1, 1], 
+                [3, 1, 128, 28, 28, 128, 1, 1, 1, 1], 
+                [1, 1, 512, 28, 28, 256, 0, 1, 1, 1], 
+                [3, 1, 256, 28, 28, 256, 1, 2, 1, 1], 
+                [1, 1, 256, 14, 14, 1024, 0, 1, 1, 1], 
+                [1, 1, 512, 28, 28, 1024, 0, 2, 1, 1], 
+                [1, 1, 1024, 14, 14, 256, 0, 1, 1, 1], 
+                [3, 1, 256, 14, 14, 256, 1, 1, 1, 1], 
+                [1, 1, 1024, 14, 14, 512, 0, 1, 1, 1], 
+                [3, 1, 512, 14, 14, 512, 1, 2, 1, 1], 
+                [1, 1, 512, 7, 7, 2048, 0, 1, 1, 1], 
+                [1, 1, 1024, 14, 14, 2048, 0, 2, 1, 1],
+                [1, 1, 2048, 7, 7, 512, 0, 1, 1, 1], 
+                [3, 1, 512, 7, 7, 512, 1, 1, 1, 1],
+
+                # resnext101_32x8d shapes
+                [7, 1, 3, 224, 224, 64, 3, 2, 1, 1],
+                [1, 1, 64, 56, 56, 256, 0, 1, 1, 1], 
+                [3, 1, 256, 56, 56, 256, 1, 1, 1, 32], 
+                [1, 1, 256, 56, 56, 256, 0, 1, 1, 1], 
+                [1, 1, 256, 56, 56, 512, 0, 1, 1, 1], 
+                [3, 1, 512, 56, 56, 512, 1, 2, 1, 32], 
+                [1, 1, 512, 28, 28, 512, 0, 1, 1, 1], 
+                [1, 1, 256, 56, 56, 512, 0, 2, 1, 1], 
+                [3, 1, 512, 28, 28, 512, 1, 1, 1, 32], 
+                [1, 1, 512, 28, 28, 1024, 0, 1, 1, 1], 
+                [3, 1, 1024, 28, 28, 1024, 1, 2, 1, 32], 
+                [1, 1, 1024, 14, 14, 1024, 0, 1, 1, 1], 
+                [1, 1, 512, 28, 28, 1024, 0, 2, 1, 1], 
+                [3, 1, 1024, 14, 14, 1024, 1, 1, 1, 32], 
+                [1, 1, 1024, 14, 14, 2048, 0, 1, 1, 1], 
+                [3, 1, 2048, 14, 14, 2048, 1, 2, 1, 32], 
+                [1, 1, 2048, 7, 7, 2048, 0, 1, 1, 1], 
+                [1, 1, 1024, 14, 14, 2048, 0, 2, 1, 1], 
+                [3, 1, 2048, 7, 7, 2048, 1, 1, 1, 32],
+
+                # kernel_size, N, iC, H, W, oC, groups
+                # [7, 1, 3, 224, 224, 64, 1],
+                # [1, 1, 64, 56, 56, 256, 1], # thnn
+                # [3, 1, 512, 28, 28, 512, 32],
+                # [3, 1, 2048, 7, 7, 2048, 32],
+                # [1, 1, 64, 56, 56, 64, 1], # thnn
+                # [1, 1, 512, 28, 28, 128, 1], # thnn
+                # [3, 1, 64, 56, 56, 64, 1],
             ]
             # params_dict = {
             #     "kernel_size": [3],

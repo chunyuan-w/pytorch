@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 
-pd.options.display.max_colwidth = 80
+pd.options.display.max_colwidth = 100
 
 columns = ["shape", "time (us)"]
 def parse_file(file):
@@ -18,9 +18,12 @@ def parse_file(file):
             H = dims[7]
             W = dims[8]
             oC = dims[9]
-            groups = dims[10]
+            padding = dims[10]
+            stride = dims[11]
+            dilation = dims[12]
+            groups = dims[13]
             
-            dims_str = "Conv+ReLU: " + "kernel=" + kernel + ", N=" + N + ", iC=" + iC + ", H=" + H + ", W=" + W + ", oC=" + oC + ", groups=" + groups
+            dims_str = "Conv+ReLU: " + "kernel=" + kernel + ", N=" + N + ", iC=" + iC + ", H=" + H + ", W=" + W + ", oC=" + oC + ", stride=" + stride + ", pad=" + padding + ", dilates=" + dilation + ", g=" + groups
             splited_element = [dims_str, line.split(":")[2].split(" ")[1]]
             lines.append(splited_element)
     df = pd.DataFrame(lines, columns=columns)
