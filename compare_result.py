@@ -32,9 +32,10 @@ def parse_file(file):
 
 def compare(df1, df2):
     df = df1.merge(df2, on="shape", suffixes=["_fusion", "_no_fusion"])
-    df["Gain"] = df["time (us)_no_fusion"] / df["time (us)_fusion"] - 1
+    df["Gain"] = 1 - df["time (us)_fusion"] / df["time (us)_no_fusion"]
     df["Gain"] = (df["Gain"] * 100).round(2).astype(str) + "%"
-    print(df)
+    df = df[["shape", "time (us)_no_fusion", "time (us)_fusion", "Gain"]]
+    return df
     
 def main(file_path_fusion, file_path_no_fusion):
     # file_path_fusion = "with_fusion.log"
@@ -43,7 +44,11 @@ def main(file_path_fusion, file_path_no_fusion):
     df1 = parse_file(file_path_fusion)
     df2 = parse_file(file_path_no_fusion)
 
-    compare(df1, df2)
+    df = compare(df1, df2)
+    print(df)
+
+    # file_prefix = file_path_fusion.split("_")[0]
+    # df.to_csv("diff_%s.csv" % file_prefix)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compare perf of two files')
