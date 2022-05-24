@@ -39,9 +39,9 @@ class ConvEltwise(benchmark.Benchmark):
         self.stride = stride
         self.dilation = dilation
         self.groups = groups
-        self.inputs = [torch.randn(N, iC, H, W, device=device, requires_grad=self.requires_grad)]
+        self.inputs = [torch.randn(N, iC, H, W, device=device, requires_grad=self.requires_grad).to(memory_format=torch.channels_last)]
 
-        self.module_layer = M(get_eltwise_fn("relu"), iC, oC, kernel_size, groups, padding=padding, stride=stride, dilation=dilation)
+        self.module_layer = M(get_eltwise_fn("relu"), iC, oC, kernel_size, groups, padding=padding, stride=stride, dilation=dilation).to(memory_format=torch.channels_last)
 
     def config(self):
         return [self.kernel_size, self.N, self.iC, self.H, self.W, self.oC, self.padding, self.stride, self.dilation, self.groups]
