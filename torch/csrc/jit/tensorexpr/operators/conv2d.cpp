@@ -315,6 +315,12 @@ bool mkldnnPrepackedConvIsSupported(
     const std::vector<int64_t>& pad,
     const std::vector<int64_t>& dilation,
     int64_t groups) {
+
+  char* env = std::getenv("DISABLE_FUSION");
+  if (env != nullptr && std::strcmp(env, "1") == 0) {
+    return false;
+  }
+
 #if AT_MKLDNN_ENABLED()
   if (input.dtype != c10::ScalarType::Float ||
       weight.dtype != c10::ScalarType::Float) {
