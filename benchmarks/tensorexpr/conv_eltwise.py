@@ -145,6 +145,16 @@ class ConvEltwise(benchmark.Benchmark):
                 [1, 1, 1024, 14, 14, 2048, 0, 1, 1, 1], # thnn when thread=1
                 [1, 1, 2048, 7, 7, 2048, 0, 1, 1, 1], # thnn when thread=1
 
+                # mobilenet_v2
+                [1, 1, 96, 56, 56, 24, 0, 1, 1, 1],
+                [3, 1, 144, 56, 56, 144, 1, 1, 1, 144],
+                [1, 1, 24, 56, 56, 1280, 0, 1, 1, 1],
+
+                # shufflenet_v2_x0_5
+                [3, 1, 96, 7, 7, 96, 1, 1, 1, 96],
+                [1, 1, 48, 14, 14, 48, 0, 1, 1, 1], # fallback to thnn
+                [1, 1, 192, 7, 7, 1024, 0, 1, 1, 1], # fallback to thnn
+
                 # kernel_size, N, iC, H, W, oC, groups
                 # [7, 1, 3, 224, 224, 64, 1],
                 # [1, 1, 64, 56, 56, 256, 1], # thnn
