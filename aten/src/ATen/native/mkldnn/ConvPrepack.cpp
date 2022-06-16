@@ -17,31 +17,49 @@ namespace mkldnn {
 namespace internal {
 namespace convolution {
 
-using torch::jit::mkldnn::fusion_attr_map;
+using namespace torch::jit::mkldnn;
 
-c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContext(
-    Tensor weight,
-    c10::optional<Tensor> bias,
-    std::vector<int64_t> stride,
-    std::vector<int64_t> padding,
-    std::vector<int64_t> dilation,
-    int64_t groups,
-    std::vector<int64_t> input_size,
-    std::string attr) {
-  auto it = fusion_attr_map.find(attr);
-  TORCH_CHECK(it != fusion_attr_map.end(), "Fusion behavior undefined.");
-  ideep::attr_t op_attr = it->second.op_attr;
+#define ATTR_FUNC_CALL(...) attr_function(__VA_ARGS__)
 
-  return mkldnn::MkldnnConvOpContext::create_context(
-      std::move(weight),
-      std::move(bias),
-      std::move(padding),
-      std::move(stride),
-      std::move(dilation),
-      groups,
-      std::move(input_size),
-      op_attr);
-}
+#define DEFINE_CREATE_CONVOLUTION_PREPACK_OP(FUNC_NAME, ATTR_MAP, METHOD, ...) \
+  c10::intrusive_ptr<mkldnn::ConvOpContext> FUNC_NAME(                         \
+      Tensor weight,                                                           \
+      c10::optional<Tensor> bias,                                              \
+      std::vector<int64_t> stride,                                             \
+      std::vector<int64_t> padding,                                            \
+      std::vector<int64_t> dilation,                                           \
+      int64_t groups,                                                          \
+      std::vector<int64_t> input_size,                                         \
+      __VA_ARGS__) {                                                           \
+    auto it = ATTR_MAP().find(attr);                                           \
+    TORCH_CHECK(it != ATTR_MAP().end(), "Fusion behavior undefined.");         \
+    ideep::attr_t op_attr = it->second.METHOD;                                 \
+    return mkldnn::MkldnnConvOpContext::create_context(                        \
+        std::move(weight),                                                     \
+        std::move(bias),                                                       \
+        std::move(padding),                                                    \
+        std::move(stride),                                                     \
+        std::move(dilation),                                                   \
+        groups,                                                                \
+        std::move(input_size),                                                 \
+        op_attr);                                                              \
+  }
+
+DEFINE_CREATE_CONVOLUTION_PREPACK_OP(
+    createConvPrePackOpContext,
+    fusion_attr_map,
+    op_attr,
+    std::string attr);
+
+DEFINE_CREATE_CONVOLUTION_PREPACK_OP(
+    createConvPrePackOpContextWithScalar,
+    fusion_attr_map_with_scalar,
+    ATTR_FUNC_CALL(scale, alpha, beta, algorithm),
+    std::string attr,
+    at::Scalar scale,
+    at::Scalar alpha,
+    at::Scalar beta,
+    std::string algorithm);
 
 ContextConv create(
     const Tensor& weight,

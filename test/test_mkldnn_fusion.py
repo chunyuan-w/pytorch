@@ -105,6 +105,10 @@ class TestMkldnnFusion(JitTestCase):
                 [torch.sigmoid, 'aten::sigmoid'],
                 [torch.tanh, 'aten::tanh'],
                 [torch.nn.Hardswish(inplace=False), 'aten::hardswish'],
+                [nn.LeakyReLU(0.1, inplace=False), 'aten::leaky_relu'],
+                [nn.Hardtanh(inplace=False), 'aten::hardtanh'],
+                [nn.GELU(approximate="none"), 'aten::gelu'],
+                [nn.GELU(approximate="tanh"), 'aten::gelu'],
             ]:
                 for bias in [True, False]:
                     for oC in [1, 10]:

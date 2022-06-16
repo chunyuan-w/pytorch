@@ -18,18 +18,27 @@ namespace jit {
 
 namespace mkldnn {
 
+using AttrFunction = std::function<ideep::attr_t(
+    at::Scalar scale,
+    at::Scalar alpha,
+    at::Scalar beta,
+    std::string algorithm)>;
+
 struct PostOp {
   ideep::attr_t op_attr;
   std::vector<torch::jit::MatchFilter> filters = {};
 };
 
-const static std::map<std::string, PostOp> fusion_attr_map = {
-    {"none", {ideep::attr_t()}},
-    {"relu", {ideep::attr_t::fuse_relu()}},
-    {"sigmoid", {ideep::attr_t::fuse_sigmoid()}},
-    {"tanh", {ideep::attr_t::fuse_tanh()}},
-    {"hardswish", {ideep::attr_t::fuse_hardswish()}},
+struct PostOpWithScalar {
+  AttrFunction attr_function;
+  std::vector<std::string> op_input_list;
+  std::string op_list_construct;
+  std::vector<torch::jit::MatchFilter> filters = {};
 };
+
+const std::map<std::string, PostOp>& fusion_attr_map();
+
+const std::map<std::string, PostOpWithScalar>& fusion_attr_map_with_scalar();
 
 } // namespace mkldnn
 
