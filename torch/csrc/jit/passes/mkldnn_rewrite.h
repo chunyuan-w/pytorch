@@ -24,6 +24,10 @@ using AttrFunction = std::function<ideep::attr_t(
     at::Scalar beta,
     std::string algorithm)>;
 
+using AttrFunctionOptional = std::function<ideep::attr_t(
+    c10::optional<at::Scalar> alpha,
+    c10::optional<at::Scalar> beta)>;
+
 struct PostOp {
   ideep::attr_t op_attr;
   std::vector<torch::jit::MatchFilter> filters = {};
@@ -36,9 +40,18 @@ struct PostOpWithScalar {
   std::vector<torch::jit::MatchFilter> filters = {};
 };
 
+struct PostOpWithOptional {
+  AttrFunctionOptional attr_function;
+  std::vector<std::string> op_input_list;
+  std::string op_list_construct;
+  std::vector<torch::jit::MatchFilter> filters = {};
+};
+
 const std::map<std::string, PostOp>& fusion_attr_map();
 
 const std::map<std::string, PostOpWithScalar>& fusion_attr_map_with_scalar();
+
+const std::map<std::string, PostOpWithOptional>& fusion_attr_map_with_optional();
 
 } // namespace mkldnn
 

@@ -15,6 +15,9 @@ namespace jit {
 
 namespace mkldnn {
 
+static constexpr float kMin = -std::numeric_limits<float>::infinity();
+static constexpr float kMax = std::numeric_limits<float>::infinity();
+
 static const std::vector<std::string> prepack_op_with_scalar_input_list =
     std::vector<std::string>(
         {"%attr", "%scale", "%alpha", "%beta", "%algorithm"});
@@ -22,6 +25,13 @@ static const std::string prepack_op_with_scalar_input_str =
     c10::Join(", ", prepack_op_with_scalar_input_list);
 static const std::string prepack_op_with_scalar =
     std::string("mkldnn_prepacked::conv2d_prepack_with_scalar");
+
+static const std::vector<std::string> prepack_op_with_optional_input_list =
+    std::vector<std::string>({"%attr", "%alpha", "%beta"});
+static const std::string prepack_op_with_optional_input_str =
+    c10::Join(", ", prepack_op_with_optional_input_list);
+static const std::string prepack_op_with_optional =
+    std::string("mkldnn_prepacked::conv2d_prepack_with_optional");
 
 static const std::string empty_scale = R"(
 %scale : float = prim::Constant[value=1.]() )";
@@ -42,6 +52,8 @@ const std::string hardtanh_op_list_construct = empty_scale + empty_algorithm;
 
 const std::string gelu_op_list_construct =
     empty_scale + empty_alpha + empty_beta;
+
+const std::string clamp_op_list_construct = R"()";
 
 bool aten_gelu_approximate_is_supported(
     const Match& match,
@@ -86,6 +98,14 @@ AttrFunction gelu_attr_func = [](at::Scalar scale,
   return ideep::attr_t::fuse_gelu(1.0, 0.f, 0.f, gelu_type);
 };
 
+AttrFunctionOptional clamp_attr_func = [](c10::optional<at::Scalar> alpha,
+                                          c10::optional<at::Scalar> beta) {
+  float lower_bound_value = alpha ? alpha.value().to<float>() : kMin;
+  float upper_bound_value = beta ? beta.value().to<float>() : kMax;
+
+  return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
+};
+
 const std::map<std::string, PostOp>& fusion_attr_map() {
   static const std::map<std::string, PostOp> fusion_attr_map{
       {"none", {ideep::attr_t()}},
@@ -118,6 +138,17 @@ const std::map<std::string, PostOpWithScalar>& fusion_attr_map_with_scalar() {
             {aten_gelu_approximate_is_supported}}},
       };
   return fusion_attr_map_with_scalar;
+}
+
+const std::map<std::string, PostOpWithOptional>& fusion_attr_map_with_optional() {
+  static const std::map<std::string, PostOpWithOptional>
+      fusion_attr_map_with_optional{
+          {"clamp",
+           {clamp_attr_func,
+            std::vector<std::string>({"%alpha", "%beta"}),
+            clamp_op_list_construct}},
+      };
+  return fusion_attr_map_with_optional;
 }
 
 } // namespace mkldnn
@@ -287,7 +318,7 @@ void RewriteEltwiseGraph(
   }
 }
 
-void FuseReluWithPackedOps(std::shared_ptr<Graph>& graph) {
+void FuseEltwiseWithPackedOps(std::shared_ptr<Graph>& graph) {
   auto conv_op_rstring = at::jit::CodeTemplate(R"(
     graph(%input, %weight, %bias, %stride:int[], %padding:int[],
           %dilation:int[], %groups:int, %input_size:int[], %dummy_attr:str):
@@ -333,6 +364,12 @@ void FuseReluWithPackedOps(std::shared_ptr<Graph>& graph) {
       mkldnn::fusion_attr_map_with_scalar(),
       mkldnn::prepack_op_with_scalar,
       mkldnn::prepack_op_with_scalar_input_str);
+
+  RewriteEltwiseGraph<mkldnn::PostOpWithOptional>(
+      graph,
+      mkldnn::fusion_attr_map_with_optional(),
+      mkldnn::prepack_op_with_optional,
+      mkldnn::prepack_op_with_optional_input_str);
 }
 
 void PrePackingOpsFolder(Block* b) {
@@ -342,7 +379,10 @@ void PrePackingOpsFolder(Block* b) {
             Symbol::fromQualString("mkldnn_prepacked::conv2d_prepack") ||
         n->kind() ==
             Symbol::fromQualString(
-                "mkldnn_prepacked::conv2d_prepack_with_scalar"));
+                "mkldnn_prepacked::conv2d_prepack_with_scalar") ||
+        n->kind() ==
+            Symbol::fromQualString(
+                "mkldnn_prepacked::conv2d_prepack_with_optional"));
   };
 
   std::unordered_set<Node*> nodes_to_delete;
@@ -385,10 +425,11 @@ void FuseConvWithEltwise(std::shared_ptr<Graph>& graph) {
       *graph);
   insertMkldnnPrePackedOps(graph);
   GRAPH_DEBUG(
-      "After insertMkldnnPrePackedOps, before FuseReluWithPackedOps\n", *graph);
-  FuseReluWithPackedOps(graph);
+      "After insertMkldnnPrePackedOps, before FuseEltwiseWithPackedOps\n",
+      *graph);
+  FuseEltwiseWithPackedOps(graph);
   GRAPH_DEBUG(
-      "After FuseReluWithPackedOps, before FoldPrePackingOps\n", *graph);
+      "After FuseEltwiseWithPackedOps, before FoldPrePackingOps\n", *graph);
   FoldPrePackingOps(graph);
   GRAPH_DEBUG("After FoldPrePackingOps. End of FuseConvWithEltwise\n", *graph);
 }

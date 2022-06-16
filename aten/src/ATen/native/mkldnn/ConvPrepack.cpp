@@ -61,6 +61,14 @@ DEFINE_CREATE_CONVOLUTION_PREPACK_OP(
     at::Scalar beta,
     std::string algorithm);
 
+DEFINE_CREATE_CONVOLUTION_PREPACK_OP(
+    createConvPrePackOpContextWithOptional,
+    fusion_attr_map_with_optional,
+    ATTR_FUNC_CALL(alpha, beta),
+    std::string attr,
+    c10::optional<at::Scalar> alpha,
+    c10::optional<at::Scalar> beta);
+
 ContextConv create(
     const Tensor& weight,
     const c10::optional<Tensor>& bias,

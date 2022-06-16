@@ -49,6 +49,10 @@ TORCH_LIBRARY(mkldnn_prepacked, m) {
       ", Scalar scale, Scalar alpha, Scalar beta, str algorithm) -> __torch__.torch.classes.mkldnn.ConvOpContext"));
 
   m.def(TORCH_SELECTIVE_SCHEMA(
+      "mkldnn_prepacked::conv2d_prepack_with_optional(" CONVOLUTION_PREPACK_OP_ARGS
+      ", Scalar? alpha, Scalar? beta) -> __torch__.torch.classes.mkldnn.ConvOpContext"));
+
+  m.def(TORCH_SELECTIVE_SCHEMA(
       "mkldnn_prepacked::conv2d_run(Tensor X, __torch__.torch.classes.mkldnn.ConvOpContext W_prepack) -> Tensor Y"));
 }
 
@@ -60,6 +64,10 @@ TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn_prepacked::conv2d_prepack_with_scalar"),
       TORCH_FN(createConvPrePackOpContextWithScalar));
+
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn_prepacked::conv2d_prepack_with_optional"),
+      TORCH_FN(createConvPrePackOpContextWithOptional));
 
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn_prepacked::conv2d_run"), TORCH_FN(conv_run));

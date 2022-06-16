@@ -31,6 +31,11 @@ DECLARE_CREATE_CONVOLUTION_PREPACK_OP(
     at::Scalar,
     at::Scalar,
     std::string);
+DECLARE_CREATE_CONVOLUTION_PREPACK_OP(
+    createConvPrePackOpContextWithOptional,
+    std::string,
+    c10::optional<at::Scalar>,
+    c10::optional<at::Scalar>);
 
 Tensor conv_run(
     const Tensor& input,
