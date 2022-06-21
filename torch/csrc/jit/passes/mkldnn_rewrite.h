@@ -19,10 +19,8 @@ namespace jit {
 namespace mkldnn {
 
 using AttrFunction = std::function<ideep::attr_t(
-    at::Scalar scale,
-    at::Scalar alpha,
-    at::Scalar beta,
-    std::string algorithm)>;
+    std::vector<c10::optional<at::Scalar>>,
+    c10::optional<std::string>)>;
 
 using AttrFunctionOptional = std::function<ideep::attr_t(
     c10::optional<at::Scalar> alpha,
@@ -50,8 +48,6 @@ struct PostOpWithOptional {
 const std::map<std::string, PostOp>& fusion_attr_map();
 
 const std::map<std::string, PostOpWithScalar>& fusion_attr_map_with_scalar();
-
-const std::map<std::string, PostOpWithOptional>& fusion_attr_map_with_optional();
 
 } // namespace mkldnn
 
