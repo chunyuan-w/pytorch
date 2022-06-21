@@ -23,19 +23,19 @@ namespace convolution {
       std::vector<int64_t> input_size,                        \
       __VA_ARGS__);
 
+c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContextWithScalar(
+    Tensor weight,
+    c10::optional<Tensor> bias,
+    std::vector<int64_t> stride,
+    std::vector<int64_t> padding,
+    std::vector<int64_t> dilation,
+    int64_t groups,
+    std::vector<int64_t> input_size,
+    std::string attr,
+    std::vector<c10::optional<at::Scalar>> scalars,
+    c10::optional<std::string> algorithm);
+
 DECLARE_CREATE_CONVOLUTION_PREPACK_OP(createConvPrePackOpContext, std::string);
-DECLARE_CREATE_CONVOLUTION_PREPACK_OP(
-    createConvPrePackOpContextWithScalar,
-    std::string,
-    at::Scalar,
-    at::Scalar,
-    at::Scalar,
-    std::string);
-DECLARE_CREATE_CONVOLUTION_PREPACK_OP(
-    createConvPrePackOpContextWithOptional,
-    std::string,
-    c10::optional<at::Scalar>,
-    c10::optional<at::Scalar>);
 
 Tensor conv_run(
     const Tensor& input,

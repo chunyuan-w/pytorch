@@ -43,17 +43,26 @@ static const std::string empty_beta = R"(
 %beta : float = prim::Constant[value=0.]() )";
 
 static const std::string empty_algorithm = R"(
-%algorithm : str = prim::Constant[value=""]() )";
+%algorithm : str? = prim::Constant() )";
 
-const std::string leaky_relu_op_list_construct =
-    empty_scale + empty_beta + empty_algorithm;
+const std::string leaky_relu_op_list_construct = R"(
+%scalars : Scalar?[] = prim::ListConstruct(%alpha)
+%algorithm : str? = prim::Constant()
+)";
 
-const std::string hardtanh_op_list_construct = empty_scale + empty_algorithm;
+const std::string hardtanh_op_list_construct = R"(
+%scalars : Scalar?[] = prim::ListConstruct(%alpha, %beta)
+%algorithm : str? = prim::Constant()
+)";
 
-const std::string gelu_op_list_construct =
-    empty_scale + empty_alpha + empty_beta;
+const std::string gelu_op_list_construct = R"(
+%scalars : Scalar?[] = prim::ListConstruct()
+)";
 
-const std::string clamp_op_list_construct = R"()";
+const std::string clamp_op_list_construct = R"(
+%scalars : Scalar?[] = prim::ListConstruct(%alpha, %beta)
+%algorithm : str? = prim::Constant()
+)";
 
 bool aten_gelu_approximate_is_supported(
     const Match& match,
@@ -64,31 +73,27 @@ bool aten_gelu_approximate_is_supported(
   return approximate_value == "none" || approximate_value == "tanh";
 }
 
-AttrFunction leaky_relu_attr_func = [](at::Scalar scale,
-                                       at::Scalar alpha,
-                                       at::Scalar beta,
-                                       std::string algorithm) {
-  auto alpha_value = alpha.to<float>();
-  return ideep::attr_t::fuse_relu(1.0, alpha_value);
-};
+AttrFunction leaky_relu_attr_func =
+    [](std::vector<c10::optional<at::Scalar>> scalars,
+       c10::optional<std::string> algorithm) {
+      auto alpha_value = scalars[0].value().to<float>();
+      return ideep::attr_t::fuse_relu(1.0, alpha_value);
+    };
 
-AttrFunction hardtanh_attr_func = [](at::Scalar scale,
-                                     at::Scalar alpha,
-                                     at::Scalar beta,
-                                     std::string algorithm) {
-  auto lower_bound_value = alpha.to<float>();
-  auto upper_bound_value = beta.to<float>();
-  return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
-};
+AttrFunction hardtanh_attr_func =
+    [](std::vector<c10::optional<at::Scalar>> scalars,
+       c10::optional<std::string> algorithm) {
+      auto lower_bound_value = scalars[0].value().to<float>();
+      auto upper_bound_value = scalars[1].value().to<float>();
+      return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
+    };
 
-AttrFunction gelu_attr_func = [](at::Scalar scale,
-                                 at::Scalar alpha,
-                                 at::Scalar beta,
-                                 std::string algorithm) {
+AttrFunction gelu_attr_func = [](std::vector<c10::optional<at::Scalar>> scalars,
+                                 c10::optional<std::string> algorithm) {
   dnnl::algorithm gelu_type;
-  if (algorithm == "none") {
+  if (algorithm.value() == "none") {
     gelu_type = dnnl::algorithm::eltwise_gelu_erf;
-  } else if (algorithm == "tanh") {
+  } else if (algorithm.value() == "tanh") {
     gelu_type = dnnl::algorithm::eltwise_gelu_tanh;
   } else {
     TORCH_CHECK(
@@ -98,13 +103,16 @@ AttrFunction gelu_attr_func = [](at::Scalar scale,
   return ideep::attr_t::fuse_gelu(1.0, 0.f, 0.f, gelu_type);
 };
 
-AttrFunctionOptional clamp_attr_func = [](c10::optional<at::Scalar> alpha,
-                                          c10::optional<at::Scalar> beta) {
-  float lower_bound_value = alpha ? alpha.value().to<float>() : kMin;
-  float upper_bound_value = beta ? beta.value().to<float>() : kMax;
+AttrFunction clamp_attr_func =
+    [](std::vector<c10::optional<at::Scalar>> scalars,
+       c10::optional<std::string> algorithm) {
+      float lower_bound_value =
+          scalars[0] ? scalars[0].value().to<float>() : kMin;
+      float upper_bound_value =
+          scalars[1] ? scalars[1].value().to<float>() : kMax;
 
-  return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
-};
+      return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
+    };
 
 const std::map<std::string, PostOp>& fusion_attr_map() {
   static const std::map<std::string, PostOp> fusion_attr_map{
@@ -136,19 +144,14 @@ const std::map<std::string, PostOpWithScalar>& fusion_attr_map_with_scalar() {
             std::vector<std::string>({"%algorithm"}),
             gelu_op_list_construct,
             {aten_gelu_approximate_is_supported}}},
-      };
-  return fusion_attr_map_with_scalar;
-}
 
-const std::map<std::string, PostOpWithOptional>& fusion_attr_map_with_optional() {
-  static const std::map<std::string, PostOpWithOptional>
-      fusion_attr_map_with_optional{
           {"clamp",
            {clamp_attr_func,
             std::vector<std::string>({"%alpha", "%beta"}),
             clamp_op_list_construct}},
+
       };
-  return fusion_attr_map_with_optional;
+  return fusion_attr_map_with_scalar;
 }
 
 } // namespace mkldnn
@@ -288,7 +291,7 @@ void RewriteEltwiseGraph(
         ${op_list_construct}
         %packed_weight_bias : __torch__.torch.classes.mkldnn.ConvOpContext = ${mkldnn_prepack_op}(
             %weight, %bias, %stride, %padding, %dilation, %groups,
-            %input_size, ${mkldnn_prepack_op_input_str})
+            %input_size, %attr, %scalars, %algorithm)
         %res = mkldnn_prepacked::conv2d_run(%input, %packed_weight_bias)
         return (%res))");
 
@@ -307,7 +310,7 @@ void RewriteEltwiseGraph(
     env_fused.s("op_input_str", op_input_str);
     env_fused.s("op_list_construct", it.second.op_list_construct);
     env_fused.s("mkldnn_prepack_op", prepack_op_name);
-    env_fused.s("mkldnn_prepack_op_input_str", prepack_op_input_str);
+    // env_fused.s("mkldnn_prepack_op_input_str", prepack_op_input_str);
 
     SubgraphRewriter rewriter;
     rewriter.RegisterRewritePattern(
@@ -364,12 +367,6 @@ void FuseEltwiseWithPackedOps(std::shared_ptr<Graph>& graph) {
       mkldnn::fusion_attr_map_with_scalar(),
       mkldnn::prepack_op_with_scalar,
       mkldnn::prepack_op_with_scalar_input_str);
-
-  RewriteEltwiseGraph<mkldnn::PostOpWithOptional>(
-      graph,
-      mkldnn::fusion_attr_map_with_optional(),
-      mkldnn::prepack_op_with_optional,
-      mkldnn::prepack_op_with_optional_input_str);
 }
 
 void PrePackingOpsFolder(Block* b) {
@@ -429,7 +426,9 @@ void FuseConvWithEltwise(std::shared_ptr<Graph>& graph) {
       *graph);
   FuseEltwiseWithPackedOps(graph);
   GRAPH_DEBUG(
-      "After FuseEltwiseWithPackedOps, before FoldPrePackingOps\n", *graph);
+      "After FuseEltwiseWithPackedOps, before ConstantPropagation\n", *graph);
+  ConstantPropagation(graph);
+  GRAPH_DEBUG("After ConstantPropagation, before FoldPrePackingOps\n", *graph);
   FoldPrePackingOps(graph);
   GRAPH_DEBUG("After FoldPrePackingOps. End of FuseConvWithEltwise\n", *graph);
 }
