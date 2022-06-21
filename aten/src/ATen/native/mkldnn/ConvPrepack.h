@@ -12,18 +12,7 @@ namespace mkldnn {
 namespace internal {
 namespace convolution {
 
-#define DECLARE_CREATE_CONVOLUTION_PREPACK_OP(FUNC_NAME, ...) \
-  c10::intrusive_ptr<mkldnn::ConvOpContext> FUNC_NAME(        \
-      Tensor weight,                                          \
-      c10::optional<Tensor> bias,                             \
-      std::vector<int64_t> stride,                            \
-      std::vector<int64_t> padding,                           \
-      std::vector<int64_t> dilation,                          \
-      int64_t groups,                                         \
-      std::vector<int64_t> input_size,                        \
-      __VA_ARGS__);
-
-c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContextWithScalar(
+c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContext(
     Tensor weight,
     c10::optional<Tensor> bias,
     std::vector<int64_t> stride,
@@ -34,8 +23,6 @@ c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContextWithScalar(
     std::string attr,
     std::vector<c10::optional<at::Scalar>> scalars,
     c10::optional<std::string> algorithm);
-
-DECLARE_CREATE_CONVOLUTION_PREPACK_OP(createConvPrePackOpContext, std::string);
 
 Tensor conv_run(
     const Tensor& input,
