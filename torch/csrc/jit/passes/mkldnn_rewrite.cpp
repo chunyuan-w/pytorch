@@ -15,31 +15,45 @@ namespace jit {
 
 namespace mkldnn {
 
+#define ATTR_MAP_ITEM(NAME)                                           \
+  {                                                                   \
+#NAME, {                                                          \
+      [](std::vector<c10::optional<at::Scalar>> scalars,              \
+         c10::optional<std::string> algorithm) {                      \
+        return ideep::attr_t::fuse_##NAME();                          \
+      },                                                              \
+          zero_scalar_operand, op_list_construct(zero_scalar_operand) \
+    }                                                                 \
+  }
+
 static constexpr float kMin = -std::numeric_limits<float>::infinity();
 static constexpr float kMax = std::numeric_limits<float>::infinity();
 
-const std::string no_scalar_op_list_construct = R"(
-%scalars : Scalar?[] = prim::ListConstruct()
-%algorithm : str? = prim::Constant()
-)";
+const std::vector<std::string> zero_scalar_operand =
+    std::vector<std::string>({});
+const std::vector<std::string> one_scalar_operand =
+    std::vector<std::string>({"%alpha"});
+const std::vector<std::string> one_algorithm_operand =
+    std::vector<std::string>({"%algorithm"});
+const std::vector<std::string> two_operands =
+    std::vector<std::string>({"%alpha", "%beta"});
 
-const std::string leaky_relu_op_list_construct = R"(
-%scalars : Scalar?[] = prim::ListConstruct(%alpha)
-%algorithm : str? = prim::Constant()
-)";
+std::string op_list_construct(std::vector<std::string> operands) {
+  std::string joined_operands = c10::Join(", ", operands);
 
-const std::string hardtanh_op_list_construct = R"(
-%scalars : Scalar?[] = prim::ListConstruct(%alpha, %beta)
-%algorithm : str? = prim::Constant()
-)";
+  auto rstring = at::jit::CodeTemplate(R"(
+%scalars : Scalar?[] = prim::ListConstruct(${joined_operands})
+%algorithm : str? = prim::Constant()    
+  )");
+
+  at::jit::TemplateEnv env;
+  env.s("joined_operands", joined_operands);
+
+  return rstring.format(env);
+}
 
 const std::string gelu_op_list_construct = R"(
 %scalars : Scalar?[] = prim::ListConstruct()
-)";
-
-const std::string clamp_op_list_construct = R"(
-%scalars : Scalar?[] = prim::ListConstruct(%alpha, %beta)
-%algorithm : str? = prim::Constant()
 )";
 
 bool aten_gelu_approximate_is_supported(
@@ -51,41 +65,19 @@ bool aten_gelu_approximate_is_supported(
   return approximate_value == "none" || approximate_value == "tanh";
 }
 
-AttrFunction none_attr_func = [](std::vector<c10::optional<at::Scalar>> scalars,
+AttrFunction attr_func_none = [](std::vector<c10::optional<at::Scalar>> scalars,
                                  c10::optional<std::string> algorithm) {
   return ideep::attr_t();
 };
 
-AttrFunction relu_attr_func = [](std::vector<c10::optional<at::Scalar>> scalars,
-                                 c10::optional<std::string> algorithm) {
-  return ideep::attr_t::fuse_relu();
-};
-
-AttrFunction sigmoid_attr_func =
-    [](std::vector<c10::optional<at::Scalar>> scalars,
-       c10::optional<std::string> algorithm) {
-      return ideep::attr_t::fuse_sigmoid();
-    };
-
-AttrFunction tanh_attr_func = [](std::vector<c10::optional<at::Scalar>> scalars,
-                                 c10::optional<std::string> algorithm) {
-  return ideep::attr_t::fuse_tanh();
-};
-
-AttrFunction hardswish_attr_func =
-    [](std::vector<c10::optional<at::Scalar>> scalars,
-       c10::optional<std::string> algorithm) {
-      return ideep::attr_t::fuse_hardswish();
-    };
-
-AttrFunction leaky_relu_attr_func =
+AttrFunction attr_func_leaky_relu =
     [](std::vector<c10::optional<at::Scalar>> scalars,
        c10::optional<std::string> algorithm) {
       auto alpha_value = scalars[0].value().to<float>();
       return ideep::attr_t::fuse_relu(1.0, alpha_value);
     };
 
-AttrFunction hardtanh_attr_func =
+AttrFunction attr_func_hardtanh =
     [](std::vector<c10::optional<at::Scalar>> scalars,
        c10::optional<std::string> algorithm) {
       auto lower_bound_value = scalars[0].value().to<float>();
@@ -93,7 +85,7 @@ AttrFunction hardtanh_attr_func =
       return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
     };
 
-AttrFunction gelu_attr_func = [](std::vector<c10::optional<at::Scalar>> scalars,
+AttrFunction attr_func_gelu = [](std::vector<c10::optional<at::Scalar>> scalars,
                                  c10::optional<std::string> algorithm) {
   dnnl::algorithm gelu_type;
   if (algorithm.value() == "none") {
@@ -108,7 +100,7 @@ AttrFunction gelu_attr_func = [](std::vector<c10::optional<at::Scalar>> scalars,
   return ideep::attr_t::fuse_gelu(1.0, 0.f, 0.f, gelu_type);
 };
 
-AttrFunction clamp_attr_func =
+AttrFunction attr_func_clamp =
     [](std::vector<c10::optional<at::Scalar>> scalars,
        c10::optional<std::string> algorithm) {
       float lower_bound_value =
@@ -122,51 +114,33 @@ AttrFunction clamp_attr_func =
 const std::map<std::string, PostOp>& fusion_attr_map() {
   static const std::map<std::string, PostOp> fusion_attr_map{
       {"none",
-       {none_attr_func,
-        std::vector<std::string>({}),
-        no_scalar_op_list_construct}},
+       {attr_func_none,
+        zero_scalar_operand,
+        op_list_construct(zero_scalar_operand)}},
 
-      {"relu",
-       {relu_attr_func,
-        std::vector<std::string>({}),
-        no_scalar_op_list_construct}},
+      // For element-wise OP that only has the activation as input:
+      ATTR_MAP_ITEM(relu),
+      ATTR_MAP_ITEM(sigmoid),
+      ATTR_MAP_ITEM(tanh),
+      ATTR_MAP_ITEM(hardswish),
 
-      {"sigmoid",
-       {sigmoid_attr_func,
-        std::vector<std::string>({}),
-        no_scalar_op_list_construct}},
-
-      {"tanh",
-       {tanh_attr_func,
-        std::vector<std::string>({}),
-        no_scalar_op_list_construct}},
-
-      {"hardswish",
-       {hardswish_attr_func,
-        std::vector<std::string>({}),
-        no_scalar_op_list_construct}},
-
-      // TODO: support elu in NNC firstly
+      // For element-wise OP that has other scalar inputs:
       {"leaky_relu",
-       {leaky_relu_attr_func,
-        std::vector<std::string>({"%alpha"}),
-        leaky_relu_op_list_construct}},
+       {attr_func_leaky_relu,
+        one_scalar_operand,
+        op_list_construct(one_scalar_operand)}},
 
       {"hardtanh",
-       {hardtanh_attr_func,
-        std::vector<std::string>({"%alpha", "%beta"}),
-        hardtanh_op_list_construct}},
-
-      {"gelu",
-       {gelu_attr_func,
-        std::vector<std::string>({"%algorithm"}),
-        gelu_op_list_construct,
-        {aten_gelu_approximate_is_supported}}},
+       {attr_func_hardtanh, two_operands, op_list_construct(two_operands)}},
 
       {"clamp",
-       {clamp_attr_func,
-        std::vector<std::string>({"%alpha", "%beta"}),
-        clamp_op_list_construct}},
+       {attr_func_clamp, two_operands, op_list_construct(two_operands)}},
+
+      {"gelu",
+       {attr_func_gelu,
+        one_algorithm_operand,
+        gelu_op_list_construct,
+        {aten_gelu_approximate_is_supported}}},
 
   };
   return fusion_attr_map;

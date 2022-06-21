@@ -17,7 +17,7 @@ namespace mkldnn {
 namespace internal {
 namespace convolution {
 
-using namespace torch::jit::mkldnn;
+using torch::jit::mkldnn::fusion_attr_map;
 
 c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContext(
     Tensor weight,
