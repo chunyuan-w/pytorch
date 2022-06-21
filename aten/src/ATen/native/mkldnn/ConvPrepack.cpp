@@ -19,39 +19,7 @@ namespace convolution {
 
 using namespace torch::jit::mkldnn;
 
-#define ATTR_FUNC_CALL(...) attr_function(__VA_ARGS__)
-
-#define DEFINE_CREATE_CONVOLUTION_PREPACK_OP(FUNC_NAME, ATTR_MAP, METHOD, ...) \
-  c10::intrusive_ptr<mkldnn::ConvOpContext> FUNC_NAME(                         \
-      Tensor weight,                                                           \
-      c10::optional<Tensor> bias,                                              \
-      std::vector<int64_t> stride,                                             \
-      std::vector<int64_t> padding,                                            \
-      std::vector<int64_t> dilation,                                           \
-      int64_t groups,                                                          \
-      std::vector<int64_t> input_size,                                         \
-      __VA_ARGS__) {                                                           \
-    auto it = ATTR_MAP().find(attr);                                           \
-    TORCH_CHECK(it != ATTR_MAP().end(), "Fusion behavior undefined.");         \
-    ideep::attr_t op_attr = it->second.METHOD;                                 \
-    return mkldnn::MkldnnConvOpContext::create_context(                        \
-        std::move(weight),                                                     \
-        std::move(bias),                                                       \
-        std::move(padding),                                                    \
-        std::move(stride),                                                     \
-        std::move(dilation),                                                   \
-        groups,                                                                \
-        std::move(input_size),                                                 \
-        op_attr);                                                              \
-  }
-
-DEFINE_CREATE_CONVOLUTION_PREPACK_OP(
-    createConvPrePackOpContext,
-    fusion_attr_map,
-    op_attr,
-    std::string attr);
-
-c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContextWithScalar(
+c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContext(
     Tensor weight,
     c10::optional<Tensor> bias,
     std::vector<int64_t> stride,
@@ -62,9 +30,8 @@ c10::intrusive_ptr<mkldnn::ConvOpContext> createConvPrePackOpContextWithScalar(
     std::string attr,
     std::vector<c10::optional<at::Scalar>> scalars,
     c10::optional<std::string> algorithm) {
-  auto it = fusion_attr_map_with_scalar().find(attr);
-  TORCH_CHECK(
-      it != fusion_attr_map_with_scalar().end(), "Fusion behavior undefined.");
+  auto it = fusion_attr_map().find(attr);
+  TORCH_CHECK(it != fusion_attr_map().end(), "Fusion behavior undefined.");
   ideep::attr_t op_attr = it->second.attr_function(scalars, algorithm);
   return mkldnn::MkldnnConvOpContext::create_context(
       std::move(weight),
