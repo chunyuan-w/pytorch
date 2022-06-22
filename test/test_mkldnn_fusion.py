@@ -192,5 +192,29 @@ class TestMkldnnFusion(JitTestCase):
                     else:
                         self.assertGraphContains(graph, kind='aten::conv2d')
 
+    def test_single_linear(self):
+        class M(nn.Module):
+            def __init__(self, in_channels, out_channels, bias, **kwargs):
+                super(M, self).__init__()
+                self.linear = torch.nn.Linear(in_channels, out_channels, bias=bias, **kwargs)
+
+            def forward(self, x):
+                res = self.linear(x)
+                return res        
+        iC = 2
+        oC = 3
+        for bias in [True, False]:
+            # TODO: refactor x_sghape generation
+            for x_shape in [
+                [1, iC],
+                [2, iC],
+                [3, 2, iC]
+            ]:
+                m = M(iC, oC, bias)
+                x = torch.randn(x_shape)
+                graph = self._check_model(m, x)
+                self.assertFused(graph, ['aten::linear'])
+                self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+
 if __name__ == "__main__":
     run_tests()
