@@ -415,7 +415,16 @@ void FuseEltwiseWithPackedOps(std::shared_ptr<Graph>& graph) {
           "%input, %weight, %bias, %stride:int[], %padding:int[], %dilation:int[], %groups:int,"),
       std::string("%weight, %bias, %stride, %padding, %dilation, %groups,"));
 
-  // TODO: add linear, matmul
+  RewriteEltwiseGraph<mkldnn::PostOp>(
+      graph,
+      mkldnn::fusion_attr_map(),
+      std::string("mkldnn_prepacked::linear_prepack"),
+      std::string("mkldnn_prepacked::linear_run"),
+      std::string("mkldnn.LinearOpContext"),
+      std::string("%input, %weight, %bias,"),
+      std::string("%weight, %bias,"));
+
+  // TODO: add matmul
 }
 
 void PrePackingOpsFolder(Block* b) {
