@@ -15,15 +15,15 @@ namespace jit {
 
 namespace mkldnn {
 
-#define ATTR_MAP_ITEM(NAME)                                                \
-  {                                                                        \
-#NAME, {                                                               \
-      [](std::vector<c10::optional<at::Scalar>> scalars,                   \
-         c10::optional<std::string> algorithm) {                           \
-        return ideep::attr_t::fuse_##NAME();                               \
-      },                                                                   \
-          zero_scalar_operand, construct_operand_list(zero_scalar_operand) \
-    }                                                                      \
+#define ATTR_MAP_ITEM(NAME)                              \
+  {                                                      \
+#NAME, {                                             \
+      [](std::vector<c10::optional<at::Scalar>> scalars, \
+         c10::optional<std::string> algorithm) {         \
+        return ideep::attr_t::fuse_##NAME();             \
+      },                                                 \
+          zero_scalar_operand                            \
+    }                                                    \
   }
 
 static constexpr float kMin = -std::numeric_limits<float>::infinity();
@@ -33,28 +33,28 @@ const std::vector<std::string> zero_scalar_operand =
     std::vector<std::string>({});
 const std::vector<std::string> one_scalar_operand =
     std::vector<std::string>({"%alpha"});
-const std::vector<std::string> algorithm_indicator =
-    std::vector<std::string>({"%algorithm"});
 const std::vector<std::string> two_scalar_operands =
     std::vector<std::string>({"%alpha", "%beta"});
+const std::string algorithm_indicator = std::string("%algorithm");
 
-std::string construct_operand_list(std::vector<std::string> operands) {
-  std::string joined_operands = c10::Join(", ", operands);
+std::string construct_operand_list(
+    std::vector<std::string> scalar_input,
+    std::string algorithm_indicator) {
+  std::string constructed_operand_list = "";
 
-  auto rstring = at::jit::CodeTemplate(R"(
-%scalars : Scalar?[] = prim::ListConstruct(${joined_operands})
-%algorithm : str? = prim::Constant()    
-  )");
+  std::string joined_scalar_operands = c10::Join(", ", scalar_input);
+  std::string scalar_operands = "%scalars : Scalar?[] = prim::ListConstruct(" +
+      joined_scalar_operands + ")\n";
 
-  at::jit::TemplateEnv env;
-  env.s("joined_operands", joined_operands);
+  constructed_operand_list += scalar_operands;
 
-  return rstring.format(env);
+  if (algorithm_indicator.empty()) {
+    std::string algorithm_placeholder = "%algorithm : str? = prim::Constant()";
+    constructed_operand_list += algorithm_placeholder;
+  }
+
+  return constructed_operand_list;
 }
-
-const std::string gelu_op_list_construct = R"(
-%scalars : Scalar?[] = prim::ListConstruct()
-)";
 
 bool aten_gelu_approximate_is_supported(
     const Match& match,
@@ -114,10 +114,7 @@ AttrFunction attr_func_clamp =
 
 const std::map<std::string, PostOp>& fusion_attr_map() {
   static const std::map<std::string, PostOp> fusion_attr_map{
-      {"none",
-       {attr_func_none,
-        zero_scalar_operand,
-        construct_operand_list(zero_scalar_operand)}},
+      {"none", {attr_func_none, zero_scalar_operand}},
 
       // For element-wise OP that only has the activation as input:
       ATTR_MAP_ITEM(relu),
@@ -126,25 +123,16 @@ const std::map<std::string, PostOp>& fusion_attr_map() {
       ATTR_MAP_ITEM(hardswish),
 
       // For element-wise OP that has other scalar inputs:
-      {"leaky_relu",
-       {attr_func_leaky_relu,
-        one_scalar_operand,
-        construct_operand_list(one_scalar_operand)}},
+      {"leaky_relu", {attr_func_leaky_relu, one_scalar_operand}},
 
-      {"hardtanh",
-       {attr_func_hardtanh,
-        two_scalar_operands,
-        construct_operand_list(two_scalar_operands)}},
+      {"hardtanh", {attr_func_hardtanh, two_scalar_operands}},
 
-      {"clamp",
-       {attr_func_clamp,
-        two_scalar_operands,
-        construct_operand_list(two_scalar_operands)}},
+      {"clamp", {attr_func_clamp, two_scalar_operands}},
 
       {"gelu",
        {attr_func_gelu,
+        zero_scalar_operand,
         algorithm_indicator,
-        gelu_op_list_construct,
         {aten_gelu_approximate_is_supported}}},
 
   };
@@ -296,7 +284,7 @@ void RewriteEltwiseGraph(
     graph(${graph_input}
           %input_size:int[], %attr_placeholder:str, %scalars_placeholder: Scalar?[], %algorithm_placeholder: str?${op_input_str}):
         %attr: str = prim::Constant[value="${op_attr}"]()
-        ${op_list_construct}
+        ${construct_operand_list}
         %packed_weight_bias : __torch__.torch.classes.mkldnn.ConvOpContext =  ${prepack_op_name}(
             ${prepack_input}
             %input_size, %attr, %scalars, %algorithm)
@@ -308,10 +296,15 @@ void RewriteEltwiseGraph(
     if (op == std::string("none")) {
       continue;
     }
-    std::vector<std::string> op_input_list = it.second.op_input_list;
-    std::string op_input_str = c10::Join(", ", op_input_list);
+    std::vector<std::string> op_input = it.second.scalar_input;
+    std::string algorithm_input = it.second.algorithm_input;
 
-    if (op_input_list.size() > 0) {
+    if (!algorithm_input.empty()) {
+      op_input.push_back(algorithm_input);
+    }
+    std::string op_input_str = c10::Join(", ", op_input);
+
+    if (!op_input.empty()) {
       op_input_str = ", " + op_input_str;
     }
 
@@ -326,7 +319,10 @@ void RewriteEltwiseGraph(
     at::jit::TemplateEnv env_fused;
     env_fused.s("op_attr", op);
     env_fused.s("op_input_str", op_input_str);
-    env_fused.s("op_list_construct", it.second.op_list_construct);
+    env_fused.s(
+        "construct_operand_list",
+        mkldnn::construct_operand_list(
+            it.second.scalar_input, it.second.algorithm_input));
     env_fused.s("prepack_op_name", prepack_op_name);
     env_fused.s("run_op_name", run_op_name);
     env_fused.s("graph_input", graph_input);

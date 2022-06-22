@@ -24,8 +24,8 @@ using AttrFunction = std::function<ideep::attr_t(
 
 struct PostOp {
   AttrFunction attr_function;
-  std::vector<std::string> op_input_list;
-  std::string op_list_construct;
+  std::vector<std::string> scalar_input;
+  std::string algorithm_input = "";
   std::vector<torch::jit::MatchFilter> filters = {};
 };
 
