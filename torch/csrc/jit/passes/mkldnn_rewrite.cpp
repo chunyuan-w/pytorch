@@ -268,6 +268,7 @@ void RewriteEltwiseGraph(
     const std::map<std::string, T>& fusion_attr_map,
     std::string prepack_op_name,
     std::string run_op_name,
+    std::string op_context_name,
     std::string graph_input,
     std::string prepack_input) {
   auto conv_op_rstring = at::jit::CodeTemplate(R"(
@@ -285,7 +286,7 @@ void RewriteEltwiseGraph(
           %input_size:int[], %attr_placeholder:str, %scalars_placeholder: Scalar?[], %algorithm_placeholder: str?${op_input_str}):
         %attr: str = prim::Constant[value="${op_attr}"]()
         ${construct_operand_list}
-        %packed_weight_bias : __torch__.torch.classes.mkldnn.ConvOpContext =  ${prepack_op_name}(
+        %packed_weight_bias : __torch__.torch.classes.${op_context_name} =  ${prepack_op_name}(
             ${prepack_input}
             %input_size, %attr, %scalars, %algorithm)
         %res = ${run_op_name}(%input, %packed_weight_bias)
@@ -325,6 +326,7 @@ void RewriteEltwiseGraph(
             it.second.scalar_input, it.second.algorithm_input));
     env_fused.s("prepack_op_name", prepack_op_name);
     env_fused.s("run_op_name", run_op_name);
+    env_fused.s("op_context_name", op_context_name);
     env_fused.s("graph_input", graph_input);
     env_fused.s("prepack_input", prepack_input);
 
@@ -343,6 +345,7 @@ void FuseEltwiseWithPackedOps(std::shared_ptr<Graph>& graph) {
       mkldnn::fusion_attr_map(),
       std::string("mkldnn_prepacked::conv2d_prepack"),
       std::string("mkldnn_prepacked::conv2d_run"),
+      std::string("mkldnn.ConvOpContext"),
       std::string(
           "%input, %weight, %bias, %stride:int[], %padding:int[], %dilation:int[], %groups:int,"),
       std::string("%weight, %bias, %stride, %padding, %dilation, %groups,"));
