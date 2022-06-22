@@ -15,15 +15,15 @@ namespace jit {
 
 namespace mkldnn {
 
-#define ATTR_MAP_ITEM(NAME)                                           \
-  {                                                                   \
-#NAME, {                                                          \
-      [](std::vector<c10::optional<at::Scalar>> scalars,              \
-         c10::optional<std::string> algorithm) {                      \
-        return ideep::attr_t::fuse_##NAME();                          \
-      },                                                              \
-          zero_scalar_operand, op_list_construct(zero_scalar_operand) \
-    }                                                                 \
+#define ATTR_MAP_ITEM(NAME)                                                \
+  {                                                                        \
+#NAME, {                                                               \
+      [](std::vector<c10::optional<at::Scalar>> scalars,                   \
+         c10::optional<std::string> algorithm) {                           \
+        return ideep::attr_t::fuse_##NAME();                               \
+      },                                                                   \
+          zero_scalar_operand, construct_operand_list(zero_scalar_operand) \
+    }                                                                      \
   }
 
 static constexpr float kMin = -std::numeric_limits<float>::infinity();
@@ -33,12 +33,12 @@ const std::vector<std::string> zero_scalar_operand =
     std::vector<std::string>({});
 const std::vector<std::string> one_scalar_operand =
     std::vector<std::string>({"%alpha"});
-const std::vector<std::string> one_algorithm_operand =
+const std::vector<std::string> algorithm_indicator =
     std::vector<std::string>({"%algorithm"});
-const std::vector<std::string> two_operands =
+const std::vector<std::string> two_scalar_operands =
     std::vector<std::string>({"%alpha", "%beta"});
 
-std::string op_list_construct(std::vector<std::string> operands) {
+std::string construct_operand_list(std::vector<std::string> operands) {
   std::string joined_operands = c10::Join(", ", operands);
 
   auto rstring = at::jit::CodeTemplate(R"(
@@ -67,7 +67,8 @@ bool aten_gelu_approximate_is_supported(
 
 AttrFunction attr_func_none = [](std::vector<c10::optional<at::Scalar>> scalars,
                                  c10::optional<std::string> algorithm) {
-  return ideep::attr_t();
+  const static ideep::attr_t empty_attr = ideep::attr_t();
+  return empty_attr;
 };
 
 AttrFunction attr_func_leaky_relu =
@@ -116,7 +117,7 @@ const std::map<std::string, PostOp>& fusion_attr_map() {
       {"none",
        {attr_func_none,
         zero_scalar_operand,
-        op_list_construct(zero_scalar_operand)}},
+        construct_operand_list(zero_scalar_operand)}},
 
       // For element-wise OP that only has the activation as input:
       ATTR_MAP_ITEM(relu),
@@ -128,17 +129,21 @@ const std::map<std::string, PostOp>& fusion_attr_map() {
       {"leaky_relu",
        {attr_func_leaky_relu,
         one_scalar_operand,
-        op_list_construct(one_scalar_operand)}},
+        construct_operand_list(one_scalar_operand)}},
 
       {"hardtanh",
-       {attr_func_hardtanh, two_operands, op_list_construct(two_operands)}},
+       {attr_func_hardtanh,
+        two_scalar_operands,
+        construct_operand_list(two_scalar_operands)}},
 
       {"clamp",
-       {attr_func_clamp, two_operands, op_list_construct(two_operands)}},
+       {attr_func_clamp,
+        two_scalar_operands,
+        construct_operand_list(two_scalar_operands)}},
 
       {"gelu",
        {attr_func_gelu,
-        one_algorithm_operand,
+        algorithm_indicator,
         gelu_op_list_construct,
         {aten_gelu_approximate_is_supported}}},
 
@@ -279,17 +284,17 @@ void RewriteEltwiseGraph(
     std::string prepack_input) {
   auto conv_op_rstring = at::jit::CodeTemplate(R"(
     graph(${graph_input} 
-          %input_size:int[], %dummy_attr:str, %dummy_scalars: Scalar?[], %dummy_algorithm: str?${op_input_str}):
+          %input_size:int[], %attr_placeholder:str, %scalars_placeholder: Scalar?[], %algorithm_placeholder: str?${op_input_str}):
         %packed_weight_bias = ${prepack_op_name}(
             ${prepack_input}
-            %input_size, %dummy_attr, %dummy_scalars, %dummy_algorithm)
+            %input_size, %attr_placeholder, %scalars_placeholder, %algorithm_placeholder)
         %conv2d_res = ${run_op_name}(%input, %packed_weight_bias)
         %res = aten::${op}(%conv2d_res${op_input_str})
         return (%res))");
 
   auto conv_op_fused_rstring = at::jit::CodeTemplate(R"(
     graph(${graph_input}
-          %input_size:int[], %dummy_attr:str, %dummy_scalars: Scalar?[], %dummy_algorithm: str?${op_input_str}):
+          %input_size:int[], %attr_placeholder:str, %scalars_placeholder: Scalar?[], %algorithm_placeholder: str?${op_input_str}):
         %attr: str = prim::Constant[value="${op_attr}"]()
         ${op_list_construct}
         %packed_weight_bias : __torch__.torch.classes.mkldnn.ConvOpContext =  ${prepack_op_name}(
