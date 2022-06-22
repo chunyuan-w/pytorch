@@ -76,6 +76,26 @@ Tensor computeAddMM(
                inputs[4])})); // TODO: handle other dtypes of alpha and beta
 }
 
+Tensor computeMkldnnPrepackedLinearRun(
+    const std::vector<ArgValue>& inputs,
+    const std::vector<ExprHandle>& outputShape,
+    const std::vector<ExprHandle>& outputStrides,
+    const c10::optional<ScalarType>& outputType,
+    at::Device device) {
+  Dtype dtype = kFloat;
+  if (outputType) {
+    dtype = Dtype(*outputType);
+  }
+
+  BufHandle ResultBuf(
+      "mkldnn_prepacked_linear_run", outputShape, outputStrides, dtype);
+  const BufHandle& inp = c10::get<BufHandle>(inputs[0]);
+  const BufHandle& prepacked = c10::get<BufHandle>(inputs[1]);
+  StmtPtr s = ExternalCall::make(
+      ResultBuf, "nnc_mkldnn_prepacked_linear_run", {inp, prepacked}, {});
+  return Tensor(ResultBuf.node(), s);
+}
+
 } // namespace tensorexpr
 } // namespace jit
 } // namespace torch
