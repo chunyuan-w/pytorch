@@ -1,9 +1,22 @@
+#include <torch/csrc/jit/jit_log.h>
 #include <torch/csrc/jit/tensorexpr/ir_simplifier.h>
 #include <torch/csrc/jit/tensorexpr/operators/matmul.h>
 
 namespace torch {
 namespace jit {
 namespace tensorexpr {
+
+bool mkldnnPrepackedLinearIsSupported(
+    const TensorInfo& input,
+    const TensorInfo& weight) {
+  // TODO: only support BF16 to make sure there's no performance regression
+  // if (input.dtype != c10::ScalarType::BFloat16 ||
+  //     weight.dtype != c10::ScalarType::BFloat16) {
+  //   GRAPH_DEBUG("conv2dIsSupported: only bfloat16 allowed");
+  //   return false;
+  // }
+  return true;
+}
 
 Tensor computeMatmul(
     const std::vector<ArgValue>& inputs,

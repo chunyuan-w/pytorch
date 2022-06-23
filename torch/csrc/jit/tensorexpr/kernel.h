@@ -28,7 +28,7 @@ bool conv2dIsSupportedJit(const Node* node);
 bool mkldnnPrepackedConvIsSupportedJit(const Node* node);
 // Returns true if the TE fuser supports this linear with mkldnn prepacked
 // linear.
-bool mkldnnLinearIsSupported(const Node* node);
+bool mkldnnPrepackedLinearIsSupportedJit(const Node* node);
 // Returns true if the TE fuser supports this matmul.
 bool matmulIsSupported(const Node* node);
 template <typename T>

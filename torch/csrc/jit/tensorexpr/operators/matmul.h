@@ -1,11 +1,15 @@
 #pragma once
 
 #include <torch/csrc/jit/tensorexpr/kernel.h>
+#include <torch/csrc/jit/tensorexpr/operators/misc.h>
 
 namespace torch {
 namespace jit {
 namespace tensorexpr {
 
+bool mkldnnPrepackedLinearIsSupported(
+    const TensorInfo& input,
+    const TensorInfo& weight);
 Tensor computeMatmul(
     const std::vector<ArgValue>& inputs,
     const std::vector<ExprHandle>& outputShape,

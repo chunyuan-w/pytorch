@@ -314,25 +314,30 @@ bool mkldnnPrepackedConvIsSupportedJit(const torch::jit::Node* node) {
   return false;
 }
 
-bool mkldnnLinearIsSupported(const torch::jit::Node* node) {
-  auto const& input0 = getTensorInfoJit(node->input(0));
-  auto const& input1 = getTensorInfoJit(node->input(1));
+bool mkldnnPrepackedLinearIsSupportedJit(const torch::jit::Node* node) {
+#if AT_MKLDNN_ENABLED()
+
+  auto const& input = getTensorInfoJit(node->input(0));
+  auto const& weight = getTensorInfoJit(node->input(1));
 
   // Everything should be statically known.
-  if (!input0 || !input1) {
-    GRAPH_DEBUG("mkldnnLinearIsSupported: Input shapes aren't static");
+  if (!input || !weight) {
+    GRAPH_DEBUG(
+        "mkldnnPrepackedLinearIsSupportedJit: Input shapes aren't static");
     return false;
   }
 
   // Inputs should be contiguous, or the TE will needlessly transpose them.
   if (!isContiguous(node->input(0)) || !isContiguous(node->input(1))) {
-    GRAPH_DEBUG("mkldnnLinearIsSupported: Input shapes are not contiguous");
+    GRAPH_DEBUG(
+        "mkldnnPrepackedLinearIsSupportedJit: Input shapes are not contiguous");
     return false;
   }
 
-  // TODO: only support BF16 to make sure there's no performance regression
+  return mkldnnPrepackedLinearIsSupported(*input, *weight);
 
-  return true;
+#endif
+  return false;
 }
 
 // The fuser currently only supports matmul of 2D x 2D matrices

@@ -1060,7 +1060,7 @@ class TensorExprFuser {
       }
     }
     if (node->kind() == aten::linear) {
-      if (!tensorexpr::mkldnnLinearIsSupported(node)) {
+      if (!tensorexpr::mkldnnPrepackedLinearIsSupportedJit(node)) {
         GRAPH_DEBUG("Shapes of linear inputs are not supported");
         return false;
       }
