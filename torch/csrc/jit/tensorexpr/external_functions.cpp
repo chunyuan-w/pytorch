@@ -1452,10 +1452,6 @@ void nnc_mkldnn_prepacked_linear_run(
   auto context = reinterpret_cast<LinearOpContext*>(buf_data[2]);
 
   at::Tensor output = context->run(x);
-  // memcpy(
-  //     buf_data[0], output.data_ptr(), output.element_size() *
-  //     output.numel());
-  // TODO: remove mem copy
   context->run(x, buf_data[0]);
 }
 
