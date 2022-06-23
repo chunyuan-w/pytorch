@@ -254,6 +254,38 @@ TEST_F(Kernel, Huge) {
   torch::jit::testing::FileCheck().run(verification_pattern, oss.str());
 }
 
+TEST_F(Kernel, MkldnnConvEltwise) {
+  const auto graph_string = R"IR(
+    graph(%x.1 : Float(1, 1, 224, 224, strides=[50176, 1, 224, 1], requires_grad=0, device=cpu)):
+      %1 : str = prim::Constant[value="tanh"]()
+      %2 : int = prim::Constant[value=1]()
+      %3 : int[] = prim::Constant[value=[0, 0]]()
+      %4 : int[] = prim::Constant[value=[1, 1]]()
+      %self.conv.bias : NoneType = prim::Constant()
+      %self.conv.weight : Float(3, 1, 1, 2, strides=[2, 1, 2, 1], requires_grad=0, device=cpu) = prim::Constant[value=<Tensor>]()
+      %x.14 : Float(1, 3, 224, 223, strides=[149856, 1, 669, 3], requires_grad=0, device=cpu) = aten::conv2d(%x.1, %self.conv.weight, %self.conv.bias, %4, %3, %4, %2)
+      %x.10 : Float(1, 3, 224, 223, strides=[149856, 1, 669, 3], requires_grad=0, device=cpu) = aten::gelu(%x.14, %1)
+      return (%x.10))IR";
+  auto graph = std::make_shared<Graph>();
+  parseIR(graph_string, &*graph, /*parse_tensor_constants*/ true);
+  TensorExprKernel k(graph);
+  std::ostringstream oss;
+  oss << *k.getCodeGenStmt();
+
+  torch::jit::testing::FileCheck()
+      .check("mkldnn_prepacked_conv_run")
+      ->run(oss.str());
+
+  torch::jit::testing::FileCheck().check_not("aten_tanh_gelu")->run(oss.str());
+
+  testing::FileCheck()
+      .check("mkldnn_prepacked::conv2d_run")
+      ->check_not("mkldnn:prepacked::conv2d_prepack") // this should be folded
+                                                      // as constant.
+      ->check_not("aten::gelu")
+      ->run(*k.graph());
+}
+
 TEST_F(Kernel, ParallelStrided) {
   const auto graph_string = R"IR(
       graph(%0 : Float(5, 3, 40005, strides=[120015, 40005, 1], device=cpu),
