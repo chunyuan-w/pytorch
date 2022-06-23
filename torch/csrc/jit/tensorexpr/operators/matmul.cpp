@@ -12,7 +12,7 @@ bool mkldnnPrepackedLinearIsSupported(
   // TODO: only support BF16 to make sure there's no performance regression
   // if (input.dtype != c10::ScalarType::BFloat16 ||
   //     weight.dtype != c10::ScalarType::BFloat16) {
-  //   GRAPH_DEBUG("conv2dIsSupported: only bfloat16 allowed");
+  //   GRAPH_DEBUG("mkldnnPrepackedLinearIsSupported: only bfloat16 allowed");
   //   return false;
   // }
   return true;
