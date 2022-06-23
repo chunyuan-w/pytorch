@@ -212,7 +212,15 @@ void insertPrePackedConvOpForNode(Node* n) {
 void insertPrePackedLinearOpForNode(Node* n) {
   constexpr int POS_INPUT = 0;
   constexpr int POS_WEIGHT = 1;
-  // TODO: check input and weight should be contiguous
+  if (!tensorexpr::isContiguous(n->input(POS_INPUT))) {
+    GRAPH_DEBUG("insertPrePackedLinearOpForNode: input is not contiguous");
+    return;
+  }
+
+  if (!tensorexpr::isContiguous(n->input(POS_WEIGHT))) {
+    GRAPH_DEBUG("insertPrePackedLinearOpForNode: weight is not contiguous");
+    return;
+  }
 
   WithInsertPoint guard(n);
   auto graph = n->owningGraph();
