@@ -125,6 +125,50 @@ Tensor run(ContextLinear& context, const Tensor& input) {
   return output;
 }
 
+void _mkldnn_linear_out(
+    const ideep::tensor& x,
+    ideep::tensor& y,
+    const ideep::tensor& w,
+    const c10::optional<ideep::tensor>& b,
+    const ideep::attr_t& attr = ideep::attr_t()) {
+  if (b.has_value()) {
+    ideep::inner_product_forward::compute(
+        x,
+        w,
+        b.value(),
+        y,
+        ideep::scale_t(),
+        ideep::scale_t(),
+        ideep::scale_t(),
+        attr);
+  } else {
+    ideep::inner_product_forward::compute(
+        x, w, y, ideep::scale_t(), ideep::scale_t(), ideep::scale_t(), attr);
+  }
+}
+
+void mkldnn_linear_out(
+    const Tensor& input,
+    ideep::tensor& mkldnn_output,
+    const ideep::tensor& mkldnn_weight,
+    const c10::optional<Tensor>& bias_opt,
+    const ideep::attr_t& attr = ideep::attr_t()) {
+  c10::MaybeOwned<Tensor> bias_maybe_owned =
+      at::borrow_from_optional_tensor(bias_opt);
+  const Tensor& bias = *bias_maybe_owned;
+
+  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  const ideep::tensor mkldnn_input = itensor_view_from_dense(input);
+
+  c10::optional<ideep::tensor> mkldnn_bias{c10::nullopt};
+  if (bias.defined()) {
+    mkldnn_bias = itensor_from_tensor(bias);
+  }
+
+  _mkldnn_linear_out(
+      mkldnn_input, mkldnn_output, mkldnn_weight, mkldnn_bias, attr);
+}
+
 void run(ContextLinear& context, const Tensor& input, void* output) {
   const ideep::tensor& mkldnn_weight = context.weight_packed_;
 
@@ -136,52 +180,20 @@ void run(ContextLinear& context, const Tensor& input, void* output) {
 
   std::vector<int64_t> output_size(input_size.begin(), input_size.end() - 1);
   output_size.push_back(mkldnn_weight.get_dim(0));
-  // auto output = at::empty(output_size, input.options());
 
   std::vector<int64_t> output_size_reshaped = {
       input_reshaped.size(0), mkldnn_weight.get_dim(0)};
-  // output = output.reshape(output_size_reshaped);
-
-  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
-  const ideep::tensor mkldnn_input = itensor_view_from_dense(input_reshaped);
 
   ideep::tensor::desc o_desc = {
-      output_size_reshaped, mkldnn_input.get_data_type()};
+      output_size_reshaped, get_mkldnn_dtype(input.scalar_type())};
   ideep::tensor mkldnn_output = {o_desc, output};
 
-  // ideep::tensor mkldnn_output = itensor_view_from_dense(output);
-
-  c10::MaybeOwned<Tensor> bias_maybe_owned =
-      at::borrow_from_optional_tensor(context.at_bias_);
-  const Tensor& bias = *bias_maybe_owned;
-
-  if (bias.defined()) {
-    const ideep::tensor mkldnn_bias = itensor_view_from_dense(bias);
-    ideep::inner_product_forward::compute(
-        mkldnn_input,
-        mkldnn_weight,
-        mkldnn_bias,
-        mkldnn_output,
-        ideep::scale_t(),
-        ideep::scale_t(),
-        ideep::scale_t(),
-        context.attr_);
-  } else {
-    ideep::inner_product_forward::compute(
-        mkldnn_input,
-        mkldnn_weight,
-        mkldnn_output,
-        ideep::scale_t(),
-        ideep::scale_t(),
-        ideep::scale_t(),
-        context.attr_);
-  }
-
-  // if (dim != 2) {
-  //   output = output.reshape(output_size);
-  // }
-
-  // return output;
+  mkldnn_linear_out(
+      input_reshaped,
+      mkldnn_output,
+      mkldnn_weight,
+      context.at_bias_,
+      context.attr_);
 }
 
 Tensor linear_run(
