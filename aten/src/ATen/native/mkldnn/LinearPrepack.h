@@ -32,6 +32,8 @@ ContextLinear create(
 
 Tensor run(ContextLinear& context, const Tensor& input);
 
+void run(ContextLinear& context, const Tensor& input, void* output);
+
 } // namespace linear
 } // namespace internal
 } // namespace mkldnn

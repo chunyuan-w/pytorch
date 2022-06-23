@@ -62,6 +62,10 @@ Tensor MkldnnLinearOpContext::run(const Tensor& input) {
   return mkldnn::internal::linear::run(op_context_, input);
 }
 
+void MkldnnLinearOpContext::run(const Tensor& input, void* output) {
+  return mkldnn::internal::linear::run(op_context_, input, output);
+}
+
 } // namespace mkldnn
 } // namespace native
 } // namespace at
