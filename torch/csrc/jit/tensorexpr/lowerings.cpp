@@ -594,6 +594,32 @@ int nnc_lowerings_lazy_registration() {
             });
       });
 
+  RegisterNNCLoweringsFunction aten_silu(
+      {"aten::silu(Tensor self) -> (Tensor)"},
+      [](const std::vector<ArgValue>& inputs,
+         const std::vector<ExprHandle>& outputShape,
+         const std::vector<ExprHandle>& outputStrides,
+         const c10::optional<ScalarType>& outputType,
+         at::Device device) {
+        // check if the activation is quantized
+        const BufHandle& x = c10::get<BufHandle>(inputs[0]);
+        if (x.node()->qscale()) {
+          // TODO: fix quantized path
+          return computeQuantizedSigmoidExternalCall(
+              inputs, outputShape, outputStrides, outputType, device);
+        }
+        return computeOneOperand(
+            "aten_silu",
+            inputs,
+            outputShape,
+            outputStrides,
+            outputType,
+            [](const ExprHandle& a) {
+              return promoteIntegerToDefaultType(a) *
+                  sigmoid(promoteIntegerToDefaultType(a));
+            });
+      });
+
   RegisterNNCLoweringsFunction aten_reciprocal(
       {"aten::reciprocal(Tensor self) -> (Tensor)"},
       [](const std::vector<ArgValue>& inputs,
