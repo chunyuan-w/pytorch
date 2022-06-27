@@ -1314,6 +1314,25 @@ int nnc_lowerings_lazy_registration() {
             });
       });
 
+  RegisterNNCLoweringsFunction aten_mish(
+      {"aten::mish(Tensor self) -> (Tensor)"},
+      [](const std::vector<ArgValue>& inputs,
+         const std::vector<ExprHandle>& outputShape,
+         const std::vector<ExprHandle>& outputStrides,
+         const c10::optional<ScalarType>& outputType,
+         at::Device device) {
+        return computeOneOperand(
+            "aten_mish",
+            inputs,
+            outputShape,
+            outputStrides,
+            outputType,
+            [](const ExprHandle& a) {
+              return promoteIntegerToDefaultType(a) *
+                  tanh(log1p(exp(promoteIntegerToDefaultType(a))));
+            });
+      });
+
   RegisterNNCLoweringsFunction aten_hardsigmoid(
       {"aten::hardsigmoid(Tensor self) -> (Tensor)"},
       [](const std::vector<ArgValue>& inputs,
