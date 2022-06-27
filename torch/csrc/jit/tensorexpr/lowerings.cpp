@@ -1298,9 +1298,17 @@ int nnc_lowerings_lazy_registration() {
                const ExprHandle& input_scale) {
               auto zero = Cast::make(a.dtype(), 0);
               auto one = Cast::make(a.dtype(), 1);
-              auto alpha_expr = Cast::make(a.dtype(), alpha);
+
+              auto poscoef = Cast::make(a.dtype(), scale);
+              auto negiptcoef = Cast::make(a.dtype(), input_scale);
+              auto negcoef = Cast::make(a.dtype(), alpha) * poscoef;
+
               return CompareSelect::make(
-                  a, zero, a, alpha_expr * (exp(a) - one), kGT);
+                  a,
+                  zero,
+                  a * poscoef,
+                  (exp(a * negiptcoef) - one) * negcoef,
+                  kGT);
             });
       });
 
