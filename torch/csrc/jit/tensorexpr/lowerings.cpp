@@ -608,8 +608,8 @@ int nnc_lowerings_lazy_registration() {
             outputStrides,
             outputType,
             [](const ExprHandle& a) {
-              return promoteIntegerToDefaultType(a) *
-                  sigmoid(promoteIntegerToDefaultType(a));
+              auto default_type_a = promoteIntegerToDefaultType(a);
+              return default_type_a * sigmoid(default_type_a);
             });
       });
 
