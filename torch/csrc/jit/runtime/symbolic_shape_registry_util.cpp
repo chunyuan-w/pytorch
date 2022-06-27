@@ -79,6 +79,7 @@ const OperatorMap<std::string>& get_tensorexpr_elementwise_set() {
       {"aten::mish(Tensor self) -> Tensor", "unary"},
       {"aten::relu6(Tensor self) -> Tensor", "unary"},
       {"aten::gelu(Tensor self, *, str approximate='none') -> Tensor", "unary"},
+      {"aten::elu(Tensor self, Scalar alpha=1, Scalar scale=1, Scalar input_scale=1) -> Tensor", "unary"},
       {"aten::neg(Tensor self) -> Tensor", "unary"},
       {"aten::reciprocal(Tensor self) -> Tensor", "unary"},
       {"aten::expm1(Tensor self) -> Tensor", "unary"},

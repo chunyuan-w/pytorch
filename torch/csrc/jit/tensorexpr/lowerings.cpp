@@ -1286,6 +1286,31 @@ int nnc_lowerings_lazy_registration() {
             });
       });
 
+  RegisterNNCLoweringsFunction aten_elu(
+      {"aten::elu(Tensor self, Scalar alpha=1, Scalar scale=1, Scalar input_scale=1) -> (Tensor)"},
+      [](const std::vector<ArgValue>& inputs,
+         const std::vector<ExprHandle>& outputShape,
+         const std::vector<ExprHandle>& outputStrides,
+         const c10::optional<ScalarType>& outputType,
+         at::Device device) {
+        return computeFourOperand(
+            "aten_elu",
+            inputs,
+            outputShape,
+            outputStrides,
+            outputType,
+            [](const ExprHandle& a,
+               const ExprHandle& alpha,
+               const ExprHandle& scale,
+               const ExprHandle& input_scale) {
+              auto zero = Cast::make(a.dtype(), 0);
+              auto one = Cast::make(a.dtype(), 1);
+              auto alpha_expr = Cast::make(a.dtype(), alpha);
+              return CompareSelect::make(
+                  a, zero, a, alpha_expr * (exp(a) - one), kGT);
+            });
+      });
+
   RegisterNNCLoweringsFunction aten_softplus(
       {"aten::softplus(Tensor self, Scalar beta=1, Scalar threshold=20) -> (Tensor)"},
       [](const std::vector<ArgValue>& inputs,
