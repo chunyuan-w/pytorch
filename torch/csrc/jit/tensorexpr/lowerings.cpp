@@ -1354,8 +1354,9 @@ int nnc_lowerings_lazy_registration() {
             outputStrides,
             outputType,
             [](const ExprHandle& a) {
-              return promoteIntegerToDefaultType(a) *
-                  tanh(log1p(exp(promoteIntegerToDefaultType(a))));
+              auto default_type_a = promoteIntegerToDefaultType(a);
+              return default_type_a *
+                  tanh(log1p(exp(default_type_a)));
             });
       });
 
