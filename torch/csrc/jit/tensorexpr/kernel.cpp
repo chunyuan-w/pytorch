@@ -637,15 +637,22 @@ static void pruneByGrainSize(std::vector<ForPtr>& loops) {
 static void pruneByThreadCount(std::vector<ForPtr>& loops) {
   int64_t trips = 1;
   auto threads = at::get_num_threads();
+    // std::cout << "threads: " << threads << "\n";
+
   auto it = loops.begin();
   for (; it != loops.end(); it++) {
     if (trips >= threads) {
+      // printf("break1\n");
       break;
     }
     auto tc = tripCount(*it);
     if (!tc) {
+      // printf("break2\n");
+
       break;
     }
+    // std::cout << "tc: " << tc.value() << "\n";
+    // std::cout << "trips: " << trips << "\n";
     trips *= *tc;
   }
   loops.erase(it, loops.end());
@@ -658,8 +665,17 @@ template <typename Bufs>
 static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
   for (auto const& buf : bufs) {
     auto loops = l.getLoopStmtsFor(buf);
+    // printf("loops size get: %ld\n", loops.size());
+
     pruneByGrainSize(loops);
+
+    // printf("loops size pruneByGrainSize: %ld\n", loops.size());
+
+
     pruneByThreadCount(loops);
+
+    // printf("loops size pruneByThreadCount: %ld\n", loops.size());
+
 
     // There are no loops to parallelize; give up.
     if (loops.size() == 0) {
@@ -667,15 +683,16 @@ static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
     }
     // The loop nest contains a reduction; give up.
     auto reductions = NodeFinder<ReduceOp>::find(loops[0]);
-    if (reductions.size() > 0) {
-      continue;
-    }
+    // if (reductions.size() > 0) {
+    //   continue;
+    // }
     // The loop nest has loop carried dependences; give up.
     if (LoopNest::hasLoopCarriedDependence(loops[0])) {
       continue;
     }
     // Try to flatten the outer loops and parallelize them if successful.
     ForPtr flattened = nullptr;
+    // printf("loops size: %ld\n", loops.size());
     if (loops.size() == 1) {
       flattened = loops[0];
     } else {
@@ -829,7 +846,8 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
   l.simplify();
   GRAPH_DEBUG("after simplification", *l.root_stmt());
 
-  if (backendType == kLLVMCodeGen && !hasReduction) {
+  // if (backendType == kLLVMCodeGen && !hasReduction) {
+  if (backendType == kLLVMCodeGen) {
     l.vectorizeInnerLoops();
     GRAPH_DEBUG("after vectorization", *l.root_stmt());
   }
