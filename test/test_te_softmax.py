@@ -42,7 +42,8 @@ class TestMkldnnFusion(JitTestCase):
             y = warmup_and_run_forward(script, x)
             y = script(x)
             y_ref = m(x)
-
+            print(y_ref)
+            print(y)
             graph = script.graph_for(*x)
             self.assertEqual(y, y_ref)
 
@@ -62,8 +63,10 @@ class TestMkldnnFusion(JitTestCase):
             def forward(self, x):
                 return self.eltwise(x, **self.kargs)
         kwargs = {"dim": -1}
-        m = M(F.softmax, **kwargs)
-        x = torch.randn(1, 256, 384, 384)
+        # m = M(F.softmax, **kwargs)
+        m = M(torch.sum, **kwargs)
+        x = torch.randn(3,8)
+        print(x)
         graph = self._check_model(m, x)
         self.assertFused(graph, ['aten::softmax'])
         self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)

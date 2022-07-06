@@ -1,0 +1,297 @@
+PYTORCH_JIT_LOG_LEVEL=":>>kernel:>>llvm_codegen:>>" python test/test_te_softmax.py  2>&1 | tee debug_te_sum.log
+
+is_contiguous_reduction
+count: 1
+is_contiguous_reduction
+count: 0
+is_contiguous_reduction
+count: 0
+[DUMP kernel.cpp:1571] TensorExprKernel graph (Before graph optimization):
+[DUMP kernel.cpp:1571] graph(%x : Float(3, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1571]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1571]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1571]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1571]   %4 : Float(3, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1571]   return (%4)
+[DUMP kernel.cpp:1599] TensorExprKernel graph (After graph optimization):
+[DUMP kernel.cpp:1599] graph(%x : Float(3, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1599]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1599]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1599]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1599]   %4 : Float(3, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1599]   return (%4)
+[DUMP kernel.cpp:1603] TensorExprKernel graph:
+[DUMP kernel.cpp:1603] graph(%x : Float(3, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1603]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1603]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1603]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1603]   %4 : Float(3, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1603]   return (%4)
+[DEBUG kernel.cpp:710] Original Stmt:
+[DEBUG kernel.cpp:710] {
+[DEBUG kernel.cpp:710]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:710]     sum[i] = float(0);
+[DEBUG kernel.cpp:710]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:710]       sum[i] = ReduceOp((sum[i]) + float(tx[i, j]), reduce_args={j});
+[DEBUG kernel.cpp:710]     }
+[DEBUG kernel.cpp:710]   }
+[DEBUG kernel.cpp:710] }
+[DEBUG kernel.cpp:732] after simplify{
+[DEBUG kernel.cpp:732]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:732]     sum[i] = 0.f;
+[DEBUG kernel.cpp:732]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:732]       sum[i] = ReduceOp((sum[i]) + (tx[i, j]), reduce_args={j});
+[DEBUG kernel.cpp:732]     }
+[DEBUG kernel.cpp:732]   }
+[DEBUG kernel.cpp:732] }
+[DEBUG kernel.cpp:742] after inline{
+[DEBUG kernel.cpp:742]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:742]     sum[i] = 0.f;
+[DEBUG kernel.cpp:742]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:742]       sum[i] = ReduceOp((sum[i]) + (tx[i, j]), reduce_args={j});
+[DEBUG kernel.cpp:742]     }
+[DEBUG kernel.cpp:742]   }
+[DEBUG kernel.cpp:742] }
+[DEBUG kernel.cpp:758] after fuse{
+[DEBUG kernel.cpp:758]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:758]     sum[i] = 0.f;
+[DEBUG kernel.cpp:758]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:758]       sum[i] = ReduceOp((sum[i]) + (tx[i, j]), reduce_args={j});
+[DEBUG kernel.cpp:758]     }
+[DEBUG kernel.cpp:758]   }
+[DEBUG kernel.cpp:758] }
+[DEBUG kernel.cpp:760] after parallelize{
+[DEBUG kernel.cpp:760]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:760]     sum[i] = 0.f;
+[DEBUG kernel.cpp:760]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:760]       sum[i] = ReduceOp((sum[i]) + (tx[i, j]), reduce_args={j});
+[DEBUG kernel.cpp:760]     }
+[DEBUG kernel.cpp:760]   }
+[DEBUG kernel.cpp:760] }
+[DEBUG kernel.cpp:845] after prepareForCodegen{
+[DEBUG kernel.cpp:845]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:845]     sum[i] = 0.f;
+[DEBUG kernel.cpp:845]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:845]       sum[i] = (sum[i]) + (tx[(0ll + i * 8ll) + j * 1ll]);
+[DEBUG kernel.cpp:845]     }
+[DEBUG kernel.cpp:845]   }
+[DEBUG kernel.cpp:845] }
+[DEBUG kernel.cpp:847] after simplification{
+[DEBUG kernel.cpp:847]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:847]     sum[i] = 0.f;
+[DEBUG kernel.cpp:847]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:847]       sum[i] = (sum[i]) + (tx[j + 8ll * i]);
+[DEBUG kernel.cpp:847]     }
+[DEBUG kernel.cpp:847]   }
+[DEBUG kernel.cpp:847] }
+[DEBUG kernel.cpp:852] after vectorization{
+[DEBUG kernel.cpp:852]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:852]     sum[i] = 0.f;
+[DEBUG kernel.cpp:852]     for (int64_t j_outer = 0ll; j_outer < (8ll - 0ll) / 8ll; j_outer++) {
+[DEBUG kernel.cpp:852]       {
+[DEBUG kernel.cpp:852]         sum[Broadcast(i, 8)] = (Broadcast(sum[i], 8)) + (tx[Ramp(8ll * (i + j_outer), 1ll, 8)]);
+[DEBUG kernel.cpp:852]       }
+[DEBUG kernel.cpp:852]     }
+[DEBUG kernel.cpp:852]   }
+[DEBUG kernel.cpp:852] }
+[DEBUG kernel.cpp:858] Final Stmt:
+[DEBUG kernel.cpp:858] {
+[DEBUG kernel.cpp:858]   for (int64_t i = 0ll; i < 3ll; i++) {
+[DEBUG kernel.cpp:858]     sum[i] = 0.f;
+[DEBUG kernel.cpp:858]     sum[Broadcast(i, 8)] = (Broadcast(sum[i], 8)) + (tx[Ramp(8ll * i, 1ll, 8)]);
+[DEBUG kernel.cpp:858]   }
+[DEBUG kernel.cpp:858] }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] LLVM module before optimizations
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] ; ModuleID = 'pytorch'
+[DEBUG llvm_codegen.cpp:632] source_filename = "pytorch"
+[DEBUG llvm_codegen.cpp:632] target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+[DEBUG llvm_codegen.cpp:632] target triple = "x86_64-unknown-linux-gnu"
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] ; Function Attrs: alwaysinline
+[DEBUG llvm_codegen.cpp:632] define private i32 @pytorch(float* noalias %0, float* noalias %1) #0 {
+[DEBUG llvm_codegen.cpp:632] entry:
+[DEBUG llvm_codegen.cpp:632]   br label %cond
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] cond:                                             ; preds = %body, %entry
+[DEBUG llvm_codegen.cpp:632]   %2 = phi i64 [ 0, %entry ], [ %36, %body ]
+[DEBUG llvm_codegen.cpp:632]   %3 = icmp slt i64 %2, 3
+[DEBUG llvm_codegen.cpp:632]   br i1 %3, label %body, label %exit
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] body:                                             ; preds = %cond
+[DEBUG llvm_codegen.cpp:632]   %4 = getelementptr float, float* %1, i64 %2
+[DEBUG llvm_codegen.cpp:632]   store float 0.000000e+00, float* %4, align 4
+[DEBUG llvm_codegen.cpp:632]   %5 = getelementptr float, float* %1, i64 %2
+[DEBUG llvm_codegen.cpp:632]   %6 = load float, float* %5, align 4
+[DEBUG llvm_codegen.cpp:632]   %.splatinsert = insertelement <8 x float> poison, float %6, i32 0
+[DEBUG llvm_codegen.cpp:632]   %.splat = shufflevector <8 x float> %.splatinsert, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:632]   %7 = mul i64 8, %2
+[DEBUG llvm_codegen.cpp:632]   %8 = getelementptr float, float* %0, i64 %7
+[DEBUG llvm_codegen.cpp:632]   %9 = bitcast float* %8 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   %10 = load <8 x float>, <8 x float>* %9, align 4
+[DEBUG llvm_codegen.cpp:632]   %11 = fadd <8 x float> %.splat, %10
+[DEBUG llvm_codegen.cpp:632]   %.splatinsert1 = insertelement <8 x i64> poison, i64 %2, i32 0
+[DEBUG llvm_codegen.cpp:632]   %.splat2 = shufflevector <8 x i64> %.splatinsert1, <8 x i64> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:632]   %12 = extractelement <8 x i64> %.splat2, i64 0
+[DEBUG llvm_codegen.cpp:632]   %13 = extractelement <8 x float> %11, i64 0
+[DEBUG llvm_codegen.cpp:632]   %14 = getelementptr float, float* %1, i64 %12
+[DEBUG llvm_codegen.cpp:632]   store float %13, float* %14, align 4
+[DEBUG llvm_codegen.cpp:632]   %15 = extractelement <8 x i64> %.splat2, i64 1
+[DEBUG llvm_codegen.cpp:632]   %16 = extractelement <8 x float> %11, i64 1
+[DEBUG llvm_codegen.cpp:632]   %17 = getelementptr float, float* %1, i64 %15
+[DEBUG llvm_codegen.cpp:632]   store float %16, float* %17, align 4
+[DEBUG llvm_codegen.cpp:632]   %18 = extractelement <8 x i64> %.splat2, i64 2
+[DEBUG llvm_codegen.cpp:632]   %19 = extractelement <8 x float> %11, i64 2
+[DEBUG llvm_codegen.cpp:632]   %20 = getelementptr float, float* %1, i64 %18
+[DEBUG llvm_codegen.cpp:632]   store float %19, float* %20, align 4
+[DEBUG llvm_codegen.cpp:632]   %21 = extractelement <8 x i64> %.splat2, i64 3
+[DEBUG llvm_codegen.cpp:632]   %22 = extractelement <8 x float> %11, i64 3
+[DEBUG llvm_codegen.cpp:632]   %23 = getelementptr float, float* %1, i64 %21
+[DEBUG llvm_codegen.cpp:632]   store float %22, float* %23, align 4
+[DEBUG llvm_codegen.cpp:632]   %24 = extractelement <8 x i64> %.splat2, i64 4
+[DEBUG llvm_codegen.cpp:632]   %25 = extractelement <8 x float> %11, i64 4
+[DEBUG llvm_codegen.cpp:632]   %26 = getelementptr float, float* %1, i64 %24
+[DEBUG llvm_codegen.cpp:632]   store float %25, float* %26, align 4
+[DEBUG llvm_codegen.cpp:632]   %27 = extractelement <8 x i64> %.splat2, i64 5
+[DEBUG llvm_codegen.cpp:632]   %28 = extractelement <8 x float> %11, i64 5
+[DEBUG llvm_codegen.cpp:632]   %29 = getelementptr float, float* %1, i64 %27
+[DEBUG llvm_codegen.cpp:632]   store float %28, float* %29, align 4
+[DEBUG llvm_codegen.cpp:632]   %30 = extractelement <8 x i64> %.splat2, i64 6
+[DEBUG llvm_codegen.cpp:632]   %31 = extractelement <8 x float> %11, i64 6
+[DEBUG llvm_codegen.cpp:632]   %32 = getelementptr float, float* %1, i64 %30
+[DEBUG llvm_codegen.cpp:632]   store float %31, float* %32, align 4
+[DEBUG llvm_codegen.cpp:632]   %33 = extractelement <8 x i64> %.splat2, i64 7
+[DEBUG llvm_codegen.cpp:632]   %34 = extractelement <8 x float> %11, i64 7
+[DEBUG llvm_codegen.cpp:632]   %35 = getelementptr float, float* %1, i64 %33
+[DEBUG llvm_codegen.cpp:632]   store float %34, float* %35, align 4
+[DEBUG llvm_codegen.cpp:632]   %36 = add i64 %2, 1
+[DEBUG llvm_codegen.cpp:632]   br label %cond
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] exit:                                             ; preds = %cond
+[DEBUG llvm_codegen.cpp:632]   ret i32 0
+[DEBUG llvm_codegen.cpp:632] }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] define i32 @fused_sum(i8** %0) {
+[DEBUG llvm_codegen.cpp:632] wrapBB:
+[DEBUG llvm_codegen.cpp:632]   %1 = getelementptr i8*, i8** %0, i32 0
+[DEBUG llvm_codegen.cpp:632]   %2 = load i8*, i8** %1, align 8
+[DEBUG llvm_codegen.cpp:632]   %3 = bitcast i8* %2 to float*
+[DEBUG llvm_codegen.cpp:632]   %4 = getelementptr i8*, i8** %0, i32 1
+[DEBUG llvm_codegen.cpp:632]   %5 = load i8*, i8** %4, align 8
+[DEBUG llvm_codegen.cpp:632]   %6 = bitcast i8* %5 to float*
+[DEBUG llvm_codegen.cpp:632]   %7 = call i32 @pytorch(float* %3, float* %6)
+[DEBUG llvm_codegen.cpp:632]   ret i32 %7
+[DEBUG llvm_codegen.cpp:632] }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] attributes #0 = { alwaysinline }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] LLVM module after optimizations
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; ModuleID = 'pytorch'
+[DEBUG llvm_codegen.cpp:644] source_filename = "pytorch"
+[DEBUG llvm_codegen.cpp:644] target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+[DEBUG llvm_codegen.cpp:644] target triple = "x86_64-unknown-linux-gnu"
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: nofree norecurse nosync nounwind
+[DEBUG llvm_codegen.cpp:644] define i32 @fused_sum(i8** nocapture readonly %0) local_unnamed_addr #0 {
+[DEBUG llvm_codegen.cpp:644] wrapBB:
+[DEBUG llvm_codegen.cpp:644]   %1 = bitcast i8** %0 to float**
+[DEBUG llvm_codegen.cpp:644]   %2 = load float*, float** %1, align 8
+[DEBUG llvm_codegen.cpp:644]   %3 = getelementptr i8*, i8** %0, i64 1
+[DEBUG llvm_codegen.cpp:644]   %4 = bitcast i8** %3 to float**
+[DEBUG llvm_codegen.cpp:644]   %5 = load float*, float** %4, align 8
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.experimental.noalias.scope.decl(metadata !0)
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.experimental.noalias.scope.decl(metadata !3)
+[DEBUG llvm_codegen.cpp:644]   %6 = getelementptr inbounds float, float* %2, i64 7
+[DEBUG llvm_codegen.cpp:644]   %7 = load float, float* %6, align 4, !alias.scope !0, !noalias !3
+[DEBUG llvm_codegen.cpp:644]   %8 = fadd float %7, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   store float %8, float* %5, align 4, !alias.scope !3, !noalias !0
+[DEBUG llvm_codegen.cpp:644]   %9 = getelementptr float, float* %5, i64 1
+[DEBUG llvm_codegen.cpp:644]   %10 = getelementptr float, float* %2, i64 15
+[DEBUG llvm_codegen.cpp:644]   %11 = load float, float* %10, align 4, !alias.scope !0, !noalias !3
+[DEBUG llvm_codegen.cpp:644]   %12 = fadd float %11, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   store float %12, float* %9, align 4, !alias.scope !3, !noalias !0
+[DEBUG llvm_codegen.cpp:644]   %13 = getelementptr float, float* %5, i64 2
+[DEBUG llvm_codegen.cpp:644]   %14 = getelementptr float, float* %2, i64 23
+[DEBUG llvm_codegen.cpp:644]   %15 = load float, float* %14, align 4, !alias.scope !0, !noalias !3
+[DEBUG llvm_codegen.cpp:644]   %16 = fadd float %15, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   store float %16, float* %13, align 4, !alias.scope !3, !noalias !0
+[DEBUG llvm_codegen.cpp:644]   ret i32 0
+[DEBUG llvm_codegen.cpp:644] }
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: inaccessiblememonly nofree nosync nounwind willreturn
+[DEBUG llvm_codegen.cpp:644] declare void @llvm.experimental.noalias.scope.decl(metadata) #1
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] attributes #0 = { nofree norecurse nosync nounwind }
+[DEBUG llvm_codegen.cpp:644] attributes #1 = { inaccessiblememonly nofree nosync nounwind willreturn }
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] !0 = !{!1}
+[DEBUG llvm_codegen.cpp:644] !1 = distinct !{!1, !2, !"pytorch: argument 0"}
+[DEBUG llvm_codegen.cpp:644] !2 = distinct !{!2, !"pytorch"}
+[DEBUG llvm_codegen.cpp:644] !3 = !{!4}
+[DEBUG llvm_codegen.cpp:644] !4 = distinct !{!4, !2, !"pytorch: argument 1"}
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] LLVM generated assembly code
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.text
+[DEBUG llvm_codegen.cpp:662] 	.file	"pytorch"
+[DEBUG llvm_codegen.cpp:662] 	.globl	fused_sum
+[DEBUG llvm_codegen.cpp:662] 	.p2align	4, 0x90
+[DEBUG llvm_codegen.cpp:662] 	.type	fused_sum,@function
+[DEBUG llvm_codegen.cpp:662] fused_sum:
+[DEBUG llvm_codegen.cpp:662] 	endbr64
+[DEBUG llvm_codegen.cpp:662] 	movq	(%rdi), %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rdi), %rcx
+[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm0, %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vaddss	28(%rax), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rcx)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	60(%rax), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, 4(%rcx)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	92(%rax), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, 8(%rcx)
+[DEBUG llvm_codegen.cpp:662] 	xorl	%eax, %eax
+[DEBUG llvm_codegen.cpp:662] 	retq
+[DEBUG llvm_codegen.cpp:662] .Lfunc_end0:
+[DEBUG llvm_codegen.cpp:662] 	.size	fused_sum, .Lfunc_end0-fused_sum
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.section	".note.GNU-stack","",@progbits
+[DEBUG llvm_codegen.cpp:662] 
+F
+======================================================================
+FAIL: test_single_softmax (__main__.TestMkldnnFusion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test/test_te_softmax.py", line 70, in test_single_softmax
+    graph = self._check_model(m, x)
+  File "test/test_te_softmax.py", line 48, in _check_model
+    self.assertEqual(y, y_ref)
+  File "/home/chunyuan/TE/pytorch/torch/testing/_internal/common_utils.py", line 2285, in assertEqual
+    msg=(lambda generated_msg: f"{generated_msg} : {msg}") if isinstance(msg, str) and self.longMessage else msg,
+  File "/home/chunyuan/TE/pytorch/torch/testing/_comparison.py", line 1093, in assert_equal
+    raise error_metas[0].to_error(msg)
+AssertionError: Tensor-likes are not close!
+
+Mismatched elements: 3 / 3 (100.0%)
+Greatest absolute difference: 3.8146959245204926 at index (2,) (up to 1e-05 allowed)
+Greatest relative difference: 1.1235659957266557 at index (2,) (up to 1.3e-06 allowed)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.078s
+
+FAILED (failures=1)
+tensor([[-0.1117, -0.4966,  0.1631, -0.8817,  0.0539,  0.6684, -0.0597, -0.4675],
+        [ 0.6369, -0.7141, -1.0831, -0.5547,  0.9717, -0.5150,  1.4255,  0.7987],
+        [-2.5273,  1.4778, -0.1696, -0.9919, -1.4569,  0.2563, -0.4030,  0.4195]])
+tensor([-1.1318,  0.9659, -3.3952])
+tensor([-0.4675,  0.7987,  0.4195])
+is_contiguous_reduction
+count: 0
+is_contiguous_reduction
+count: 0
+is_contiguous_reduction
+count: 0
+is_contiguous_reduction
+count: 0
