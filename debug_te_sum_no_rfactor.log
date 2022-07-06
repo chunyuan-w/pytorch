@@ -1,0 +1,40 @@
+cd build/bin
+PYTORCH_JIT_LOG_LEVEL=":>>loopnest:>>" ./test_tensorexpr --gtest_filter='Reductions.ReductionVectorize' 2>&1 | tee ~/TE/pytorch/debug_te_sum_no_rfactor.log
+
+
+CUDA not available. Disabling CUDA and MultiCUDA tests
+Note: Google Test filter = Reductions.ReductionVectorize-*_CUDA:*_MultiCUDA
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from Reductions
+[ RUN      ] Reductions.ReductionVectorize
+[DEBUG loopnest.cpp:062] Origin Stmt in LoopNest:
+[DEBUG loopnest.cpp:062] {
+[DEBUG loopnest.cpp:062]   for (int i = 0; i < 8; i++) {
+[DEBUG loopnest.cpp:062]     sum[i] = float(0);
+[DEBUG loopnest.cpp:062]     for (int i_1 = 0; i_1 < 8; i_1++) {
+[DEBUG loopnest.cpp:062]       sum[i] = ReduceOp((sum[i]) + (in[i, i_1]), reduce_args={i_1});
+[DEBUG loopnest.cpp:062]     }
+[DEBUG loopnest.cpp:062]   }
+[DEBUG loopnest.cpp:062] }
+[DEBUG loopnest.cpp:040] Origin Stmt in LoopNest:
+[DEBUG loopnest.cpp:040] {
+[DEBUG loopnest.cpp:040]   for (int i = 0; i < 8; i++) {
+[DEBUG loopnest.cpp:040]     sum[i] = float(0);
+[DEBUG loopnest.cpp:040]     for (int i_1 = 0; i_1 < 8; i_1++) {
+[DEBUG loopnest.cpp:040]       sum[i] = ReduceOp((sum[i]) + (in[i, i_1]), reduce_args={i_1});
+[DEBUG loopnest.cpp:040]     }
+[DEBUG loopnest.cpp:040]   }
+[DEBUG loopnest.cpp:040] }
+done: {
+  sum[Ramp(0, 1, 8)] = Broadcast(0.f, 8);
+  for (int i = 0; i < 8; i++) {
+    sum[Ramp(0, 1, 8)] = ReduceOp((sum[Ramp(0, 1, 8)]) + (in[Ramp(i, 8, 8)]), reduce_args={i});
+  }
+}
+[       OK ] Reductions.ReductionVectorize (1 ms)
+[----------] 1 test from Reductions (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (1 ms total)
+[  PASSED  ] 1 test.

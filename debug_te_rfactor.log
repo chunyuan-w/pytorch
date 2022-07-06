@@ -1,0 +1,46 @@
+PYTORCH_JIT_LOG_LEVEL=":>>loopnest:>>" ./test_tensorexpr --gtest_filter='Reductions.ReductionVectorizeRfactor' 2>&1 | tee ~/TE/pytorch/debug_te_rfactor.log
+
+CUDA not available. Disabling CUDA and MultiCUDA tests
+Note: Google Test filter = Reductions.ReductionVectorizeRfactor-*_CUDA:*_MultiCUDA
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from Reductions
+[ RUN      ] Reductions.ReductionVectorizeRfactor
+[DEBUG loopnest.cpp:062] Origin Stmt in LoopNest:
+[DEBUG loopnest.cpp:062] {
+[DEBUG loopnest.cpp:062]   sum = float(0);
+[DEBUG loopnest.cpp:062]   for (int i = 0; i < 8; i++) {
+[DEBUG loopnest.cpp:062]     for (int i_1 = 0; i_1 < 8; i_1++) {
+[DEBUG loopnest.cpp:062]       sum = ReduceOp((sum) + (in[i, i_1]), reduce_args={i, i_1});
+[DEBUG loopnest.cpp:062]     }
+[DEBUG loopnest.cpp:062]   }
+[DEBUG loopnest.cpp:062] }
+[DEBUG loopnest.cpp:040] Origin Stmt in LoopNest:
+[DEBUG loopnest.cpp:040] {
+[DEBUG loopnest.cpp:040]   sum = float(0);
+[DEBUG loopnest.cpp:040]   for (int i = 0; i < 8; i++) {
+[DEBUG loopnest.cpp:040]     for (int i_1 = 0; i_1 < 8; i_1++) {
+[DEBUG loopnest.cpp:040]       sum = ReduceOp((sum) + (in[i, i_1]), reduce_args={i, i_1});
+[DEBUG loopnest.cpp:040]     }
+[DEBUG loopnest.cpp:040]   }
+[DEBUG loopnest.cpp:040] }
+[DEBUG loopnest.cpp:3426] After rfactor in LoopNest:
+[DEBUG loopnest.cpp:3426] sum = ReduceOp((sum_rfac[i]) + (in[i_1, i]), reduce_args={i_1, i});
+done: {
+  sum = 0.f;
+  for (int i = 0; i < 8; i++) {
+    sum_rfac[i] = 0.f;
+  }
+  for (int i_1 = 0; i_1 < 8; i_1++) {
+    sum_rfac[Ramp(0, 1, 8)] = ReduceOp((sum_rfac[Ramp(0, 1, 8)]) + (in[Ramp(8 * i_1, 1, 8)]), reduce_args={i_1});
+  }
+  for (int i_2 = 0; i_2 < 8; i_2++) {
+    sum = ReduceOp((sum) + (sum_rfac[i_2]), reduce_args={i_2});
+  }
+}
+[       OK ] Reductions.ReductionVectorizeRfactor (2 ms)
+[----------] 1 test from Reductions (2 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (2 ms total)
+[  PASSED  ] 1 test.

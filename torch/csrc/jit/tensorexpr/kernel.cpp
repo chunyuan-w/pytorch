@@ -683,9 +683,9 @@ static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
     }
     // The loop nest contains a reduction; give up.
     auto reductions = NodeFinder<ReduceOp>::find(loops[0]);
-    // if (reductions.size() > 0) {
-    //   continue;
-    // }
+    if (reductions.size() > 0) {
+      continue;
+    }
     // The loop nest has loop carried dependences; give up.
     if (LoopNest::hasLoopCarriedDependence(loops[0])) {
       continue;
@@ -848,8 +848,14 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
 
   // if (backendType == kLLVMCodeGen && !hasReduction) {
   if (backendType == kLLVMCodeGen) {
-    l.vectorizeInnerLoops();
-    GRAPH_DEBUG("after vectorization", *l.root_stmt());
+    for (auto buf : bufOutputs_) {
+      std::vector<ForPtr> loops = l.getLoopStmtsFor(buf);
+      // BufPtr rfac_buf = nullptr;
+      // LoopNest::rfactor(tensor_body, loops.at(0), &rfac_buf);
+      LoopNest::vectorize(loops[0]);
+      // l.vectorizeInnerLoops();
+      GRAPH_DEBUG("after vectorization", *l.root_stmt());
+    }
   }
 
   StmtPtr stmt = l.root_stmt();

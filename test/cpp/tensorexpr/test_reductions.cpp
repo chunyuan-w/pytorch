@@ -1807,6 +1807,10 @@ TEST(Reductions, ReductionVectorize) {
 
   std::ostringstream oss;
   oss << *s;
+
+std::cout << "done: " << oss.str() << "\n";
+
+
   const std::string& expected_ir =
       R"IR(
 #CHECK: sum[Ramp(0, 1, 8)] = Broadcast(0.f, 8);
@@ -1876,6 +1880,9 @@ TEST(Reductions, ReductionVectorizeRfactor) {
 
   std::ostringstream oss;
   oss << *s;
+
+std::cout << "done: " << oss.str() << "\n";
+
   const std::string& expected_ir =
       R"IR(
 #CHECK: sum = 0.f;
