@@ -848,8 +848,21 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
 
   // if (backendType == kLLVMCodeGen && !hasReduction) {
   if (backendType == kLLVMCodeGen) {
-    l.vectorizeInnerLoops();
-    GRAPH_DEBUG("after vectorization", *l.root_stmt());
+    // l.vectorizeInnerLoops();
+    // GRAPH_DEBUG("after vectorization", *l.root_stmt());
+  
+  
+      for (auto buf : bufOutputs_) {
+      std::vector<ForPtr> loops = l.getLoopStmtsFor(buf);
+      std::cout << "len: " << loops.size() << "\n";
+      // BufPtr rfac_buf = nullptr;
+      // LoopNest::rfactor(tensor_body, loops.at(0), &rfac_buf);
+      LoopNest::vectorize(loops[0]);
+      // l.vectorizeInnerLoops();
+      GRAPH_DEBUG("after vectorization", *l.root_stmt());
+    }
+  
+  
   }
 
   StmtPtr stmt = l.root_stmt();
