@@ -259,6 +259,10 @@ class Vectorizer : public IRMutator {
     start_ = immLike(start, *start_imm);
     lanes_ = *stop_imm;
 
+
+    std::cout << "loop start_: " << intValue(start_).value() << "\n";
+    std::cout << "loop lanes_: " << intValue(lanes_).value() << "\n";
+
     StmtPtr new_body = body->accept_mutator(this);
     if (new_body == body) {
       // Vectorization failed!
@@ -496,7 +500,14 @@ class Vectorizer : public IRMutator {
     }
 
     StmtPtr body = v->body();
+
+      std::cout << "body in For before mutate: \n" << std::to_string(body) << "\n";
+
+
     StmtPtr new_body = body->accept_mutator(this);
+
+      std::cout << "body in For after mutate: \n" << std::to_string(new_body) << "\n";
+
 
     if (new_body == body) {
       return (ForPtr)v;
@@ -513,7 +524,14 @@ class Vectorizer : public IRMutator {
     bool any_change = false;
     std::vector<StmtPtr> stmts;
     for (StmtPtr stmt : *v) {
+
+      std::cout << "stmt in Block before mutate: \n" << std::to_string(stmt) << "\n";
+
       StmtPtr stmt_new = stmt->accept_mutator(this);
+
+      std::cout << "stmt in Block after mutate: \n" << std::to_string(stmt_new) << "\n";
+
+
       if (stmt != stmt_new) {
         any_change = true;
       } else {
@@ -555,7 +573,17 @@ class Vectorizer : public IRMutator {
 
     // Attempt to vectorize each input.
     for (ExprPtr& in : inputs) {
+
+
+      printf("old_in: \n");
+      std::cout << std::to_string(in) << "\n";
+
       ExprPtr new_in = in->accept_mutator(this);
+
+
+      printf("new_in: \n");
+      std::cout << std::to_string(new_in) << "\n";
+
       new_inputs.push_back(new_in);
       if (new_in != in) {
         any_vectorized = true;
@@ -569,9 +597,13 @@ class Vectorizer : public IRMutator {
 
     // Insert broadcasts for any inputs that weren't vectorized.
     for (size_t i = 0; i < inputs.size(); ++i) {
+      std::cout << "insert broadcasts for " << i << "\n";
       if (inputs[i] == new_inputs[i]) {
+        printf("broadcast make\n");
         inputs[i] = Broadcast::make(ExprHandle(inputs[i]), lanes_).node();
       } else {
+        printf("no broadcast make\n");
+
         inputs[i] = new_inputs[i];
       }
     }
@@ -603,10 +635,33 @@ bool LoopNest::vectorize(ForPtr f) {
 
   Vectorizer v;
   StmtPtr new_f = nullptr;
+
+
+std::cout << "orig f: \n" << std::to_string(f) << "\n";
+
+
   new_f = Stmt::clone(f);
+
+std::cout << "before normalize: \n" << std::to_string(new_f) << "\n";
+
+
   normalize(to<For>(new_f));
+
+
+std::cout << "before flatten: \n" << std::to_string(new_f) << "\n";
+
+
   new_f = FlattenIndexes(new_f);
+
+
+std::cout << "before vec: \n" << std::to_string(new_f) << "\n";
+
+
   new_f = v.vectorize(to<For>(new_f));
+
+
+std::cout << "after vec: \n" << std::to_string(new_f) << "\n";
+
   if (!v.success()) {
     // We clone f before vectorizing. So, any partial vectorization will
     // have modified the clone. In case of an exception, we can continue
