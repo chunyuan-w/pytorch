@@ -851,16 +851,22 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
     // l.vectorizeInnerLoops();
     // GRAPH_DEBUG("after vectorization", *l.root_stmt());
   
-  
-      for (auto buf : bufOutputs_) {
-      std::vector<ForPtr> loops = l.getLoopStmtsFor(buf);
-      std::cout << "len: " << loops.size() << "\n";
-      // BufPtr rfac_buf = nullptr;
-      // LoopNest::rfactor(tensor_body, loops.at(0), &rfac_buf);
-      LoopNest::vectorize(loops[0]);
-      // l.vectorizeInnerLoops();
-      GRAPH_DEBUG("after vectorization", *l.root_stmt());
-    }
+    l.vectorizeReduction();
+     GRAPH_DEBUG("after vectorizeReduction", *l.root_stmt());
+
+  // std::cout <<"len bufOut: " << bufOutputs_.size() << "\n";
+  //     for (auto buf : bufOutputs_) {
+  //     std::vector<ForPtr> loops = l.getLoopStmtsFor(buf);
+  //     std::cout << "len: " << loops.size() << "\n";
+
+
+
+  //     // BufPtr rfac_buf = nullptr;
+  //     // LoopNest::rfactor(tensor_body, loops.at(0), &rfac_buf);
+  //     LoopNest::vectorize(loops[0]);
+  //     // l.vectorizeInnerLoops();
+  //     GRAPH_DEBUG("after vectorization", *l.root_stmt());
+  //   }
   
   
   }

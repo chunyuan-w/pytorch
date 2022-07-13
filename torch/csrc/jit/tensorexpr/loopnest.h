@@ -554,6 +554,8 @@ class TORCH_API LoopNest {
   // Find the inner-most loops and vectorize them. Currently, this only works
   // for the LLVM backend, when no reductions are involved.
   void vectorizeInnerLoops();
+  
+  void vectorizeReduction();
 
   void eliminateDeadStores();
 

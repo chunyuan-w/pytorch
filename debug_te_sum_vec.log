@@ -1,0 +1,102 @@
+tensor([[ 0.0461,  0.4024, -1.0115,  0.2167, -0.6123,  0.5036,  0.2310,  0.6931]])
+[DUMP kernel.cpp:1590] TensorExprKernel graph (Before graph optimization):
+[DUMP kernel.cpp:1590] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1590]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1590]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1590]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1590]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1590]   return (%4)
+[DUMP kernel.cpp:1618] TensorExprKernel graph (After graph optimization):
+[DUMP kernel.cpp:1618] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1618]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1618]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1618]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1618]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1618]   return (%4)
+[DUMP kernel.cpp:1622] TensorExprKernel graph:
+[DUMP kernel.cpp:1622] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1622]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1622]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1622]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1622]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1622]   return (%4)
+[DEBUG kernel.cpp:710] Original Stmt:
+[DEBUG kernel.cpp:710] {
+[DEBUG kernel.cpp:710]   for (int64_t i = 0ll; i < 1ll; i++) {
+[DEBUG kernel.cpp:710]     sum[i] = float(0);
+[DEBUG kernel.cpp:710]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:710]       sum[i] = ReduceOp((sum[i]) + float(tx[0ll, j]), reduce_args={j});
+[DEBUG kernel.cpp:710]     }
+[DEBUG kernel.cpp:710]   }
+[DEBUG kernel.cpp:710] }
+[DEBUG kernel.cpp:732] after simplify{
+[DEBUG kernel.cpp:732]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:732]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:732]     sum[0ll] = ReduceOp((sum[0ll]) + (tx[0ll, j]), reduce_args={j});
+[DEBUG kernel.cpp:732]   }
+[DEBUG kernel.cpp:732] }
+[DEBUG kernel.cpp:742] after inline{
+[DEBUG kernel.cpp:742]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:742]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:742]     sum[0ll] = ReduceOp((sum[0ll]) + (tx[0ll, j]), reduce_args={j});
+[DEBUG kernel.cpp:742]   }
+[DEBUG kernel.cpp:742] }
+[DEBUG kernel.cpp:758] after fuse{
+[DEBUG kernel.cpp:758]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:758]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:758]     sum[0ll] = ReduceOp((sum[0ll]) + (tx[0ll, j]), reduce_args={j});
+[DEBUG kernel.cpp:758]   }
+[DEBUG kernel.cpp:758] }
+[DEBUG kernel.cpp:760] after parallelize{
+[DEBUG kernel.cpp:760]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:760]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:760]     sum[0ll] = ReduceOp((sum[0ll]) + (tx[0ll, j]), reduce_args={j});
+[DEBUG kernel.cpp:760]   }
+[DEBUG kernel.cpp:760] }
+[DEBUG kernel.cpp:845] after prepareForCodegen{
+[DEBUG kernel.cpp:845]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:845]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:845]     sum[0ll] = (sum[0ll]) + (tx[(0ll + 0ll * 8ll) + j * 1ll]);
+[DEBUG kernel.cpp:845]   }
+[DEBUG kernel.cpp:845] }
+[DEBUG kernel.cpp:847] after simplification{
+[DEBUG kernel.cpp:847]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:847]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:847]     sum[0ll] = (sum[0ll]) + (tx[j]);
+[DEBUG kernel.cpp:847]   }
+[DEBUG kernel.cpp:847] }
+f: 
+for (int64_t j = 0ll; j < 8ll; j++) {
+  sum[0ll] = (sum[0ll]) + (tx[j]);
+}
+worklist size: 1
+loop: 
+for (int64_t j = 0ll; j < 8ll; j++) {
+  sum[0ll] = (sum[0ll]) + (tx[j]);
+}
+[DEBUG kernel.cpp:855] after vectorizeReduction{
+[DEBUG kernel.cpp:855]   for (float i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:855]     buf_tmp[i] = 0.f;
+[DEBUG kernel.cpp:855]   }
+[DEBUG kernel.cpp:855]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:855]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:855]     sum[0ll] = (sum[0ll]) + (tx[j]);
+[DEBUG kernel.cpp:855]   }
+[DEBUG kernel.cpp:855] }
+[DEBUG kernel.cpp:877] Final Stmt:
+[DEBUG kernel.cpp:877] {
+[DEBUG kernel.cpp:877]   for (float i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:877]     buf_tmp[i] = 0.f;
+[DEBUG kernel.cpp:877]   }
+[DEBUG kernel.cpp:877]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:877]   for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:877]     sum[0ll] = (sum[0ll]) + (tx[j]);
+[DEBUG kernel.cpp:877]   }
+[DEBUG kernel.cpp:877] }
+tensor([0.4691])
+tensor([0.4691])
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.154s
+
+OK

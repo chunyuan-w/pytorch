@@ -1548,6 +1548,83 @@ void LoopNest::vectorizeInnerLoops() {
   }
 }
 
+void LoopNest::vectorizeReduction() {
+  std::vector<ForPtr> innerLoops;
+  std::vector<ForPtr> worklist;
+
+  // Find outer-most For loops
+  if (ForPtr rootF = to<For>(root_stmt_)) {
+
+std::cout << "root: \n" << std::to_string(rootF) << "\n";
+
+    worklist.push_back(rootF);
+  } else if (BlockPtr body = to<Block>(root_stmt_)) {
+    std::vector<BlockPtr> blocks = {body};
+    while (blocks.size()) {
+      BlockPtr b = blocks.back();
+      blocks.pop_back();
+
+      for (StmtPtr s : *b) {
+        if (ForPtr f = to<For>(s)) {
+std::cout << "f: \n" << std::to_string(f) << "\n";
+
+
+          worklist.push_back(f);
+        } else if (BlockPtr b2 = to<Block>(s)) {
+          blocks.push_back(b2);
+        }
+      }
+    }
+  }  
+
+
+  std::cout << "worklist size: " << worklist.size() << "\n";
+
+  BlockPtr b = to<Block>(root_stmt_);
+  StmtPtr first_reduction_loop = b->stmts().front();
+
+  BufHandle in("in", {1, 8}, kFloat);
+
+  const std::vector<ExprPtr>& rfac_dims = in.node()->dims();
+
+  std::vector<std::string> var_names = {"i"};
+  std::vector<VarPtr> new_loop_vars;
+  std::vector<ExprPtr> new_loop_vars_expr;
+  for (size_t i = 0; i < 1; ++i) {
+    new_loop_vars.push_back(
+        alloc<Var>(var_names[i % var_names.size()], kFloat));
+    new_loop_vars_expr.push_back(new_loop_vars[i]);
+  }
+
+  auto rfac_buf = alloc<Buf>(
+      "buf_tmp",
+      rfac_dims,
+      kFloat);
+  // BufPtr rfac_buf = *rfac_buf_ptr;
+  // // Insert an initialization store for the temp buffer:
+  // //   T[a,b,c] = init
+  // b->insert_stmt_before(
+  //     alloc<Store>(rfac_buf, new_loop_vars_expr, getImmediateByType(kFloat, 0)),
+  //     first_reduction_loop);
+
+
+  // Init cache to 0.
+  StmtPtr tmp_init = alloc<Store>(
+      rfac_buf, new_loop_vars_expr, getImmediateByType(kFloat, 0));
+
+  b->insert_stmt_before(
+      alloc<For>(new_loop_vars[0], immLike(rfac_dims[1], 0), rfac_dims[1], tmp_init),
+      first_reduction_loop);
+
+
+  for (ForPtr loop : worklist) {
+    std::cout << "loop: \n" << std::to_string(loop) << "\n";
+
+  }
+
+
+}
+
 void LoopNest::sliceHead(ForPtr f, int factor, ForPtr* head, ForPtr* tail) {
   if (intValue(f->start()) && intValue(f->stop())) {
     auto start_val = *intValue(f->start());

@@ -65,7 +65,7 @@ class TestMkldnnFusion(JitTestCase):
         kwargs = {"dim": -1}
         # m = M(F.softmax, **kwargs)
         m = M(torch.sum, **kwargs)
-        x = torch.randn(3,8)
+        x = torch.randn(1,8)
         print(x)
         graph = self._check_model(m, x)
         self.assertFused(graph, ['aten::softmax'])
