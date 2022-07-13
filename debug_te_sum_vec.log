@@ -81,11 +81,11 @@ for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG kernel.cpp:855]     buf_tmp[i] = 0.f;
 [DEBUG kernel.cpp:855]   }
 [DEBUG kernel.cpp:855]   sum[0ll] = 0.f;
-[DEBUG kernel.cpp:855]   for (int64_t i = 0; i < 8; i++) {
-[DEBUG kernel.cpp:855]     sum[0ll] = ReduceOp((sum[0ll]) + (buf_tmp[i]), reduce_args={i});
-[DEBUG kernel.cpp:855]   }
 [DEBUG kernel.cpp:855]   for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG kernel.cpp:855]     sum[0ll] = (sum[0ll]) + (tx[j]);
+[DEBUG kernel.cpp:855]   }
+[DEBUG kernel.cpp:855]   for (int64_t i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:855]     sum[0ll] = ReduceOp((sum[0ll]) + (buf_tmp[i]), reduce_args={i});
 [DEBUG kernel.cpp:855]   }
 [DEBUG kernel.cpp:855] }
 [DEBUG kernel.cpp:877] Final Stmt:
@@ -94,15 +94,15 @@ for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG kernel.cpp:877]     buf_tmp[i] = 0.f;
 [DEBUG kernel.cpp:877]   }
 [DEBUG kernel.cpp:877]   sum[0ll] = 0.f;
-[DEBUG kernel.cpp:877]   for (int64_t i = 0; i < 8; i++) {
-[DEBUG kernel.cpp:877]     sum[0ll] = ReduceOp((sum[0ll]) + (buf_tmp[i]), reduce_args={i});
-[DEBUG kernel.cpp:877]   }
 [DEBUG kernel.cpp:877]   for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG kernel.cpp:877]     sum[0ll] = (sum[0ll]) + (tx[j]);
 [DEBUG kernel.cpp:877]   }
+[DEBUG kernel.cpp:877]   for (int64_t i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:877]     sum[0ll] = ReduceOp((sum[0ll]) + (buf_tmp[i]), reduce_args={i});
+[DEBUG kernel.cpp:877]   }
 [DEBUG kernel.cpp:877] }
 Stored value type does not match pointer operand type!
-  store i32 %8, float* %15, align 4E
+  store i32 %17, float* %24, align 4E
 ======================================================================
 ERROR: test_single_softmax (__main__.TestMkldnnFusion)
 ----------------------------------------------------------------------
@@ -122,7 +122,7 @@ Traceback (most recent call last):
 RuntimeError: Function verification failed
 
 ----------------------------------------------------------------------
-Ran 1 test in 0.182s
+Ran 1 test in 0.180s
 
 FAILED (errors=1)
 

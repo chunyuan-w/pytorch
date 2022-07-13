@@ -1588,6 +1588,7 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
 
   BlockPtr b = to<Block>(root_stmt_);
   StmtPtr first_reduction_loop = b->stmts().front();
+  StmtPtr first_reduction_loop_end = b->stmts().back();
 
   BufHandle in("in", {1, 8}, kFloat);
 
@@ -1641,7 +1642,7 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
 
   b->insert_stmt_after(
       tmp_store_for,
-      first_reduction_loop);
+      first_reduction_loop_end);
 
 
 
