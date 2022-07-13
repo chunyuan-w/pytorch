@@ -1585,6 +1585,23 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
 
 
   std::cout << "worklist size: " << worklist.size() << "\n";
+  BlockPtr for_block = worklist[0]->body();
+  
+  ExprPtr add_right;
+  std::vector<ExprPtr> idx;
+  for (StmtPtr s : for_block->stmts()) {
+    std::cout << "stmt: " << std::to_string(s) << "\n";
+
+    StorePtr store_sum = to<Store>(s);
+    
+    
+    AddPtr add_v = to<Add>(store_sum->value());
+    add_right = add_v->rhs();
+    std::cout << "add_right: " << std::to_string(add_right) << "\n";
+
+    LoadPtr rhsVar = to<Load>(add_right);
+    idx = rhsVar->indices();
+  }
 
   BlockPtr b = to<Block>(root_stmt_);
   StmtPtr first_reduction_loop = b->stmts().front();
@@ -1602,6 +1619,15 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
         alloc<Var>(var_names[i % var_names.size()], kLong));
     new_loop_vars_expr.push_back(new_loop_vars[i]);
   }
+
+  // std::vector<std::string> j_var_names = {"j"};
+  // std::vector<VarPtr> j_new_loop_vars;
+  // std::vector<ExprPtr> j_new_loop_vars_expr;
+  // for (size_t i = 0; i < 1; ++i) {
+  //   j_new_loop_vars.push_back(
+  //       alloc<Var>(j_var_names[i % j_var_names.size()], kLong));
+  //   j_new_loop_vars_expr.push_back(j_new_loop_vars[i]);
+  // }
 
   auto rfac_buf = alloc<Buf>(
       "buf_tmp",
@@ -1640,16 +1666,29 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
 
   StmtPtr tmp_store_for = alloc<For>(new_loop_vars[0], worklist[0]->start(), worklist[0]->stop(), tmp_store);
 
+
+  // TODO: Stored value type does not match pointer operand type!
+  // store i64 %17, float* %24, align 8E
   b->insert_stmt_after(
       tmp_store_for,
       first_reduction_loop_end);
-
-
 
   for (ForPtr loop : worklist) {
     std::cout << "loop: \n" << std::to_string(loop) << "\n";
 
   }
+
+  ExprPtr tmp_buf_load = alloc<Load>(rfac_buf, idx);
+  ExprPtr add_res = alloc<Add>(tmp_buf_load, add_right);
+  StmtPtr tmp_add = alloc<Store>(
+      rfac_buf, idx, add_res);
+  auto new_for = alloc<For>(worklist[0]->var(), worklist[0]->start(), worklist[0]->stop(), tmp_add);
+
+
+    std::cout << "tmp_add: \n" << std::to_string(new_for) << "\n";
+
+  b->replace_stmt(worklist[0], new_for);
+
 
 
 }
