@@ -1551,6 +1551,7 @@ void LoopNest::vectorizeInnerLoops() {
 void LoopNest::vectorizeReduction() {
   std::vector<ForPtr> innerLoops;
   std::vector<ForPtr> worklist;
+  std::vector<StorePtr> storelist;
 
   // Find outer-most For loops
   if (ForPtr rootF = to<For>(root_stmt_)) {
@@ -1572,6 +1573,11 @@ std::cout << "f: \n" << std::to_string(f) << "\n";
           worklist.push_back(f);
         } else if (BlockPtr b2 = to<Block>(s)) {
           blocks.push_back(b2);
+        } else if (StorePtr st = to<Store>(s)) {
+std::cout << "st: \n" << std::to_string(st) << "\n";
+
+
+          storelist.push_back(st);          
         }
       }
     }
@@ -1608,6 +1614,7 @@ std::cout << "f: \n" << std::to_string(f) << "\n";
   //     first_reduction_loop);
 
 
+  // Insert the tmp buffer initialization at the beginning
   // Init cache to 0.
   StmtPtr tmp_init = alloc<Store>(
       rfac_buf, new_loop_vars_expr, getImmediateByType(kFloat, 0));
@@ -1615,6 +1622,25 @@ std::cout << "f: \n" << std::to_string(f) << "\n";
   b->insert_stmt_before(
       alloc<For>(new_loop_vars[0], immLike(rfac_dims[1], 0), rfac_dims[1], tmp_init),
       first_reduction_loop);
+
+  // Insert a store for the final reduction overt the tmp buffer into the original buffer
+  auto orig_buf = BufHandle(storelist[0]->buf());
+  ExprPtr final_reduce_load = alloc<Load>(rfac_buf, new_loop_vars_expr);
+  ExprHandle final_reduce_load_handle = ExprHandle(final_reduce_load);
+  
+  // std::vector<ExprPtr> indices = {immLike(rfac_dims[1], 0)};
+  ExprPtr reducer = Sum()(
+              orig_buf, final_reduce_load_handle, ExprVectorToExprHandleVector(storelist[0]->indices()), VarVectorToVarHandleVector(new_loop_vars)).node();
+  
+  StmtPtr tmp_store = alloc<Store>(
+          storelist[0]->buf(),
+          storelist[0]->indices(),
+          reducer);
+
+  b->insert_stmt_after(
+      tmp_store,
+      first_reduction_loop);
+
 
 
   for (ForPtr loop : worklist) {
