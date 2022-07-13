@@ -1621,7 +1621,7 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
       rfac_buf, new_loop_vars_expr, getImmediateByType(kFloat, 0));
 
   b->insert_stmt_before(
-      alloc<For>(new_loop_vars[0], immLike(rfac_dims[1], 0), rfac_dims[1], tmp_init),
+      alloc<For>(new_loop_vars[0], worklist[0]->start(), worklist[0]->stop(), tmp_init),
       first_reduction_loop);
 
   // Insert a store for the final reduction overt the tmp buffer into the original buffer
@@ -1638,7 +1638,7 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
           storelist[0]->indices(),
           reducer);
 
-  StmtPtr tmp_store_for = alloc<For>(new_loop_vars[0], immLike(rfac_dims[1], 0), rfac_dims[1], tmp_store);
+  StmtPtr tmp_store_for = alloc<For>(new_loop_vars[0], worklist[0]->start(), worklist[0]->stop(), tmp_store);
 
   b->insert_stmt_after(
       tmp_store_for,
