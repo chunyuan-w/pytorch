@@ -65,6 +65,8 @@ tensor([[ 0.0461,  0.4024, -1.0115,  0.2167, -0.6123,  0.5036,  0.2310,  0.6931]
 [DEBUG kernel.cpp:847]     sum[0ll] = (sum[0ll]) + (tx[j]);
 [DEBUG kernel.cpp:847]   }
 [DEBUG kernel.cpp:847] }
+st: 
+sum[0ll] = 0.f;
 f: 
 for (int64_t j = 0ll; j < 8ll; j++) {
   sum[0ll] = (sum[0ll]) + (tx[j]);
@@ -75,28 +77,53 @@ for (int64_t j = 0ll; j < 8ll; j++) {
   sum[0ll] = (sum[0ll]) + (tx[j]);
 }
 [DEBUG kernel.cpp:855] after vectorizeReduction{
-[DEBUG kernel.cpp:855]   for (float i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:855]   for (int64_t i = 0; i < 8; i++) {
 [DEBUG kernel.cpp:855]     buf_tmp[i] = 0.f;
 [DEBUG kernel.cpp:855]   }
 [DEBUG kernel.cpp:855]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:855]   for (int64_t i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:855]     sum[0ll] = ReduceOp((sum[0ll]) + (buf_tmp[i]), reduce_args={i});
+[DEBUG kernel.cpp:855]   }
 [DEBUG kernel.cpp:855]   for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG kernel.cpp:855]     sum[0ll] = (sum[0ll]) + (tx[j]);
 [DEBUG kernel.cpp:855]   }
 [DEBUG kernel.cpp:855] }
 [DEBUG kernel.cpp:877] Final Stmt:
 [DEBUG kernel.cpp:877] {
-[DEBUG kernel.cpp:877]   for (float i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:877]   for (int64_t i = 0; i < 8; i++) {
 [DEBUG kernel.cpp:877]     buf_tmp[i] = 0.f;
 [DEBUG kernel.cpp:877]   }
 [DEBUG kernel.cpp:877]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:877]   for (int64_t i = 0; i < 8; i++) {
+[DEBUG kernel.cpp:877]     sum[0ll] = ReduceOp((sum[0ll]) + (buf_tmp[i]), reduce_args={i});
+[DEBUG kernel.cpp:877]   }
 [DEBUG kernel.cpp:877]   for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG kernel.cpp:877]     sum[0ll] = (sum[0ll]) + (tx[j]);
 [DEBUG kernel.cpp:877]   }
 [DEBUG kernel.cpp:877] }
-tensor([0.4691])
-tensor([0.4691])
-.
+Stored value type does not match pointer operand type!
+  store i32 %8, float* %15, align 4E
+======================================================================
+ERROR: test_single_softmax (__main__.TestMkldnnFusion)
 ----------------------------------------------------------------------
-Ran 1 test in 0.154s
+Traceback (most recent call last):
+  File "test/test_te_softmax.py", line 70, in test_single_softmax
+    graph = self._check_model(m, x)
+  File "test/test_te_softmax.py", line 42, in _check_model
+    y = warmup_and_run_forward(script, x)
+  File "/home_local/chunyuan/code/TE-ipex/pytorch/test/test_tensorexpr.py", line 31, in warmup_and_run_forward
+    results = f(*args)
+  File "/home_local/chunyuan/code/TE-ipex/pytorch/torch/nn/modules/module.py", line 1147, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home_local/chunyuan/code/TE-ipex/pytorch/torch/testing/_internal/common_utils.py", line 440, in prof_meth_call
+    return prof_callable(meth_call, *args, **kwargs)
+  File "/home_local/chunyuan/code/TE-ipex/pytorch/torch/testing/_internal/common_utils.py", line 434, in prof_callable
+    return callable(*args, **kwargs)
+RuntimeError: Function verification failed
 
-OK
+----------------------------------------------------------------------
+Ran 1 test in 0.182s
+
+FAILED (errors=1)
+
+ i32

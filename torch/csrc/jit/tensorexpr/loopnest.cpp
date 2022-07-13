@@ -1598,7 +1598,7 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
   std::vector<ExprPtr> new_loop_vars_expr;
   for (size_t i = 0; i < 1; ++i) {
     new_loop_vars.push_back(
-        alloc<Var>(var_names[i % var_names.size()], kFloat));
+        alloc<Var>(var_names[i % var_names.size()], kLong));
     new_loop_vars_expr.push_back(new_loop_vars[i]);
   }
 
@@ -1637,8 +1637,10 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
           storelist[0]->indices(),
           reducer);
 
+  StmtPtr tmp_store_for = alloc<For>(new_loop_vars[0], immLike(rfac_dims[1], 0), rfac_dims[1], tmp_store);
+
   b->insert_stmt_after(
-      tmp_store,
+      tmp_store_for,
       first_reduction_loop);
 
 
