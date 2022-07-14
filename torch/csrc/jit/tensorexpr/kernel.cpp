@@ -871,6 +871,8 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
   
   }
 
+  l.vectorizeInnerLoops();
+
   l.prepareForCodegen();
 
   StmtPtr stmt = l.root_stmt();

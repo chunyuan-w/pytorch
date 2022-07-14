@@ -1,25 +1,25 @@
 tensor([[ 0.0461,  0.4024, -1.0115,  0.2167, -0.6123,  0.5036,  0.2310,  0.6931]])
-[DUMP kernel.cpp:1592] TensorExprKernel graph (Before graph optimization):
-[DUMP kernel.cpp:1592] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
-[DUMP kernel.cpp:1592]   %1 : NoneType = prim::Constant()
-[DUMP kernel.cpp:1592]   %2 : bool = prim::Constant[value=0]()
-[DUMP kernel.cpp:1592]   %3 : int[] = prim::Constant[value=[-1]]()
-[DUMP kernel.cpp:1592]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
-[DUMP kernel.cpp:1592]   return (%4)
-[DUMP kernel.cpp:1620] TensorExprKernel graph (After graph optimization):
-[DUMP kernel.cpp:1620] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
-[DUMP kernel.cpp:1620]   %1 : NoneType = prim::Constant()
-[DUMP kernel.cpp:1620]   %2 : bool = prim::Constant[value=0]()
-[DUMP kernel.cpp:1620]   %3 : int[] = prim::Constant[value=[-1]]()
-[DUMP kernel.cpp:1620]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
-[DUMP kernel.cpp:1620]   return (%4)
-[DUMP kernel.cpp:1624] TensorExprKernel graph:
-[DUMP kernel.cpp:1624] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
-[DUMP kernel.cpp:1624]   %1 : NoneType = prim::Constant()
-[DUMP kernel.cpp:1624]   %2 : bool = prim::Constant[value=0]()
-[DUMP kernel.cpp:1624]   %3 : int[] = prim::Constant[value=[-1]]()
-[DUMP kernel.cpp:1624]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
-[DUMP kernel.cpp:1624]   return (%4)
+[DUMP kernel.cpp:1594] TensorExprKernel graph (Before graph optimization):
+[DUMP kernel.cpp:1594] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1594]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1594]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1594]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1594]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1594]   return (%4)
+[DUMP kernel.cpp:1622] TensorExprKernel graph (After graph optimization):
+[DUMP kernel.cpp:1622] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1622]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1622]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1622]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1622]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1622]   return (%4)
+[DUMP kernel.cpp:1626] TensorExprKernel graph:
+[DUMP kernel.cpp:1626] graph(%x : Float(1, 8, strides=[8, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1626]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1626]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1626]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1626]   %4 : Float(1, strides=[1], requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:64:0
+[DUMP kernel.cpp:1626]   return (%4)
 [DEBUG kernel.cpp:710] Original Stmt:
 [DEBUG kernel.cpp:710] {
 [DEBUG kernel.cpp:710]   for (int64_t i = 0ll; i < 1ll; i++) {
@@ -94,19 +94,291 @@ for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG kernel.cpp:855]     sum[0ll] = ReduceOp((sum[0ll]) + (buf_tmp[j]), reduce_args={j});
 [DEBUG kernel.cpp:855]   }
 [DEBUG kernel.cpp:855] }
-[DEBUG kernel.cpp:879] Final Stmt:
-[DEBUG kernel.cpp:879] {
-[DEBUG kernel.cpp:879]   for (int64_t i = 0ll; i < 8ll; i++) {
-[DEBUG kernel.cpp:879]     buf_tmp[i] = 0.f;
-[DEBUG kernel.cpp:879]   }
-[DEBUG kernel.cpp:879]   sum[0ll] = 0.f;
-[DEBUG kernel.cpp:879]   for (int64_t j = 0ll; j < 8ll; j++) {
-[DEBUG kernel.cpp:879]     buf_tmp[j] = (buf_tmp[j]) + (tx[j]);
-[DEBUG kernel.cpp:879]   }
-[DEBUG kernel.cpp:879]   for (int64_t j = 0ll; j < 8ll; j++) {
-[DEBUG kernel.cpp:879]     sum[0ll] = (sum[0ll]) + (buf_tmp[j]);
-[DEBUG kernel.cpp:879]   }
-[DEBUG kernel.cpp:879] }
+orig f: 
+for (int64_t j_inner = 0ll; j_inner < 8ll; j_inner++) {
+  buf_tmp[j_outer * 8ll + j_inner] = (buf_tmp[j_outer * 8ll + j_inner]) + (tx[j_outer * 8ll + j_inner]);
+}
+before normalize: 
+for (int64_t j_inner = 0ll; j_inner < 8ll; j_inner++) {
+  buf_tmp[j_outer * 8ll + j_inner] = (buf_tmp[j_outer * 8ll + j_inner]) + (tx[j_outer * 8ll + j_inner]);
+}
+before flatten: 
+for (int64_t j_inner = 0ll; j_inner < 8ll; j_inner++) {
+  buf_tmp[j_outer * 8ll + j_inner] = (buf_tmp[j_outer * 8ll + j_inner]) + (tx[j_outer * 8ll + j_inner]);
+}
+before vec: 
+for (int64_t j_inner = 0ll; j_inner < 8ll; j_inner++) {
+  buf_tmp[j_outer * 8ll + j_inner] = (buf_tmp[j_outer * 8ll + j_inner]) + (tx[j_outer * 8ll + j_inner]);
+}
+loop start_: 0
+loop lanes_: 8
+stmt in Block before mutate: 
+buf_tmp[j_outer * 8ll + j_inner] = (buf_tmp[j_outer * 8ll + j_inner]) + (tx[j_outer * 8ll + j_inner]);
+old_in: 
+j_outer * 8ll + j_inner
+old_in: 
+j_outer * 8ll
+old_in: 
+j_outer
+new_in: 
+j_outer
+old_in: 
+8ll
+new_in: 
+8ll
+new_in: 
+j_outer * 8ll
+old_in: 
+j_inner
+stride value: 1
+stride value cstr: 1
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+broadcast make
+lanes: 8
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))
+old_in: 
+(buf_tmp[j_outer * 8ll + j_inner]) + (tx[j_outer * 8ll + j_inner])
+old_in: 
+buf_tmp[j_outer * 8ll + j_inner]
+old_in: 
+j_outer * 8ll + j_inner
+old_in: 
+j_outer * 8ll
+old_in: 
+j_outer
+new_in: 
+j_outer
+old_in: 
+8ll
+new_in: 
+8ll
+new_in: 
+j_outer * 8ll
+old_in: 
+j_inner
+stride value: 1
+stride value cstr: 1
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+broadcast make
+lanes: 8
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))
+insert broadcasts for 0
+no broadcast make
+new_in: 
+buf_tmp[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]
+old_in: 
+tx[j_outer * 8ll + j_inner]
+old_in: 
+j_outer * 8ll + j_inner
+old_in: 
+j_outer * 8ll
+old_in: 
+j_outer
+new_in: 
+j_outer
+old_in: 
+8ll
+new_in: 
+8ll
+new_in: 
+j_outer * 8ll
+old_in: 
+j_inner
+stride value: 1
+stride value cstr: 1
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+broadcast make
+lanes: 8
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))
+insert broadcasts for 0
+no broadcast make
+new_in: 
+tx[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]
+insert broadcasts for 0
+no broadcast make
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(buf_tmp[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]) + (tx[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))])
+insert broadcasts for 0
+no broadcast make
+insert broadcasts for 1
+no broadcast make
+stmt in Block after mutate: 
+buf_tmp[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))] = (buf_tmp[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]) + (tx[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]);
+after vec: 
+{
+  buf_tmp[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))] = (buf_tmp[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]) + (tx[(Broadcast(j_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]);
+}
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+orig f: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  buf_tmp[i_outer * 8ll + i_inner] = 0.f;
+}
+before normalize: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  buf_tmp[i_outer * 8ll + i_inner] = 0.f;
+}
+before flatten: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  buf_tmp[i_outer * 8ll + i_inner] = 0.f;
+}
+before vec: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  buf_tmp[i_outer * 8ll + i_inner] = 0.f;
+}
+loop start_: 0
+loop lanes_: 8
+stmt in Block before mutate: 
+buf_tmp[i_outer * 8ll + i_inner] = 0.f;
+old_in: 
+i_outer * 8ll + i_inner
+old_in: 
+i_outer * 8ll
+old_in: 
+i_outer
+new_in: 
+i_outer
+old_in: 
+8ll
+new_in: 
+8ll
+new_in: 
+i_outer * 8ll
+old_in: 
+i_inner
+stride value: 1
+stride value cstr: 1
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+broadcast make
+lanes: 8
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))
+old_in: 
+0.f
+new_in: 
+0.f
+insert broadcasts for 0
+no broadcast make
+insert broadcasts for 1
+broadcast make
+lanes: 8
+stmt in Block after mutate: 
+buf_tmp[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))] = Broadcast(0.f, 8);
+after vec: 
+{
+  buf_tmp[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))] = Broadcast(0.f, 8);
+}
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+[DEBUG kernel.cpp:881] Final Stmt:
+[DEBUG kernel.cpp:881] {
+[DEBUG kernel.cpp:881]   buf_tmp[Ramp(0ll, 1ll, 8)] = Broadcast(0.f, 8);
+[DEBUG kernel.cpp:881]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:881]   buf_tmp[Ramp(0ll, 1ll, 8)] = (buf_tmp[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(0ll, 1ll, 8)]);
+[DEBUG kernel.cpp:881]   for (int64_t j_inner = 0ll; j_inner < 8ll; j_inner++) {
+[DEBUG kernel.cpp:881]     sum[0ll] = (sum[0ll]) + (buf_tmp[j_inner]);
+[DEBUG kernel.cpp:881]   }
+[DEBUG kernel.cpp:881] }
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
+lanes: 8
+stride value cstr: 1
+stride value cstr: 1
+stride value cstr: 1
 [DEBUG llvm_codegen.cpp:633] 
 [DEBUG llvm_codegen.cpp:633] LLVM module before optimizations
 [DEBUG llvm_codegen.cpp:633] 
@@ -119,62 +391,42 @@ for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG llvm_codegen.cpp:633] define private i32 @pytorch(float* noalias %0, float* noalias %1) #0 {
 [DEBUG llvm_codegen.cpp:633] entry:
 [DEBUG llvm_codegen.cpp:633]   %2 = alloca float, i64 32, align 4
+[DEBUG llvm_codegen.cpp:633]   %3 = getelementptr float, float* %2, i64 0
+[DEBUG llvm_codegen.cpp:633]   %4 = bitcast float* %3 to <8 x float>*
+[DEBUG llvm_codegen.cpp:633]   store <8 x float> zeroinitializer, <8 x float>* %4, align 4
+[DEBUG llvm_codegen.cpp:633]   %5 = getelementptr float, float* %1, i64 0
+[DEBUG llvm_codegen.cpp:633]   store float 0.000000e+00, float* %5, align 4
+[DEBUG llvm_codegen.cpp:633]   %6 = getelementptr float, float* %2, i64 0
+[DEBUG llvm_codegen.cpp:633]   %7 = bitcast float* %6 to <8 x float>*
+[DEBUG llvm_codegen.cpp:633]   %8 = load <8 x float>, <8 x float>* %7, align 4
+[DEBUG llvm_codegen.cpp:633]   %9 = getelementptr float, float* %0, i64 0
+[DEBUG llvm_codegen.cpp:633]   %10 = bitcast float* %9 to <8 x float>*
+[DEBUG llvm_codegen.cpp:633]   %11 = load <8 x float>, <8 x float>* %10, align 4
+[DEBUG llvm_codegen.cpp:633]   %12 = fadd <8 x float> %8, %11
+[DEBUG llvm_codegen.cpp:633]   %13 = getelementptr float, float* %2, i64 0
+[DEBUG llvm_codegen.cpp:633]   %14 = bitcast float* %13 to <8 x float>*
+[DEBUG llvm_codegen.cpp:633]   store <8 x float> %12, <8 x float>* %14, align 4
 [DEBUG llvm_codegen.cpp:633]   br label %cond
 [DEBUG llvm_codegen.cpp:633] 
 [DEBUG llvm_codegen.cpp:633] cond:                                             ; preds = %body, %entry
-[DEBUG llvm_codegen.cpp:633]   %3 = phi i64 [ 0, %entry ], [ %6, %body ]
-[DEBUG llvm_codegen.cpp:633]   %4 = icmp slt i64 %3, 8
-[DEBUG llvm_codegen.cpp:633]   br i1 %4, label %body, label %exit
+[DEBUG llvm_codegen.cpp:633]   %15 = phi i64 [ 0, %entry ], [ %23, %body ]
+[DEBUG llvm_codegen.cpp:633]   %16 = icmp slt i64 %15, 8
+[DEBUG llvm_codegen.cpp:633]   br i1 %16, label %body, label %exit
 [DEBUG llvm_codegen.cpp:633] 
 [DEBUG llvm_codegen.cpp:633] body:                                             ; preds = %cond
-[DEBUG llvm_codegen.cpp:633]   %5 = getelementptr float, float* %2, i64 %3
-[DEBUG llvm_codegen.cpp:633]   store float 0.000000e+00, float* %5, align 4
-[DEBUG llvm_codegen.cpp:633]   %6 = add i64 %3, 1
+[DEBUG llvm_codegen.cpp:633]   %17 = getelementptr float, float* %1, i64 0
+[DEBUG llvm_codegen.cpp:633]   %18 = load float, float* %17, align 4
+[DEBUG llvm_codegen.cpp:633]   %19 = getelementptr float, float* %2, i64 %15
+[DEBUG llvm_codegen.cpp:633]   %20 = load float, float* %19, align 4
+[DEBUG llvm_codegen.cpp:633]   %21 = fadd float %18, %20
+[DEBUG llvm_codegen.cpp:633]   %22 = getelementptr float, float* %1, i64 0
+[DEBUG llvm_codegen.cpp:633]   store float %21, float* %22, align 4
+[DEBUG llvm_codegen.cpp:633]   %23 = add i64 %15, 1
 [DEBUG llvm_codegen.cpp:633]   br label %cond
 [DEBUG llvm_codegen.cpp:633] 
 [DEBUG llvm_codegen.cpp:633] exit:                                             ; preds = %cond
-[DEBUG llvm_codegen.cpp:633]   %7 = getelementptr float, float* %1, i64 0
-[DEBUG llvm_codegen.cpp:633]   store float 0.000000e+00, float* %7, align 4
-[DEBUG llvm_codegen.cpp:633]   br label %cond1
-[DEBUG llvm_codegen.cpp:633] 
-[DEBUG llvm_codegen.cpp:633] cond1:                                            ; preds = %body2, %exit
-[DEBUG llvm_codegen.cpp:633]   %8 = phi i64 [ 0, %exit ], [ %16, %body2 ]
-[DEBUG llvm_codegen.cpp:633]   %9 = icmp slt i64 %8, 8
-[DEBUG llvm_codegen.cpp:633]   br i1 %9, label %body2, label %exit3
-[DEBUG llvm_codegen.cpp:633] 
-[DEBUG llvm_codegen.cpp:633] body2:                                            ; preds = %cond1
-[DEBUG llvm_codegen.cpp:633]   %10 = getelementptr float, float* %2, i64 %8
-[DEBUG llvm_codegen.cpp:633]   %11 = load float, float* %10, align 4
-[DEBUG llvm_codegen.cpp:633]   %12 = getelementptr float, float* %0, i64 %8
-[DEBUG llvm_codegen.cpp:633]   %13 = load float, float* %12, align 4
-[DEBUG llvm_codegen.cpp:633]   %14 = fadd float %11, %13
-[DEBUG llvm_codegen.cpp:633]   %15 = getelementptr float, float* %2, i64 %8
-[DEBUG llvm_codegen.cpp:633]   store float %14, float* %15, align 4
-[DEBUG llvm_codegen.cpp:633]   %16 = add i64 %8, 1
-[DEBUG llvm_codegen.cpp:633]   br label %cond1
-[DEBUG llvm_codegen.cpp:633] 
-[DEBUG llvm_codegen.cpp:633] exit3:                                            ; preds = %cond1
-[DEBUG llvm_codegen.cpp:633]   br label %cond4
-[DEBUG llvm_codegen.cpp:633] 
-[DEBUG llvm_codegen.cpp:633] cond4:                                            ; preds = %body5, %exit3
-[DEBUG llvm_codegen.cpp:633]   %17 = phi i64 [ 0, %exit3 ], [ %25, %body5 ]
-[DEBUG llvm_codegen.cpp:633]   %18 = icmp slt i64 %17, 8
-[DEBUG llvm_codegen.cpp:633]   br i1 %18, label %body5, label %exit6
-[DEBUG llvm_codegen.cpp:633] 
-[DEBUG llvm_codegen.cpp:633] body5:                                            ; preds = %cond4
-[DEBUG llvm_codegen.cpp:633]   %19 = getelementptr float, float* %1, i64 0
-[DEBUG llvm_codegen.cpp:633]   %20 = load float, float* %19, align 4
-[DEBUG llvm_codegen.cpp:633]   %21 = getelementptr float, float* %2, i64 %17
-[DEBUG llvm_codegen.cpp:633]   %22 = load float, float* %21, align 4
-[DEBUG llvm_codegen.cpp:633]   %23 = fadd float %20, %22
-[DEBUG llvm_codegen.cpp:633]   %24 = getelementptr float, float* %1, i64 0
-[DEBUG llvm_codegen.cpp:633]   store float %23, float* %24, align 4
-[DEBUG llvm_codegen.cpp:633]   %25 = add i64 %17, 1
-[DEBUG llvm_codegen.cpp:633]   br label %cond4
-[DEBUG llvm_codegen.cpp:633] 
-[DEBUG llvm_codegen.cpp:633] exit6:                                            ; preds = %cond4
-[DEBUG llvm_codegen.cpp:633]   %26 = alloca i8*, i32 0, align 8
-[DEBUG llvm_codegen.cpp:633]   call void @nnc_aten_free(i64 0, i8** %26)
+[DEBUG llvm_codegen.cpp:633]   %24 = alloca i8*, i32 0, align 8
+[DEBUG llvm_codegen.cpp:633]   call void @nnc_aten_free(i64 0, i8** %24)
 [DEBUG llvm_codegen.cpp:633]   ret i32 0
 [DEBUG llvm_codegen.cpp:633] }
 [DEBUG llvm_codegen.cpp:633] 
@@ -217,37 +469,26 @@ for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG llvm_codegen.cpp:645]   call void @llvm.experimental.noalias.scope.decl(metadata !3)
 [DEBUG llvm_codegen.cpp:645]   %7 = bitcast [0 x i8*]* %1 to i8*
 [DEBUG llvm_codegen.cpp:645]   call void @llvm.lifetime.start.p0i8(i64 0, i8* %7)
-[DEBUG llvm_codegen.cpp:645]   %8 = load float, float* %3, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %9 = fadd float %8, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %10 = getelementptr float, float* %3, i64 1
-[DEBUG llvm_codegen.cpp:645]   %11 = load float, float* %10, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %12 = fadd float %11, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %13 = getelementptr float, float* %3, i64 2
-[DEBUG llvm_codegen.cpp:645]   %14 = load float, float* %13, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %15 = fadd float %14, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %16 = getelementptr float, float* %3, i64 3
-[DEBUG llvm_codegen.cpp:645]   %17 = load float, float* %16, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %18 = fadd float %17, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %19 = getelementptr float, float* %3, i64 4
-[DEBUG llvm_codegen.cpp:645]   %20 = load float, float* %19, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %21 = fadd float %20, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %22 = getelementptr float, float* %3, i64 5
-[DEBUG llvm_codegen.cpp:645]   %23 = load float, float* %22, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %24 = fadd float %23, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %25 = getelementptr float, float* %3, i64 6
-[DEBUG llvm_codegen.cpp:645]   %26 = load float, float* %25, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %27 = fadd float %26, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %28 = getelementptr float, float* %3, i64 7
-[DEBUG llvm_codegen.cpp:645]   %29 = load float, float* %28, align 4, !alias.scope !0, !noalias !3
-[DEBUG llvm_codegen.cpp:645]   %30 = fadd float %29, 0.000000e+00
-[DEBUG llvm_codegen.cpp:645]   %31 = fadd float %9, %12
-[DEBUG llvm_codegen.cpp:645]   %32 = fadd float %31, %15
-[DEBUG llvm_codegen.cpp:645]   %33 = fadd float %32, %18
-[DEBUG llvm_codegen.cpp:645]   %34 = fadd float %33, %21
-[DEBUG llvm_codegen.cpp:645]   %35 = fadd float %34, %24
-[DEBUG llvm_codegen.cpp:645]   %36 = fadd float %35, %27
-[DEBUG llvm_codegen.cpp:645]   %37 = fadd float %36, %30
-[DEBUG llvm_codegen.cpp:645]   store float %37, float* %6, align 4, !alias.scope !3, !noalias !0
+[DEBUG llvm_codegen.cpp:645]   %8 = bitcast float* %3 to <8 x float>*
+[DEBUG llvm_codegen.cpp:645]   %9 = load <8 x float>, <8 x float>* %8, align 4, !alias.scope !0, !noalias !3
+[DEBUG llvm_codegen.cpp:645]   %10 = fadd <8 x float> %9, zeroinitializer
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.0.vec.extract.i = extractelement <8 x float> %10, i32 0
+[DEBUG llvm_codegen.cpp:645]   %11 = fadd float %.sroa.0.0.vec.extract.i, 0.000000e+00
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.4.vec.extract.i = extractelement <8 x float> %10, i32 1
+[DEBUG llvm_codegen.cpp:645]   %12 = fadd float %11, %.sroa.0.4.vec.extract.i
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.8.vec.extract.i = extractelement <8 x float> %10, i32 2
+[DEBUG llvm_codegen.cpp:645]   %13 = fadd float %12, %.sroa.0.8.vec.extract.i
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.12.vec.extract.i = extractelement <8 x float> %10, i32 3
+[DEBUG llvm_codegen.cpp:645]   %14 = fadd float %13, %.sroa.0.12.vec.extract.i
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.16.vec.extract.i = extractelement <8 x float> %10, i32 4
+[DEBUG llvm_codegen.cpp:645]   %15 = fadd float %14, %.sroa.0.16.vec.extract.i
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.20.vec.extract.i = extractelement <8 x float> %10, i32 5
+[DEBUG llvm_codegen.cpp:645]   %16 = fadd float %15, %.sroa.0.20.vec.extract.i
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.24.vec.extract.i = extractelement <8 x float> %10, i32 6
+[DEBUG llvm_codegen.cpp:645]   %17 = fadd float %16, %.sroa.0.24.vec.extract.i
+[DEBUG llvm_codegen.cpp:645]   %.sroa.0.28.vec.extract.i = extractelement <8 x float> %10, i32 7
+[DEBUG llvm_codegen.cpp:645]   %18 = fadd float %17, %.sroa.0.28.vec.extract.i
+[DEBUG llvm_codegen.cpp:645]   store float %18, float* %6, align 4, !alias.scope !3, !noalias !0
 [DEBUG llvm_codegen.cpp:645]   %.sub1.i = getelementptr inbounds [0 x i8*], [0 x i8*]* %1, i64 0, i64 0
 [DEBUG llvm_codegen.cpp:645]   call void @nnc_aten_free(i64 0, i8** nonnull %.sub1.i) #0, !noalias !5
 [DEBUG llvm_codegen.cpp:645]   call void @llvm.lifetime.end.p0i8(i64 0, i8* %7)
@@ -288,27 +529,30 @@ for (int64_t j = 0ll; j < 8ll; j++) {
 [DEBUG llvm_codegen.cpp:662] fused_sum:
 [DEBUG llvm_codegen.cpp:662] 	pushq	%rax
 [DEBUG llvm_codegen.cpp:662] 	movq	(%rdi), %rax
-[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm0, %xmm0, %xmm0
-[DEBUG llvm_codegen.cpp:662] 	vaddss	(%rax), %xmm0, %xmm1
 [DEBUG llvm_codegen.cpp:662] 	movq	8(%rdi), %rcx
-[DEBUG llvm_codegen.cpp:662] 	vaddss	4(%rax), %xmm0, %xmm2
+[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm0, %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vaddps	(%rax), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm1, %xmm1, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm1, %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovshdup	%xmm0, %xmm2
 [DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm2, %xmm1, %xmm1
-[DEBUG llvm_codegen.cpp:662] 	vaddss	8(%rax), %xmm0, %xmm2
+[DEBUG llvm_codegen.cpp:662] 	vpermilpd	$1, %xmm0, %xmm2
 [DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm2, %xmm1, %xmm1
-[DEBUG llvm_codegen.cpp:662] 	vaddss	12(%rax), %xmm0, %xmm2
+[DEBUG llvm_codegen.cpp:662] 	vpermilps	$255, %xmm0, %xmm2
 [DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm2, %xmm1, %xmm1
-[DEBUG llvm_codegen.cpp:662] 	vaddss	16(%rax), %xmm0, %xmm2
+[DEBUG llvm_codegen.cpp:662] 	vextractf128	$1, %ymm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm0, %xmm1, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovshdup	%xmm0, %xmm2
 [DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm2, %xmm1, %xmm1
-[DEBUG llvm_codegen.cpp:662] 	vaddss	20(%rax), %xmm0, %xmm2
+[DEBUG llvm_codegen.cpp:662] 	vpermilpd	$1, %xmm0, %xmm2
 [DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm2, %xmm1, %xmm1
-[DEBUG llvm_codegen.cpp:662] 	vaddss	24(%rax), %xmm0, %xmm2
-[DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm2, %xmm1, %xmm1
-[DEBUG llvm_codegen.cpp:662] 	vaddss	28(%rax), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vpermilps	$255, %xmm0, %xmm0
 [DEBUG llvm_codegen.cpp:662] 	vaddss	%xmm0, %xmm1, %xmm0
 [DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx)
 [DEBUG llvm_codegen.cpp:662] 	movabsq	$nnc_aten_free, %rax
 [DEBUG llvm_codegen.cpp:662] 	movq	%rsp, %rsi
 [DEBUG llvm_codegen.cpp:662] 	xorl	%edi, %edi
+[DEBUG llvm_codegen.cpp:662] 	vzeroupper
 [DEBUG llvm_codegen.cpp:662] 	callq	*%rax
 [DEBUG llvm_codegen.cpp:662] 	xorl	%eax, %eax
 [DEBUG llvm_codegen.cpp:662] 	popq	%rcx
@@ -322,6 +566,6 @@ tensor([0.4691])
 tensor([0.4691])
 .
 ----------------------------------------------------------------------
-Ran 1 test in 0.157s
+Ran 1 test in 0.162s
 
 OK
