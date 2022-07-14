@@ -1652,19 +1652,20 @@ std::cout << "st: \n" << std::to_string(st) << "\n";
 
   // Insert a store for the final reduction overt the tmp buffer into the original buffer
   auto orig_buf = BufHandle(storelist[0]->buf());
-  ExprPtr final_reduce_load = alloc<Load>(rfac_buf, new_loop_vars_expr);
+  ExprPtr final_reduce_load = alloc<Load>(rfac_buf, idx);
   ExprHandle final_reduce_load_handle = ExprHandle(final_reduce_load);
   
+  std::vector<VarHandle> var_handle_list = {VarHandle(worklist[0]->var())};
   // std::vector<ExprPtr> indices = {immLike(rfac_dims[1], 0)};
   ExprPtr reducer = Sum()(
-              orig_buf, final_reduce_load_handle, ExprVectorToExprHandleVector(storelist[0]->indices()), VarVectorToVarHandleVector(new_loop_vars)).node();
+              orig_buf, final_reduce_load_handle, ExprVectorToExprHandleVector(storelist[0]->indices()), var_handle_list).node();
   
   StmtPtr tmp_store = alloc<Store>(
           storelist[0]->buf(),
           storelist[0]->indices(),
           reducer);
 
-  StmtPtr tmp_store_for = alloc<For>(new_loop_vars[0], worklist[0]->start(), worklist[0]->stop(), tmp_store);
+  StmtPtr tmp_store_for = alloc<For>(worklist[0]->var(), worklist[0]->start(), worklist[0]->stop(), tmp_store);
 
 
   // TODO: Stored value type does not match pointer operand type!
