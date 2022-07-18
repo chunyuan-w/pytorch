@@ -755,20 +755,42 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
           continue;
         }
         ForPtr mi;
+        ForPtr tail;
 
-        l.splitWithMask(loops.at(0), kChunkSize, &mi);
-        GRAPH_DEBUG("after splitWithMask", *l.root_stmt());
+        ForPtr orig_l = loops.at(0);
+
+        l.splitWithTail(orig_l, kChunkSize, &mi, &tail);
+        GRAPH_DEBUG("after splitWithTail", *l.root_stmt());
+
+        loops = l.getLoopStmtsFor(buf);
+
+std::cout << "loops size after splitWithTail: " << loops.size() << "\n";
+std::cout << "loops[0] after splitWithTail: " << *loops[0] << "\n";
+// std::cout << "orig_l after splitWithTail: " << *orig_l << "\n";
+
+
+        // l.splitWithMask(loops.at(0), kChunkSize, &mi);
+        // GRAPH_DEBUG("after splitWithMask", *l.root_stmt());
 
         ForPtr mo = loops.at(0);
 
         l.reorderAxis(mo, mi);
         GRAPH_DEBUG("after 1st reorderAxis", *l.root_stmt());
 
-        loops = l.getLoopStmtsFor(buf);
+        // loops = l.getLoopStmtsFor(buf);
+
+std::cout << "loops size: " << loops.size() << "\n";
+std::cout << "loops[0]: " << *loops[0] << "\n";
 
         auto bt_body = l.getAllWritesToBuf(buf)[1];
 
-        l.rfactor(bt_body, loops.at(0), &rfac_buf);
+
+std::cout << "orig_l after splitWithTail: " << *orig_l << "\n";
+
+std::cout << "writes size: " << l.getAllWritesToBuf(buf).size() << "\n";
+
+std::cout << "bt_body: \n" << *bt_body << "\n";
+        l.rfactor(bt_body, orig_l, &rfac_buf);
         GRAPH_DEBUG("after 1st rfactor", *l.root_stmt());
 
         l.reorderAxis(loops.at(0), loops.at(1));

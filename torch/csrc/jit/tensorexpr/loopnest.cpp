@@ -2723,11 +2723,13 @@ StmtPtr LoopNest::getLoopBodyFor(Tensor t) const {
 StmtPtr LoopNest::getLoopBodyFor(BufPtr buf) const {
   auto writes = WritesToBuf::find(root_stmt_, buf);
 
+std::cout << "writes size: " << writes.size() << "\n";
   // special case for reduction Tensors, ignore the initializer if it's the only
   // op:
-  if (writes.size() == 2) {
+  if (writes.size() == 2 || writes.size() == 3) {
     if (StorePtr s = to<Store>(writes.back())) {
       if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+        printf("return for size2\n");
         return (StmtPtr)s; // NOLINT
       }
     }
