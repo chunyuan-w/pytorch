@@ -701,6 +701,7 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
   }
 
   bool hasReduction = NodeFinder<ReduceOp>::find(l.root_stmt()).size() != 0;
+  // TODO: bool ReduceOnInnermostAxis = ...
 
   // For Block codegen we create a map of tensor dims before
   // inlining. Like GPU codegen we need to inline. But the order
@@ -743,43 +744,45 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
     GRAPH_DEBUG("after parallelize", *l.root_stmt());
 
     // Reduction
-    const int kChunkSize = 8;
-    for (auto buf : bufOutputs_) {
-      BufPtr rfac_buf;
+    if (hasReduction) {
+      const int kChunkSize = 8;
+      for (auto buf : bufOutputs_) {
+        BufPtr rfac_buf;
 
-      std::vector<ForPtr> loops = l.getLoopStmtsFor(buf);
-      // TODO: only handles loops size == 1 for now
-      if (loops.size() != 1) {
-        continue;
+        std::vector<ForPtr> loops = l.getLoopStmtsFor(buf);
+        // TODO: only handles loops size == 1 for now
+        if (loops.size() != 1) {
+          continue;
+        }
+        ForPtr mi;
+
+        l.splitWithMask(loops.at(0), kChunkSize, &mi);
+        GRAPH_DEBUG("after splitWithMask", *l.root_stmt());
+
+        ForPtr mo = loops.at(0);
+
+        l.reorderAxis(mo, mi);
+        GRAPH_DEBUG("after 1st reorderAxis", *l.root_stmt());
+
+        loops = l.getLoopStmtsFor(buf);
+
+        auto bt_body = l.getAllWritesToBuf(buf)[1];
+
+        l.rfactor(bt_body, loops.at(0), &rfac_buf);
+        GRAPH_DEBUG("after 1st rfactor", *l.root_stmt());
+
+        l.reorderAxis(loops.at(0), loops.at(1));
+        GRAPH_DEBUG("after 2nd reorderAxis", *l.root_stmt());
+
+        loops = l.getAllInnermostLoopsWritingToBuf(rfac_buf);
+
+        TORCH_CHECK(loops.size() == 2);
+        l.vectorize(loops.at(1));
+        GRAPH_DEBUG("after vectorize", *l.root_stmt());
+
+        l.prepareForCodegen();
+        GRAPH_DEBUG("after prepareForCodegen", *l.root_stmt());
       }
-      ForPtr mi;
-
-      l.splitWithMask(loops.at(0), kChunkSize, &mi);
-      GRAPH_DEBUG("after splitWithMask", *l.root_stmt());
-
-      ForPtr mo = loops.at(0);
-
-      l.reorderAxis(mo, mi);
-      GRAPH_DEBUG("after 1st reorderAxis", *l.root_stmt());
-
-      loops = l.getLoopStmtsFor(buf);
-
-      auto bt_body = l.getAllWritesToBuf(buf)[1];
-
-      l.rfactor(bt_body, loops.at(0), &rfac_buf);
-      GRAPH_DEBUG("after 1st rfactor", *l.root_stmt());
-
-      l.reorderAxis(loops.at(0), loops.at(1));
-      GRAPH_DEBUG("after 2nd reorderAxis", *l.root_stmt());
-
-      loops = l.getAllInnermostLoopsWritingToBuf(rfac_buf);
-
-      TORCH_CHECK(loops.size() == 2);
-      l.vectorize(loops.at(1));
-      GRAPH_DEBUG("after vectorize", *l.root_stmt());
-
-      l.prepareForCodegen();
-      GRAPH_DEBUG("after prepareForCodegen", *l.root_stmt());
     }
   }
 
