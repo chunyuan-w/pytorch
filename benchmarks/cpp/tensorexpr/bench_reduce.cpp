@@ -357,20 +357,41 @@ BENCHMARK_DEFINE_F(Reduce1D, TeRfactorV1)(benchmark::State& state) {
   auto loops = loop.getLoopStmtsFor(BT);
   TORCH_CHECK(loops.size() == 1);
   te::ForPtr mi;
+
+  std::cout << "before splitWithMask:" << *loop.root_stmt() << "\n";
+
+
   loop.splitWithMask(loops.at(0), kChunkSize, &mi);
   te::ForPtr mo = loops.at(0);
 
+  std::cout << "after splitWithMask:" << *loop.root_stmt() << "\n";
+
+
   loop.reorderAxis(mo, mi);
+  std::cout << "after 1st reorderAxis:" << *loop.root_stmt() << "\n";
+
+
   loops = loop.getLoopStmtsFor(BT);
   auto bt_body = loop.getAllWritesToBuf(BT.buf())[1];
   TORCH_CHECK(loop.rfactor(bt_body, loops.at(0), &rfac_buf));
+
+  std::cout << "after rfactor:" << *loop.root_stmt() << "\n";
+
+
   loop.reorderAxis(loops.at(0), loops.at(1));
+
+  std::cout << "after reorderAxis:" << *loop.root_stmt() << "\n";
+
 
   loops = loop.getAllInnermostLoopsWritingToBuf(rfac_buf);
   TORCH_CHECK(loops.size() == 2);
   loop.vectorize(loops.at(1));
 
+  std::cout << "after vectorize:" << *loop.root_stmt() << "\n";
+
+
   loop.prepareForCodegen();
+  std::cout << "after prepareForCodegen:" << *loop.root_stmt() << "\n";
   te::StmtPtr s = loop.root_stmt();
   s = te::IRSimplifier::simplify(s);
   auto cg = CreateCodeGen("llvm_codegen", s, {AP, BT});

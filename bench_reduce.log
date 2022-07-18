@@ -1,0 +1,309 @@
+2022-07-18T10:13:54+08:00
+Running ./tensorexpr_bench
+Run on (224 X 3000.73 MHz CPU s)
+CPU Caches:
+  L1 Data 48 KiB (x112)
+  L1 Instruction 32 KiB (x112)
+  L2 Unified 2048 KiB (x112)
+  L3 Unified 107520 KiB (x2)
+Load Average: 1.37, 5.98, 12.17
+before splitWithMask:{
+  reduce_full = float(0);
+  for (int i = 0; i < 16777216; i++) {
+    reduce_full = ReduceOp((reduce_full) + (A[i]), reduce_args={i});
+  }
+}
+after splitWithMask:{
+  reduce_full = float(0);
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after 1st reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after rfactor:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after vectorize:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = ReduceOp((reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after prepareForCodegen:{
+  reduce_full[0ll] = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = (reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]);
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full[0ll] = (reduce_full[0ll]) + (reduce_full_rfac[i_inner]);
+  }
+}
+before splitWithMask:{
+  reduce_full = float(0);
+  for (int i = 0; i < 16777216; i++) {
+    reduce_full = ReduceOp((reduce_full) + (A[i]), reduce_args={i});
+  }
+}
+after splitWithMask:{
+  reduce_full = float(0);
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after 1st reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after rfactor:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after vectorize:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = ReduceOp((reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after prepareForCodegen:{
+  reduce_full[0ll] = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = (reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]);
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full[0ll] = (reduce_full[0ll]) + (reduce_full_rfac[i_inner]);
+  }
+}
+before splitWithMask:{
+  reduce_full = float(0);
+  for (int i = 0; i < 16777216; i++) {
+    reduce_full = ReduceOp((reduce_full) + (A[i]), reduce_args={i});
+  }
+}
+after splitWithMask:{
+  reduce_full = float(0);
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after 1st reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after rfactor:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after vectorize:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = ReduceOp((reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after prepareForCodegen:{
+  reduce_full[0ll] = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = (reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]);
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full[0ll] = (reduce_full[0ll]) + (reduce_full_rfac[i_inner]);
+  }
+}
+before splitWithMask:{
+  reduce_full = float(0);
+  for (int i = 0; i < 16777216; i++) {
+    reduce_full = ReduceOp((reduce_full) + (A[i]), reduce_args={i});
+  }
+}
+after splitWithMask:{
+  reduce_full = float(0);
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after 1st reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full = ReduceOp((reduce_full) + (A[i_outer * 8 + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+after rfactor:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+    for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after reorderAxis:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    for (int i_inner = 0; i_inner < 8; i_inner++) {
+      reduce_full_rfac[i_inner] = ReduceOp((reduce_full_rfac[i_inner]) + (A[i_outer * 8 + i_inner]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after vectorize:{
+  reduce_full = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = ReduceOp((reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]), reduce_args={i_outer});
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full = ReduceOp((reduce_full) + (reduce_full_rfac[i_inner]), reduce_args={i_inner});
+  }
+}
+after prepareForCodegen:{
+  reduce_full[0ll] = float(0);
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full_rfac[i_inner] = float(0);
+  }
+  for (int i_outer = 0; i_outer < (((16777216 - 0) + 8) - 1) / 8; i_outer++) {
+    {
+      reduce_full_rfac[Ramp(0, 1, 8)] = (reduce_full_rfac[Ramp(0, 1, 8)]) + (A[Ramp(8 * i_outer, 1, 8)]);
+    }
+  }
+  for (int i_inner = 0; i_inner < 8; i_inner++) {
+    reduce_full[0ll] = (reduce_full[0ll]) + (reduce_full_rfac[i_inner]);
+  }
+}
+----------------------------------------------------------------------------------------
+Benchmark                              Time             CPU   Iterations UserCounters...
+----------------------------------------------------------------------------------------
+Reduce1D/TeRfactorV1/16777216    2046032 ns      2034785 ns          341 BYTES=32.9808G/s
