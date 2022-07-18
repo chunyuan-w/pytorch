@@ -11,7 +11,7 @@ add_executable(
   bench_gemm.cpp
   bench_kernels.cpp
   bench_parallel.cpp
-  bench_prefix_sum.cpp
+  # bench_prefix_sum.cpp
   bench_reduce.cpp
   main.cpp)
 
