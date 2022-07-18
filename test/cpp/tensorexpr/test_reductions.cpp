@@ -1807,6 +1807,10 @@ TEST(Reductions, ReductionVectorize) {
 
   std::ostringstream oss;
   oss << *s;
+
+  printf("after vectorize: \n");
+  std::cout << oss.str() << "\n";
+
   const std::string& expected_ir =
       R"IR(
 #CHECK: sum[Ramp(0, 1, 8)] = Broadcast(0.f, 8);
@@ -1836,18 +1840,18 @@ TEST(Reductions, ReductionVectorizeInner) {
 }
 
 TEST(Reductions, ReductionVectorizeRfactor) {
-  std::vector<float> in_(8 * 8);
-  for (const auto i : c10::irange(8)) {
-    for (const auto j : c10::irange(8)) {
+  std::vector<float> in_(1 * 10);
+  for (const auto i : c10::irange(1)) {
+    for (const auto j : c10::irange(10)) {
       in_[i * 8 + j] = i;
     }
   }
   std::vector<float> out_before(1, -1.f);
   std::vector<float> out_after(1, -1.f);
 
-  BufHandle in("in", {8, 8}, kFloat);
+  BufHandle in("in", {1, 10}, kFloat);
 
-  Tensor tensor = Reduce("sum", {}, Sum(), in, {8, 8});
+  Tensor tensor = Reduce("sum", {}, Sum(), in, {1, 10});
 
   LoopNest l_before({tensor});
   LoopNest l(l_before);
@@ -1860,16 +1864,47 @@ TEST(Reductions, ReductionVectorizeRfactor) {
   // But if we rfactor this so it's not a reduce axis we can vectorize that
   // loop.
   std::vector<ForPtr> loops = l.getLoopStmtsFor(tensor);
+
+  printf("before reorder\n");
+  StmtPtr s_start = LoopNest::sanitizeNames(l.root_stmt());
+
+  std::ostringstream oss_start;
+  oss_start << *s_start;
+  std::cout << oss_start.str() << "\n";
+
   LoopNest::reorderAxis(loops[0], loops[1]);
+
+  printf("after reorder\n");
+  StmtPtr s_reorder = LoopNest::sanitizeNames(l.root_stmt());
+
+  std::ostringstream oss_reorder;
+  oss_reorder << *s_reorder;
+  std::cout << oss_reorder.str() << "\n";
+
   loops = l.getLoopStmtsFor(tensor);
   auto tensor_body = l.getAllWritesToBuf(tensor.buf())[1];
   BufPtr rfac_buf = nullptr;
   ASSERT_TRUE(LoopNest::rfactor(tensor_body, loops.at(0), &rfac_buf));
 
+  printf("after factor\n");
+  StmtPtr s0 = LoopNest::sanitizeNames(l.root_stmt());
+
+  std::ostringstream oss0;
+  oss0 << *s0;
+  std::cout << oss0.str() << "\n";
+
   LoopNest::distributeLoop(loops.at(0));
   auto rfac_loops = l.getAllLoopNestsWritingToBuf(rfac_buf);
 
   ASSERT_TRUE(LoopNest::vectorize(rfac_loops[1][0]));
+
+  printf("after vec\n");
+  StmtPtr s1 = LoopNest::sanitizeNames(l.root_stmt());
+
+  std::ostringstream oss1;
+  oss1 << *s0;
+  std::cout << oss1.str() << "\n";
+
   l.simplify();
 
   StmtPtr s = LoopNest::sanitizeNames(l.root_stmt());
