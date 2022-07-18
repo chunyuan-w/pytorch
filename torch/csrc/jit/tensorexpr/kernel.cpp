@@ -759,8 +759,8 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
 
       ForPtr mo = loops.at(0);
 
-      l.reorderAxis(mo, mi);
-      GRAPH_DEBUG("after 1st reorderAxis", *l.root_stmt());
+      // l.reorderAxis(mo, mi);
+      // GRAPH_DEBUG("after 1st reorderAxis", *l.root_stmt());
 
       loops = l.getLoopStmtsFor(buf);
 
@@ -769,8 +769,8 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
       l.rfactor(bt_body, loops.at(0), &rfac_buf);
       GRAPH_DEBUG("after 1st rfactor", *l.root_stmt());
 
-      l.reorderAxis(loops.at(0), loops.at(1));
-      GRAPH_DEBUG("after 2nd reorderAxis", *l.root_stmt());
+      // l.reorderAxis(loops.at(0), loops.at(1));
+      // GRAPH_DEBUG("after 2nd reorderAxis", *l.root_stmt());
 
       loops = l.getAllInnermostLoopsWritingToBuf(rfac_buf);
 
