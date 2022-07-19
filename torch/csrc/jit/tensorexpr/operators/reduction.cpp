@@ -145,8 +145,8 @@ printf("enter computeSum\n")      ;
         TORCH_CHECK(loops.size() == 2);
         
         // TODO: if we vectorize here, IR verifier will fail
-        nest.vectorize(loops.at(1));
-        GRAPH_DEBUG("after vectorize", *nest.root_stmt());
+        // nest.vectorize(loops.at(1));
+        // GRAPH_DEBUG("after vectorize", *nest.root_stmt());
 
 
         // nest.prepareForCodegen();
