@@ -158,6 +158,12 @@ void IRVerifier::visit(StorePtr v) {
     throw malformed_ir("Index scalar dtype is not Int or Long!");
   }
   if (v->buf()->dtype() != v->value()->dtype()) {
+
+    std::cout << "v: " << *v << "\n";
+  std::cout << "buf dtype: " <<  v->buf()->dtype() << '\n';
+  std::cout << "buf dtype: " <<  v->value()->dtype() << '\n';
+
+
     throw malformed_ir("buf and value dtype mismatch in Store");
   }
 

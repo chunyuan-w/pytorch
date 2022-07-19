@@ -1,4 +1,6 @@
 #include <torch/csrc/jit/tensorexpr/operators/reduction.h>
+#include <torch/csrc/jit/tensorexpr/loopnest.h>
+#include <torch/csrc/jit/jit_log.h>
 
 using namespace torch::jit::tensorexpr;
 
@@ -25,6 +27,7 @@ Tensor computeSum(
     const std::vector<ExprHandle>& outputStrides,
     const c10::optional<ScalarType>& outputType,
     at::Device device) {
+printf("enter computeSum\n")      ;
   std::vector<size_t> axes;
   bool keepdim = false;
   // aten::sum takes the input tensor named self.
@@ -70,7 +73,7 @@ Tensor computeSum(
     }
   }
 
-  return Reduce(
+  Tensor sum = Reduce(
       "sum",
       outputDims,
       outputStrides,
@@ -102,6 +105,59 @@ Tensor computeSum(
         }
       },
       reductionDims);
+   
+  LoopNest nest({sum});
+
+  constexpr int kChunkSize = 8;
+  // TODO: only handle reduce_dim == -1 for now
+  if (axes.size() == 1){
+    if (axes[0] == rank - 1) {
+      // TODO: only handle rank == 1 for now
+      if (rank == 1) {
+        
+        auto loops = nest.getLoopStmtsFor(sum);
+
+        TORCH_CHECK(loops.size() == 1);
+        
+        BufPtr rfac_buf;
+        ForPtr mi;
+        ForPtr tail;
+        nest.splitWithTail(loops.at(0), kChunkSize, &mi, &tail);
+
+        GRAPH_DEBUG("after splitWithMask", *nest.root_stmt());
+
+        ForPtr mo = loops.at(0);
+
+        nest.reorderAxis(mo, mi);
+        GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
+
+        loops = nest.getLoopStmtsFor(sum);
+
+        auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
+        nest.rfactor(bt_body, loops.at(0), &rfac_buf);
+        GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
+
+        nest.reorderAxis(loops.at(0), loops.at(1));
+        GRAPH_DEBUG("after 2nd reorderAxis", *nest.root_stmt());
+
+        loops = nest.getAllInnermostLoopsWritingToBuf(rfac_buf);
+
+        TORCH_CHECK(loops.size() == 2);
+        
+        // TODO: if we vectorize here, IR verifier will fail
+        nest.vectorize(loops.at(1));
+        GRAPH_DEBUG("after vectorize", *nest.root_stmt());
+
+
+        // nest.prepareForCodegen();
+        // GRAPH_DEBUG("after prepareForCodegen", *nest.root_stmt());
+
+      }
+
+    }
+  }
+
+  return Tensor(sum.buf(), nest.root_stmt());
 }
 
 Tensor computeMean(
