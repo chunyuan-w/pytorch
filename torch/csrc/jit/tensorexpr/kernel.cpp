@@ -755,8 +755,10 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
           continue;
         }
         ForPtr mi;
+        ForPtr tail;
 
-        l.splitWithMask(loops.at(0), kChunkSize, &mi);
+        // l.splitWithMask(loops.at(0), kChunkSize, &mi);
+        l.splitWithTail(loops.at(0), kChunkSize, &mi, &tail);
         GRAPH_DEBUG("after splitWithMask", *l.root_stmt());
 
         ForPtr mo = loops.at(0);

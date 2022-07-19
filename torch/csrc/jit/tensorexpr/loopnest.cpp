@@ -2704,9 +2704,13 @@ std::vector<ForPtr> LoopNest::getLoopStmtsFor(BufPtr buf) const {
 }
 
 std::vector<ForPtr> LoopNest::getLoopStmtsFor(StmtPtr s) const {
+printf("in getLoopStmtsFor\n")  ;
+
   std::vector<ForPtr> result;
 
   while (s) {
+    std::cout << "while s: " << *s << "\n";
+
     if (auto loop = to<For>(s)) {
       result.push_back(loop);
     }
@@ -2733,12 +2737,28 @@ StmtPtr LoopNest::getLoopBodyFor(BufPtr buf) const {
     }
   }
 
+  if (writes.size() == 3) {
+    if (StorePtr s = to<Store>(writes[1])) {
+      if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+        return (StmtPtr)s; // NOLINT
+      }
+    }
+  }
+
   StmtPtr res = nullptr;
   for (auto s : writes) {
+    std::cout << "s: " << *s << "\n";
     if (!res) {
       res = s;
+    std::cout << "res: " << *s << "\n";
+
       continue;
     }
+
+
+printf("final get parent\n");
+    std::cout << "res: " << *s << "\n";
+    std::cout << "s: " << *s << "\n";
 
     res = Block::getSharedParent(res, s);
   }

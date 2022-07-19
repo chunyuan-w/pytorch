@@ -64,10 +64,13 @@ class TestMkldnnFusion(JitTestCase):
         kwargs = {"dim": -1}
         m = M(torch.sum, **kwargs)
         # x = torch.randn(1, 256, 384, 384)
-        x = torch.randn(128)
-        graph = self._check_model(m, x)
-        self.assertFused(graph, ['aten::softmax'])
-        self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+        for size in [128, 9]:
+            print("size: ", size)
+            x = torch.randn(size)
+            # x = torch.randn(9)
+            graph = self._check_model(m, x)
+            self.assertFused(graph, ['aten::softmax'])
+            self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
 
 
 if __name__ == "__main__":

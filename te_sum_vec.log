@@ -1,24 +1,25 @@
-[DUMP kernel.cpp:1593] TensorExprKernel graph (Before graph optimization):
-[DUMP kernel.cpp:1593] graph(%x : Float(128, strides=[1], requires_grad=0, device=cpu)):
-[DUMP kernel.cpp:1593]   %1 : NoneType = prim::Constant()
-[DUMP kernel.cpp:1593]   %2 : bool = prim::Constant[value=0]()
-[DUMP kernel.cpp:1593]   %3 : int[] = prim::Constant[value=[-1]]()
-[DUMP kernel.cpp:1593]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
-[DUMP kernel.cpp:1593]   return (%4)
-[DUMP kernel.cpp:1621] TensorExprKernel graph (After graph optimization):
-[DUMP kernel.cpp:1621] graph(%x : Float(128, strides=[1], requires_grad=0, device=cpu)):
-[DUMP kernel.cpp:1621]   %1 : NoneType = prim::Constant()
-[DUMP kernel.cpp:1621]   %2 : bool = prim::Constant[value=0]()
-[DUMP kernel.cpp:1621]   %3 : int[] = prim::Constant[value=[-1]]()
-[DUMP kernel.cpp:1621]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
-[DUMP kernel.cpp:1621]   return (%4)
-[DUMP kernel.cpp:1625] TensorExprKernel graph:
-[DUMP kernel.cpp:1625] graph(%x : Float(128, strides=[1], requires_grad=0, device=cpu)):
-[DUMP kernel.cpp:1625]   %1 : NoneType = prim::Constant()
-[DUMP kernel.cpp:1625]   %2 : bool = prim::Constant[value=0]()
-[DUMP kernel.cpp:1625]   %3 : int[] = prim::Constant[value=[-1]]()
-[DUMP kernel.cpp:1625]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
-[DUMP kernel.cpp:1625]   return (%4)
+size:  128
+[DUMP kernel.cpp:1598] TensorExprKernel graph (Before graph optimization):
+[DUMP kernel.cpp:1598] graph(%x : Float(128, strides=[1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1598]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1598]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1598]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1598]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
+[DUMP kernel.cpp:1598]   return (%4)
+[DUMP kernel.cpp:1626] TensorExprKernel graph (After graph optimization):
+[DUMP kernel.cpp:1626] graph(%x : Float(128, strides=[1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1626]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1626]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1626]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1626]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
+[DUMP kernel.cpp:1626]   return (%4)
+[DUMP kernel.cpp:1630] TensorExprKernel graph:
+[DUMP kernel.cpp:1630] graph(%x : Float(128, strides=[1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1630]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1630]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1630]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1630]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
+[DUMP kernel.cpp:1630]   return (%4)
 [DEBUG loopnest.cpp:046] Origin Stmt in LoopNest:
 [DEBUG loopnest.cpp:046] {
 [DEBUG loopnest.cpp:046]   {
@@ -37,139 +38,616 @@
 [DEBUG kernel.cpp:693]     }
 [DEBUG kernel.cpp:693]   }
 [DEBUG kernel.cpp:693] }
-[DEBUG kernel.cpp:715] after simplify{
-[DEBUG kernel.cpp:715]   sum = 0.f;
-[DEBUG kernel.cpp:715]   for (int64_t i = 0ll; i < 128ll; i++) {
-[DEBUG kernel.cpp:715]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
-[DEBUG kernel.cpp:715]   }
-[DEBUG kernel.cpp:715] }
-[DEBUG kernel.cpp:725] after inline{
-[DEBUG kernel.cpp:725]   sum = 0.f;
-[DEBUG kernel.cpp:725]   for (int64_t i = 0ll; i < 128ll; i++) {
-[DEBUG kernel.cpp:725]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
-[DEBUG kernel.cpp:725]   }
-[DEBUG kernel.cpp:725] }
-[DEBUG kernel.cpp:741] after fuse{
-[DEBUG kernel.cpp:741]   sum = 0.f;
-[DEBUG kernel.cpp:741]   for (int64_t i = 0ll; i < 128ll; i++) {
-[DEBUG kernel.cpp:741]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
-[DEBUG kernel.cpp:741]   }
-[DEBUG kernel.cpp:741] }
-[DEBUG kernel.cpp:743] after parallelize{
-[DEBUG kernel.cpp:743]   sum = 0.f;
-[DEBUG kernel.cpp:743]   for (int64_t i = 0ll; i < 128ll; i++) {
-[DEBUG kernel.cpp:743]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
-[DEBUG kernel.cpp:743]   }
-[DEBUG kernel.cpp:743] }
-[DEBUG kernel.cpp:758] after splitWithMask{
-[DEBUG kernel.cpp:758]   sum = 0.f;
-[DEBUG kernel.cpp:758]   for (int64_t i_outer = 0ll; i_outer < (((128ll - 0ll) + 8ll) - 1ll) / 8ll; i_outer++) {
-[DEBUG kernel.cpp:758]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:758]       sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
-[DEBUG kernel.cpp:758]     }
-[DEBUG kernel.cpp:758]   }
-[DEBUG kernel.cpp:758] }
-[DEBUG kernel.cpp:763] after 1st reorderAxis{
-[DEBUG kernel.cpp:763]   sum = 0.f;
-[DEBUG kernel.cpp:763]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:763]     for (int64_t i_outer = 0ll; i_outer < (((128ll - 0ll) + 8ll) - 1ll) / 8ll; i_outer++) {
-[DEBUG kernel.cpp:763]       sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
-[DEBUG kernel.cpp:763]     }
-[DEBUG kernel.cpp:763]   }
-[DEBUG kernel.cpp:763] }
-[DEBUG kernel.cpp:770] after 1st rfactor{
-[DEBUG kernel.cpp:770]   sum = 0.f;
-[DEBUG kernel.cpp:770]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:770]     sum_rfac[i_inner] = float(0);
-[DEBUG kernel.cpp:770]     for (int64_t i_outer = 0ll; i_outer < (((128ll - 0ll) + 8ll) - 1ll) / 8ll; i_outer++) {
-[DEBUG kernel.cpp:770]       sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
-[DEBUG kernel.cpp:770]     }
-[DEBUG kernel.cpp:770]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
-[DEBUG kernel.cpp:770]   }
-[DEBUG kernel.cpp:770] }
-[DEBUG kernel.cpp:773] after 2nd reorderAxis{
-[DEBUG kernel.cpp:773]   sum = 0.f;
-[DEBUG kernel.cpp:773]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:773]     sum_rfac[i_inner] = float(0);
-[DEBUG kernel.cpp:773]   }
-[DEBUG kernel.cpp:773]   for (int64_t i_outer = 0ll; i_outer < (((128ll - 0ll) + 8ll) - 1ll) / 8ll; i_outer++) {
-[DEBUG kernel.cpp:773]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:773]       sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
-[DEBUG kernel.cpp:773]     }
-[DEBUG kernel.cpp:773]   }
-[DEBUG kernel.cpp:773]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:773]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
-[DEBUG kernel.cpp:773]   }
-[DEBUG kernel.cpp:773] }
-[DEBUG kernel.cpp:779] after vectorize{
-[DEBUG kernel.cpp:779]   sum = 0.f;
-[DEBUG kernel.cpp:779]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:779]     sum_rfac[i_inner] = float(0);
-[DEBUG kernel.cpp:779]   }
-[DEBUG kernel.cpp:779]   for (int64_t i_outer = 0ll; i_outer < (((128ll - 0ll) + 8ll) - 1ll) / 8ll; i_outer++) {
-[DEBUG kernel.cpp:779]     {
-[DEBUG kernel.cpp:779]       sum_rfac[Ramp(0ll, 1ll, 8)] = ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]), reduce_args={i_outer});
-[DEBUG kernel.cpp:779]     }
-[DEBUG kernel.cpp:779]   }
-[DEBUG kernel.cpp:779]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:779]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
-[DEBUG kernel.cpp:779]   }
-[DEBUG kernel.cpp:779] }
-[DEBUG kernel.cpp:782] after prepareForCodegen{
-[DEBUG kernel.cpp:782]   sum[0ll] = 0.f;
-[DEBUG kernel.cpp:782]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:782]     sum_rfac[i_inner] = float(0);
-[DEBUG kernel.cpp:782]   }
-[DEBUG kernel.cpp:782]   for (int64_t i_outer = 0ll; i_outer < (((128ll - 0ll) + 8ll) - 1ll) / 8ll; i_outer++) {
-[DEBUG kernel.cpp:782]     {
-[DEBUG kernel.cpp:782]       sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
-[DEBUG kernel.cpp:782]     }
-[DEBUG kernel.cpp:782]   }
-[DEBUG kernel.cpp:782]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:782]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
-[DEBUG kernel.cpp:782]   }
-[DEBUG kernel.cpp:782] }
-[DEBUG kernel.cpp:868] after prepareForCodegen{
-[DEBUG kernel.cpp:868]   sum[0ll] = 0.f;
-[DEBUG kernel.cpp:868]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:868]     sum_rfac[i_inner] = float(0);
-[DEBUG kernel.cpp:868]   }
-[DEBUG kernel.cpp:868]   for (int64_t i_outer = 0ll; i_outer < (((128ll - 0ll) + 8ll) - 1ll) / 8ll; i_outer++) {
-[DEBUG kernel.cpp:868]     {
-[DEBUG kernel.cpp:868]       sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
-[DEBUG kernel.cpp:868]     }
-[DEBUG kernel.cpp:868]   }
-[DEBUG kernel.cpp:868]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:868]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
-[DEBUG kernel.cpp:868]   }
-[DEBUG kernel.cpp:868] }
-[DEBUG kernel.cpp:870] after simplification{
-[DEBUG kernel.cpp:870]   sum[0ll] = 0.f;
-[DEBUG kernel.cpp:870]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:870]     sum_rfac[i_inner] = 0.f;
-[DEBUG kernel.cpp:870]   }
-[DEBUG kernel.cpp:870]   for (int64_t i_outer = 0ll; i_outer < 16ll; i_outer++) {
-[DEBUG kernel.cpp:870]     sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
-[DEBUG kernel.cpp:870]   }
-[DEBUG kernel.cpp:870]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:870]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
-[DEBUG kernel.cpp:870]   }
-[DEBUG kernel.cpp:870] }
-[DEBUG kernel.cpp:880] Final Stmt:
-[DEBUG kernel.cpp:880] {
-[DEBUG kernel.cpp:880]   sum[0ll] = 0.f;
-[DEBUG kernel.cpp:880]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:880]     sum_rfac[i_inner] = 0.f;
-[DEBUG kernel.cpp:880]   }
-[DEBUG kernel.cpp:880]   for (int64_t i_outer = 0ll; i_outer < 16ll; i_outer++) {
-[DEBUG kernel.cpp:880]     sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
-[DEBUG kernel.cpp:880]   }
-[DEBUG kernel.cpp:880]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
-[DEBUG kernel.cpp:880]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
-[DEBUG kernel.cpp:880]   }
-[DEBUG kernel.cpp:880] }
+[DEBUG kernel.cpp:716] after simplify{
+[DEBUG kernel.cpp:716]   sum = 0.f;
+[DEBUG kernel.cpp:716]   for (int64_t i = 0ll; i < 128ll; i++) {
+[DEBUG kernel.cpp:716]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:716]   }
+[DEBUG kernel.cpp:716] }
+[DEBUG kernel.cpp:726] after inline{
+[DEBUG kernel.cpp:726]   sum = 0.f;
+[DEBUG kernel.cpp:726]   for (int64_t i = 0ll; i < 128ll; i++) {
+[DEBUG kernel.cpp:726]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:726]   }
+[DEBUG kernel.cpp:726] }
+[DEBUG kernel.cpp:742] after fuse{
+[DEBUG kernel.cpp:742]   sum = 0.f;
+[DEBUG kernel.cpp:742]   for (int64_t i = 0ll; i < 128ll; i++) {
+[DEBUG kernel.cpp:742]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:742]   }
+[DEBUG kernel.cpp:742] }
+in getLoopStmtsFor
+while s: sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+while s: {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: for (int64_t i = 0ll; i < 128ll; i++) {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: {
+  sum = 0.f;
+  for (int64_t i = 0ll; i < 128ll; i++) {
+    sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+  }
+}
+[DEBUG kernel.cpp:744] after parallelize{
+[DEBUG kernel.cpp:744]   sum = 0.f;
+[DEBUG kernel.cpp:744]   for (int64_t i = 0ll; i < 128ll; i++) {
+[DEBUG kernel.cpp:744]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:744]   }
+[DEBUG kernel.cpp:744] }
+in getLoopStmtsFor
+while s: sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+while s: {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: for (int64_t i = 0ll; i < 128ll; i++) {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: {
+  sum = 0.f;
+  for (int64_t i = 0ll; i < 128ll; i++) {
+    sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+  }
+}
+[DEBUG kernel.cpp:762] after splitWithMask{
+[DEBUG kernel.cpp:762]   sum = 0.f;
+[DEBUG kernel.cpp:762]   for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:762]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:762]       sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+[DEBUG kernel.cpp:762]     }
+[DEBUG kernel.cpp:762]   }
+[DEBUG kernel.cpp:762] }
+[DEBUG kernel.cpp:767] after 1st reorderAxis{
+[DEBUG kernel.cpp:767]   sum = 0.f;
+[DEBUG kernel.cpp:767]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:767]     for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:767]       sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+[DEBUG kernel.cpp:767]     }
+[DEBUG kernel.cpp:767]   }
+[DEBUG kernel.cpp:767] }
+in getLoopStmtsFor
+while s: sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+while s: {
+  sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+}
+while s: for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+  sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+}
+while s: {
+  for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+    sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+  }
+}
+while s: for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+    sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+  }
+}
+while s: {
+  sum = 0.f;
+  for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+    for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+      sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+}
+[DEBUG kernel.cpp:774] after 1st rfactor{
+[DEBUG kernel.cpp:774]   sum = 0.f;
+[DEBUG kernel.cpp:774]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:774]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:774]     for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:774]       sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+[DEBUG kernel.cpp:774]     }
+[DEBUG kernel.cpp:774]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
+[DEBUG kernel.cpp:774]   }
+[DEBUG kernel.cpp:774] }
+[DEBUG kernel.cpp:777] after 2nd reorderAxis{
+[DEBUG kernel.cpp:777]   sum = 0.f;
+[DEBUG kernel.cpp:777]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:777]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:777]   }
+[DEBUG kernel.cpp:777]   for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:777]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:777]       sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+[DEBUG kernel.cpp:777]     }
+[DEBUG kernel.cpp:777]   }
+[DEBUG kernel.cpp:777]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:777]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
+[DEBUG kernel.cpp:777]   }
+[DEBUG kernel.cpp:777] }
+orig f: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+before normalize: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+before flatten: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+before vec: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+loop start_: 0
+loop lanes_: 8
+stmt in Block before mutate: 
+sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+old_in: 
+i_inner
+new_in: 
+Ramp(0ll, 1ll, 8)
+old_in: 
+ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer})
+old_in: 
+(sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner])
+old_in: 
+sum_rfac[i_inner]
+old_in: 
+i_inner
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+no broadcast make
+new_in: 
+sum_rfac[Ramp(0ll, 1ll, 8)]
+old_in: 
+tx[i_outer * 8ll + i_inner]
+old_in: 
+i_outer * 8ll + i_inner
+old_in: 
+i_outer * 8ll
+old_in: 
+i_outer
+new_in: 
+i_outer
+old_in: 
+8ll
+new_in: 
+8ll
+new_in: 
+i_outer * 8ll
+old_in: 
+i_inner
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+broadcast make
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))
+insert broadcasts for 0
+no broadcast make
+new_in: 
+tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]
+insert broadcasts for 0
+no broadcast make
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))])
+insert broadcasts for 0
+no broadcast make
+new_in: 
+ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]), reduce_args={i_outer})
+insert broadcasts for 0
+no broadcast make
+insert broadcasts for 1
+no broadcast make
+stmt in Block after mutate: 
+sum_rfac[Ramp(0ll, 1ll, 8)] = ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]), reduce_args={i_outer});
+after vec: 
+{
+  sum_rfac[Ramp(0ll, 1ll, 8)] = ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]), reduce_args={i_outer});
+}
+[DEBUG kernel.cpp:783] after vectorize{
+[DEBUG kernel.cpp:783]   sum = 0.f;
+[DEBUG kernel.cpp:783]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:783]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:783]   }
+[DEBUG kernel.cpp:783]   for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:783]     {
+[DEBUG kernel.cpp:783]       sum_rfac[Ramp(0ll, 1ll, 8)] = ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]), reduce_args={i_outer});
+[DEBUG kernel.cpp:783]     }
+[DEBUG kernel.cpp:783]   }
+[DEBUG kernel.cpp:783]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:783]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
+[DEBUG kernel.cpp:783]   }
+[DEBUG kernel.cpp:783] }
+[DEBUG kernel.cpp:786] after prepareForCodegen{
+[DEBUG kernel.cpp:786]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:786]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:786]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:786]   }
+[DEBUG kernel.cpp:786]   for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:786]     {
+[DEBUG kernel.cpp:786]       sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
+[DEBUG kernel.cpp:786]     }
+[DEBUG kernel.cpp:786]   }
+[DEBUG kernel.cpp:786]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:786]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:786]   }
+[DEBUG kernel.cpp:786] }
+[DEBUG kernel.cpp:873] after prepareForCodegen{
+[DEBUG kernel.cpp:873]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:873]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:873]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:873]   }
+[DEBUG kernel.cpp:873]   for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:873]     {
+[DEBUG kernel.cpp:873]       sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
+[DEBUG kernel.cpp:873]     }
+[DEBUG kernel.cpp:873]   }
+[DEBUG kernel.cpp:873]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:873]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:873]   }
+[DEBUG kernel.cpp:873] }
+[DEBUG kernel.cpp:875] after simplification{
+[DEBUG kernel.cpp:875]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:875]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:875]     sum_rfac[i_inner] = 0.f;
+[DEBUG kernel.cpp:875]   }
+[DEBUG kernel.cpp:875]   for (int64_t i_outer = 0ll; i_outer < 16ll; i_outer++) {
+[DEBUG kernel.cpp:875]     sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
+[DEBUG kernel.cpp:875]   }
+[DEBUG kernel.cpp:875]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:875]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:875]   }
+[DEBUG kernel.cpp:875] }
+[DEBUG kernel.cpp:885] Final Stmt:
+[DEBUG kernel.cpp:885] {
+[DEBUG kernel.cpp:885]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:885]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:885]     sum_rfac[i_inner] = 0.f;
+[DEBUG kernel.cpp:885]   }
+[DEBUG kernel.cpp:885]   for (int64_t i_outer = 0ll; i_outer < 16ll; i_outer++) {
+[DEBUG kernel.cpp:885]     sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
+[DEBUG kernel.cpp:885]   }
+[DEBUG kernel.cpp:885]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:885]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:885]   }
+[DEBUG kernel.cpp:885] }
+size:  9
+[DUMP kernel.cpp:1598] TensorExprKernel graph (Before graph optimization):
+[DUMP kernel.cpp:1598] graph(%x : Float(9, strides=[1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1598]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1598]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1598]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1598]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
+[DUMP kernel.cpp:1598]   return (%4)
+[DUMP kernel.cpp:1626] TensorExprKernel graph (After graph optimization):
+[DUMP kernel.cpp:1626] graph(%x : Float(9, strides=[1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1626]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1626]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1626]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1626]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
+[DUMP kernel.cpp:1626]   return (%4)
+[DUMP kernel.cpp:1630] TensorExprKernel graph:
+[DUMP kernel.cpp:1630] graph(%x : Float(9, strides=[1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1630]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1630]   %2 : bool = prim::Constant[value=0]()
+[DUMP kernel.cpp:1630]   %3 : int[] = prim::Constant[value=[-1]]()
+[DUMP kernel.cpp:1630]   %4 : Float(requires_grad=0, device=cpu) = aten::sum(%x, %3, %2, %1) # test/test_te_softmax.py:63:0
+[DUMP kernel.cpp:1630]   return (%4)
+[DEBUG loopnest.cpp:046] Origin Stmt in LoopNest:
+[DEBUG loopnest.cpp:046] {
+[DEBUG loopnest.cpp:046]   {
+[DEBUG loopnest.cpp:046]     sum = float(0);
+[DEBUG loopnest.cpp:046]     for (int64_t i = 0ll; i < 9ll; i++) {
+[DEBUG loopnest.cpp:046]       sum = ReduceOp((sum) + float(tx[i]), reduce_args={i});
+[DEBUG loopnest.cpp:046]     }
+[DEBUG loopnest.cpp:046]   }
+[DEBUG loopnest.cpp:046] }
+[DEBUG kernel.cpp:693] Original Stmt:
+[DEBUG kernel.cpp:693] {
+[DEBUG kernel.cpp:693]   {
+[DEBUG kernel.cpp:693]     sum = float(0);
+[DEBUG kernel.cpp:693]     for (int64_t i = 0ll; i < 9ll; i++) {
+[DEBUG kernel.cpp:693]       sum = ReduceOp((sum) + float(tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:693]     }
+[DEBUG kernel.cpp:693]   }
+[DEBUG kernel.cpp:693] }
+[DEBUG kernel.cpp:716] after simplify{
+[DEBUG kernel.cpp:716]   sum = 0.f;
+[DEBUG kernel.cpp:716]   for (int64_t i = 0ll; i < 9ll; i++) {
+[DEBUG kernel.cpp:716]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:716]   }
+[DEBUG kernel.cpp:716] }
+[DEBUG kernel.cpp:726] after inline{
+[DEBUG kernel.cpp:726]   sum = 0.f;
+[DEBUG kernel.cpp:726]   for (int64_t i = 0ll; i < 9ll; i++) {
+[DEBUG kernel.cpp:726]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:726]   }
+[DEBUG kernel.cpp:726] }
+[DEBUG kernel.cpp:742] after fuse{
+[DEBUG kernel.cpp:742]   sum = 0.f;
+[DEBUG kernel.cpp:742]   for (int64_t i = 0ll; i < 9ll; i++) {
+[DEBUG kernel.cpp:742]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:742]   }
+[DEBUG kernel.cpp:742] }
+in getLoopStmtsFor
+while s: sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+while s: {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: for (int64_t i = 0ll; i < 9ll; i++) {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: {
+  sum = 0.f;
+  for (int64_t i = 0ll; i < 9ll; i++) {
+    sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+  }
+}
+[DEBUG kernel.cpp:744] after parallelize{
+[DEBUG kernel.cpp:744]   sum = 0.f;
+[DEBUG kernel.cpp:744]   for (int64_t i = 0ll; i < 9ll; i++) {
+[DEBUG kernel.cpp:744]     sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+[DEBUG kernel.cpp:744]   }
+[DEBUG kernel.cpp:744] }
+in getLoopStmtsFor
+while s: sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+while s: {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: for (int64_t i = 0ll; i < 9ll; i++) {
+  sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+}
+while s: {
+  sum = 0.f;
+  for (int64_t i = 0ll; i < 9ll; i++) {
+    sum = ReduceOp((sum) + (tx[i]), reduce_args={i});
+  }
+}
+[DEBUG kernel.cpp:762] after splitWithMask{
+[DEBUG kernel.cpp:762]   sum = 0.f;
+[DEBUG kernel.cpp:762]   for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:762]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:762]       sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+[DEBUG kernel.cpp:762]     }
+[DEBUG kernel.cpp:762]   }
+[DEBUG kernel.cpp:762]   for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+[DEBUG kernel.cpp:762]     sum = ReduceOp((sum) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]), reduce_args={i_tail});
+[DEBUG kernel.cpp:762]   }
+[DEBUG kernel.cpp:762] }
+[DEBUG kernel.cpp:767] after 1st reorderAxis{
+[DEBUG kernel.cpp:767]   sum = 0.f;
+[DEBUG kernel.cpp:767]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:767]     for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:767]       sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+[DEBUG kernel.cpp:767]     }
+[DEBUG kernel.cpp:767]   }
+[DEBUG kernel.cpp:767]   for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+[DEBUG kernel.cpp:767]     sum = ReduceOp((sum) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]), reduce_args={i_tail});
+[DEBUG kernel.cpp:767]   }
+[DEBUG kernel.cpp:767] }
+in getLoopStmtsFor
+while s: sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+while s: {
+  sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+}
+while s: for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+  sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+}
+while s: {
+  for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+    sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+  }
+}
+while s: for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+    sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+  }
+}
+while s: {
+  sum = 0.f;
+  for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+    for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+      sum = ReduceOp((sum) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+    }
+  }
+  for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+    sum = ReduceOp((sum) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]), reduce_args={i_tail});
+  }
+}
+[DEBUG kernel.cpp:774] after 1st rfactor{
+[DEBUG kernel.cpp:774]   sum = 0.f;
+[DEBUG kernel.cpp:774]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:774]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:774]     for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:774]       sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+[DEBUG kernel.cpp:774]     }
+[DEBUG kernel.cpp:774]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
+[DEBUG kernel.cpp:774]   }
+[DEBUG kernel.cpp:774]   for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+[DEBUG kernel.cpp:774]     sum = ReduceOp((sum) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]), reduce_args={i_tail});
+[DEBUG kernel.cpp:774]   }
+[DEBUG kernel.cpp:774] }
+[DEBUG kernel.cpp:777] after 2nd reorderAxis{
+[DEBUG kernel.cpp:777]   sum = 0.f;
+[DEBUG kernel.cpp:777]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:777]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:777]   }
+[DEBUG kernel.cpp:777]   for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:777]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:777]       sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+[DEBUG kernel.cpp:777]     }
+[DEBUG kernel.cpp:777]   }
+[DEBUG kernel.cpp:777]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:777]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
+[DEBUG kernel.cpp:777]   }
+[DEBUG kernel.cpp:777]   for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+[DEBUG kernel.cpp:777]     sum = ReduceOp((sum) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]), reduce_args={i_tail});
+[DEBUG kernel.cpp:777]   }
+[DEBUG kernel.cpp:777] }
+orig f: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+before normalize: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+before flatten: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+before vec: 
+for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+  sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+}
+loop start_: 0
+loop lanes_: 8
+stmt in Block before mutate: 
+sum_rfac[i_inner] = ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer});
+old_in: 
+i_inner
+new_in: 
+Ramp(0ll, 1ll, 8)
+old_in: 
+ReduceOp((sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner]), reduce_args={i_outer})
+old_in: 
+(sum_rfac[i_inner]) + (tx[i_outer * 8ll + i_inner])
+old_in: 
+sum_rfac[i_inner]
+old_in: 
+i_inner
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+no broadcast make
+new_in: 
+sum_rfac[Ramp(0ll, 1ll, 8)]
+old_in: 
+tx[i_outer * 8ll + i_inner]
+old_in: 
+i_outer * 8ll + i_inner
+old_in: 
+i_outer * 8ll
+old_in: 
+i_outer
+new_in: 
+i_outer
+old_in: 
+8ll
+new_in: 
+8ll
+new_in: 
+i_outer * 8ll
+old_in: 
+i_inner
+new_in: 
+Ramp(0ll, 1ll, 8)
+insert broadcasts for 0
+broadcast make
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))
+insert broadcasts for 0
+no broadcast make
+new_in: 
+tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]
+insert broadcasts for 0
+no broadcast make
+insert broadcasts for 1
+no broadcast make
+new_in: 
+(sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))])
+insert broadcasts for 0
+no broadcast make
+new_in: 
+ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]), reduce_args={i_outer})
+insert broadcasts for 0
+no broadcast make
+insert broadcasts for 1
+no broadcast make
+stmt in Block after mutate: 
+sum_rfac[Ramp(0ll, 1ll, 8)] = ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]), reduce_args={i_outer});
+after vec: 
+{
+  sum_rfac[Ramp(0ll, 1ll, 8)] = ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[(Broadcast(i_outer * 8ll, 8)) + (Ramp(0ll, 1ll, 8))]), reduce_args={i_outer});
+}
+[DEBUG kernel.cpp:783] after vectorize{
+[DEBUG kernel.cpp:783]   sum = 0.f;
+[DEBUG kernel.cpp:783]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:783]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:783]   }
+[DEBUG kernel.cpp:783]   for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:783]     {
+[DEBUG kernel.cpp:783]       sum_rfac[Ramp(0ll, 1ll, 8)] = ReduceOp((sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]), reduce_args={i_outer});
+[DEBUG kernel.cpp:783]     }
+[DEBUG kernel.cpp:783]   }
+[DEBUG kernel.cpp:783]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:783]     sum = ReduceOp((sum) + (sum_rfac[i_inner]), reduce_args={i_inner});
+[DEBUG kernel.cpp:783]   }
+[DEBUG kernel.cpp:783]   for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+[DEBUG kernel.cpp:783]     sum = ReduceOp((sum) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]), reduce_args={i_tail});
+[DEBUG kernel.cpp:783]   }
+[DEBUG kernel.cpp:783] }
+[DEBUG kernel.cpp:786] after prepareForCodegen{
+[DEBUG kernel.cpp:786]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:786]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:786]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:786]   }
+[DEBUG kernel.cpp:786]   for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:786]     {
+[DEBUG kernel.cpp:786]       sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
+[DEBUG kernel.cpp:786]     }
+[DEBUG kernel.cpp:786]   }
+[DEBUG kernel.cpp:786]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:786]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:786]   }
+[DEBUG kernel.cpp:786]   for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+[DEBUG kernel.cpp:786]     sum[0ll] = (sum[0ll]) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]);
+[DEBUG kernel.cpp:786]   }
+[DEBUG kernel.cpp:786] }
+[DEBUG kernel.cpp:873] after prepareForCodegen{
+[DEBUG kernel.cpp:873]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:873]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:873]     sum_rfac[i_inner] = float(0);
+[DEBUG kernel.cpp:873]   }
+[DEBUG kernel.cpp:873]   for (int64_t i_outer = 0ll; i_outer < (9ll - 0ll) / 8ll; i_outer++) {
+[DEBUG kernel.cpp:873]     {
+[DEBUG kernel.cpp:873]       sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(8ll * i_outer, 1ll, 8)]);
+[DEBUG kernel.cpp:873]     }
+[DEBUG kernel.cpp:873]   }
+[DEBUG kernel.cpp:873]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:873]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:873]   }
+[DEBUG kernel.cpp:873]   for (int64_t i_tail = 0ll; i_tail < (9ll - 0ll) % 8ll; i_tail++) {
+[DEBUG kernel.cpp:873]     sum[0ll] = (sum[0ll]) + (tx[i_tail + ((9ll - 0ll) / 8ll) * 8ll]);
+[DEBUG kernel.cpp:873]   }
+[DEBUG kernel.cpp:873] }
+[DEBUG kernel.cpp:875] after simplification{
+[DEBUG kernel.cpp:875]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:875]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:875]     sum_rfac[i_inner] = 0.f;
+[DEBUG kernel.cpp:875]   }
+[DEBUG kernel.cpp:875]   sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(0ll, 1ll, 8)]);
+[DEBUG kernel.cpp:875]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:875]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:875]   }
+[DEBUG kernel.cpp:875]   sum[0ll] = (sum[0ll]) + (tx[8ll]);
+[DEBUG kernel.cpp:875] }
+[DEBUG kernel.cpp:885] Final Stmt:
+[DEBUG kernel.cpp:885] {
+[DEBUG kernel.cpp:885]   sum[0ll] = 0.f;
+[DEBUG kernel.cpp:885]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:885]     sum_rfac[i_inner] = 0.f;
+[DEBUG kernel.cpp:885]   }
+[DEBUG kernel.cpp:885]   sum_rfac[Ramp(0ll, 1ll, 8)] = (sum_rfac[Ramp(0ll, 1ll, 8)]) + (tx[Ramp(0ll, 1ll, 8)]);
+[DEBUG kernel.cpp:885]   for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG kernel.cpp:885]     sum[0ll] = (sum[0ll]) + (sum_rfac[i_inner]);
+[DEBUG kernel.cpp:885]   }
+[DEBUG kernel.cpp:885]   sum[0ll] = (sum[0ll]) + (tx[8ll]);
+[DEBUG kernel.cpp:885] }
 .
 ----------------------------------------------------------------------
-Ran 1 test in 0.065s
+Ran 1 test in 0.067s
 
 OK
