@@ -157,11 +157,14 @@ void IRVerifier::visit(StorePtr v) {
       index_dtype.scalar_type() != ScalarType::Long) {
     throw malformed_ir("Index scalar dtype is not Int or Long!");
   }
-  if (v->buf()->dtype() != v->value()->dtype()) {
+  // TODO: only check scalar type but not lanes here
+  // We've vectorized in Reduce sum
+  // value->dtype().lanes() will be 8 while buf->dtype().lanes() is 1
+  if (v->buf()->dtype().scalar_type() != v->value()->dtype().scalar_type()) {
 
     std::cout << "v: " << *v << "\n";
   std::cout << "buf dtype: " <<  v->buf()->dtype() << '\n';
-  std::cout << "buf dtype: " <<  v->value()->dtype() << '\n';
+  std::cout << "val dtype: " <<  v->value()->dtype() << '\n';
 
 
     throw malformed_ir("buf and value dtype mismatch in Store");
