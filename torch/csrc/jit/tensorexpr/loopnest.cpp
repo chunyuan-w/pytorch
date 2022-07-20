@@ -475,13 +475,6 @@ class Vectorizer : public IRMutator {
     BufPtr buf = v->buf();
     std::vector<ExprPtr> inputs = {v->flat_index(), v->value()};
     return try_vectorize(v, inputs, [&]() {
-      // buf->set_dtype(dtype_with_lanes);
-      if (buf->dtype().lanes() != inputs[1]->dtype().lanes()) {
-  printf("resetting lanes to: %d\n", inputs[1]->dtype().lanes());
-        Dtype dtype_with_lanes = {buf->dtype(), inputs[1]->dtype().lanes()};
-
-        buf->set_dtype(dtype_with_lanes);
-      }
       return Store::make(
           BufHandle(buf), {ExprHandle(inputs[0])}, ExprHandle(inputs[1]));
     });
