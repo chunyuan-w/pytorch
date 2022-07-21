@@ -132,12 +132,45 @@ printf("enter computeSum\n")      ;
         GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
 
         loops = nest.getLoopStmtsFor(sum);
+        
+        auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
+        StmtPtr outerLoop = nullptr;
+
+        if (writes.size() == 2) {
+          if (StorePtr s = to<Store>(writes.back())) {
+            if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+              outerLoop = (StmtPtr)s; // NOLINT
+            }
+          }
+        }
+
+        if (writes.size() == 3) {
+          if (StorePtr s = to<Store>(writes[1])) {
+            if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+              outerLoop = (StmtPtr)s; // NOLINT
+            }
+          }
+        }
+
+        std::cout << "outerLoop: " << *outerLoop << "\n";
+
+
+        std::vector<ForPtr> result;
+        while (outerLoop) {
+          if (auto loop = to<For>(outerLoop)) {
+            result.push_back(loop);
+          }
+          outerLoop = outerLoop->get_parent();
+        }
+        std::reverse(result.begin(), result.end());
+        std::cout << "result size: " << result.size() << "\n";
+
 
         auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
-        nest.rfactor(bt_body, loops.at(0), &rfac_buf);
+        nest.rfactor(bt_body, result.at(0), &rfac_buf);
         GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
 
-        nest.reorderAxis(loops.at(0), loops.at(1));
+        nest.reorderAxis(result.at(0), result.at(1));
         GRAPH_DEBUG("after 2nd reorderAxis", *nest.root_stmt());
 
         loops = nest.getAllInnermostLoopsWritingToBuf(rfac_buf);
