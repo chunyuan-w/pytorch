@@ -113,80 +113,74 @@ printf("enter computeSum\n")      ;
   if (axes.size() == 1){
     if (axes[0] == rank - 1) {
       // TODO: only handle rank == 1 for now
-      if (rank == 1) {
         
-        auto loops = nest.getLoopStmtsFor(sum);
+      auto loops = nest.getLoopStmtsFor(sum);
 
-        TORCH_CHECK(loops.size() == 1);
-        
-        BufPtr rfac_buf;
-        ForPtr mi;
-        ForPtr tail;
-        nest.splitWithTail(loops.at(0), kChunkSize, &mi, &tail);
+      BufPtr rfac_buf;
+      ForPtr mi;
+      ForPtr tail;
+      nest.splitWithTail(loops.at(rank - 1), kChunkSize, &mi, &tail);
 
-        GRAPH_DEBUG("after splitWithMask", *nest.root_stmt());
+      GRAPH_DEBUG("after splitWithMask", *nest.root_stmt());
 
-        ForPtr mo = loops.at(0);
+      ForPtr mo = loops.at(rank - 1);
 
-        nest.reorderAxis(mo, mi);
-        GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
+      nest.reorderAxis(mo, mi);
+      GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
 
-        loops = nest.getLoopStmtsFor(sum);
-        
-        auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
-        StmtPtr outerLoop = nullptr;
-
-        if (writes.size() == 2) {
-          if (StorePtr s = to<Store>(writes.back())) {
-            if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
-              outerLoop = (StmtPtr)s; // NOLINT
-            }
+      auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
+      StmtPtr outerLoop = nullptr;
+std::cout << "writes size: " << writes.size() << "\n";
+      if (writes.size() == 2) {
+        if (StorePtr s = to<Store>(writes.back())) {
+          if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+            outerLoop = (StmtPtr)s; // NOLINT
           }
         }
-
-        if (writes.size() == 3) {
-          if (StorePtr s = to<Store>(writes[1])) {
-            if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
-              outerLoop = (StmtPtr)s; // NOLINT
-            }
-          }
-        }
-
-        std::cout << "outerLoop: " << *outerLoop << "\n";
-
-
-        std::vector<ForPtr> result;
-        while (outerLoop) {
-          if (auto loop = to<For>(outerLoop)) {
-            result.push_back(loop);
-          }
-          outerLoop = outerLoop->get_parent();
-        }
-        std::reverse(result.begin(), result.end());
-        std::cout << "result size: " << result.size() << "\n";
-
-
-        auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
-        nest.rfactor(bt_body, result.at(0), &rfac_buf);
-        GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
-
-        nest.reorderAxis(result.at(0), result.at(1));
-        GRAPH_DEBUG("after 2nd reorderAxis", *nest.root_stmt());
-
-        loops = nest.getAllInnermostLoopsWritingToBuf(rfac_buf);
-
-        TORCH_CHECK(loops.size() == 2);
-        
-        // TODO: if we vectorize here, IR verifier will fail
-        // Modified the IR verifier to only check the scalar type but not the lanes
-        nest.vectorize(loops.at(1));
-        GRAPH_DEBUG("after vectorize", *nest.root_stmt());
-
-
-        // nest.prepareForCodegen();
-        // GRAPH_DEBUG("after prepareForCodegen", *nest.root_stmt());
-
       }
+
+      if (writes.size() == 3) {
+        if (StorePtr s = to<Store>(writes[1])) {
+          if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+            outerLoop = (StmtPtr)s; // NOLINT
+          }
+        }
+      }
+
+      std::vector<ForPtr> result;
+      while (outerLoop) {
+        if (auto loop = to<For>(outerLoop)) {
+          result.push_back(loop);
+        }
+        outerLoop = outerLoop->get_parent();
+      }
+      std::reverse(result.begin(), result.end());
+
+      auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
+
+std::cout << "bt_body\n" << *bt_body << "\n";
+std::cout << "result 0\n" << *result.at(0) << "\n";
+std::cout << "result size " << result.size() << "\n";
+
+      nest.rfactor(bt_body, result.at(result.size()-2), &rfac_buf);
+      GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
+
+      nest.reorderAxis(result.at(result.size()-2), result.at(result.size()-1));
+      GRAPH_DEBUG("after 2nd reorderAxis", *nest.root_stmt());
+
+      loops = nest.getAllInnermostLoopsWritingToBuf(rfac_buf);
+
+      TORCH_CHECK(loops.size() == 2);
+      
+      // TODO: if we vectorize here, IR verifier will fail
+      // Modified the IR verifier to only check the scalar type but not the lanes
+      nest.vectorize(loops.at(1));
+      GRAPH_DEBUG("after vectorize", *nest.root_stmt());
+
+
+      // nest.prepareForCodegen();
+      // GRAPH_DEBUG("after prepareForCodegen", *nest.root_stmt());
+
 
     }
   }
