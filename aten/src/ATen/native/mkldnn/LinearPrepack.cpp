@@ -25,9 +25,27 @@ c10::intrusive_ptr<mkldnn::LinearOpContext> createLinearPrePackOpContext(
     std::string attr,
     std::vector<c10::optional<at::Scalar>> scalars,
     c10::optional<std::string> algorithm) {
-  auto it = fusion_attr_map().find(attr);
-  TORCH_CHECK(it != fusion_attr_map().end(), "Fusion behavior undefined.");
-  ideep::attr_t op_attr = it->second.attr_function(scalars, algorithm);
+  auto it_elt = fusion_attr_map().find(attr);
+  auto it_binary = fusion_binary_attr_map().find(attr);
+  TORCH_CHECK(
+      it_elt != fusion_attr_map().end() ||
+          it_binary != fusion_binary_attr_map().end(),
+      "Fusion behavior undefined.");
+  ideep::attr_t op_attr;
+  if (it_elt != fusion_attr_map().end()) {
+    op_attr = it_elt->second.attr_function(scalars, algorithm);;
+  } else {
+    int64_t b_size = std::accumulate(
+                       input_size.begin(),
+                       input_size.end(),
+                       (int64_t)1,
+                       std::multiplies<int64_t>()) /
+      input_size[input_size.size() - 1];
+    std::vector<int64_t> output_size = {b_size, weight.size(0)};
+    auto other_desc = ideep::tensor::desc(
+        output_size, get_mkldnn_dtype(weight.scalar_type()), ideep::tag::ab);
+    op_attr = ideep::attr_t::fuse_binary(it_binary->second, other_desc);
+  }
   return mkldnn::MkldnnLinearOpContext::create_context(
       std::move(weight), std::move(bias), std::move(input_size), op_attr);
 }
@@ -81,13 +99,31 @@ void _mkldnn_linear_out(
         w,
         b.value(),
         y,
-        ideep::scale_t(),
-        ideep::scale_t(),
-        ideep::scale_t(),
         attr);
   } else {
     ideep::inner_product_forward::compute(
-        x, w, y, ideep::scale_t(), ideep::scale_t(), ideep::scale_t(), attr);
+        x, w, y, attr);
+  }
+}
+
+void _mkldnn_linear_binary_out(
+    const ideep::tensor& x,
+    const ideep::tensor& other,
+    ideep::tensor& y,
+    const ideep::tensor& w,
+    const c10::optional<ideep::tensor>& b,
+    const ideep::attr_t& attr = ideep::attr_t()) {
+  if (b.has_value()) {
+    ideep::inner_product_forward::compute_binary(
+        x,
+        other,
+        w,
+        b.value(),
+        y,
+        attr);
+  } else {
+    ideep::inner_product_forward::compute_binary(
+        x, other, w, y, attr);
   }
 }
 
@@ -111,6 +147,29 @@ void mkldnn_linear_out(
 
   _mkldnn_linear_out(
       mkldnn_input, mkldnn_output, mkldnn_weight, mkldnn_bias, attr);
+}
+
+void mkldnn_linear_binary_out(
+    const Tensor& input,
+    const Tensor& other,
+    ideep::tensor& mkldnn_output,
+    const ideep::tensor& mkldnn_weight,
+    const c10::optional<Tensor>& bias_opt,
+    const ideep::attr_t& attr = ideep::attr_t()) {
+  c10::MaybeOwned<Tensor> bias_maybe_owned =
+      at::borrow_from_optional_tensor(bias_opt);
+  const Tensor& bias = *bias_maybe_owned;
+
+  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  const ideep::tensor mkldnn_input = itensor_view_from_dense(input);
+  const ideep::tensor mkldnn_other = itensor_view_from_dense(other);
+  c10::optional<ideep::tensor> mkldnn_bias{c10::nullopt};
+  if (bias.defined()) {
+    mkldnn_bias = itensor_from_tensor(bias);
+  }
+
+  _mkldnn_linear_binary_out(
+      mkldnn_input, mkldnn_other, mkldnn_output, mkldnn_weight, mkldnn_bias, attr);
 }
 
 Tensor run(ContextLinear& context, const Tensor& input) {
@@ -137,6 +196,45 @@ Tensor run(ContextLinear& context, const Tensor& input) {
 
   mkldnn_linear_out(
       input_reshaped,
+      mkldnn_output,
+      mkldnn_weight,
+      context.at_bias_,
+      context.attr_);
+
+  if (dim != 2) {
+    output = output.reshape(output_size);
+  }
+
+  return output;
+}
+
+Tensor run(ContextLinear& context, const Tensor& input, const Tensor& other) {
+  const ideep::tensor& mkldnn_weight = context.weight_packed_;
+
+  auto input_size = input.sizes();
+
+  const int64_t dim = input.dim();
+  auto input_reshaped =
+      dim == 2 ? input : input.reshape({-1, input.size(input.dim() - 1)});
+
+  std::vector<int64_t> output_size(input_size.begin(), input_size.end() - 1);
+  output_size.push_back(mkldnn_weight.get_dim(0));
+  auto output = at::empty(output_size, input.options());
+
+  auto other_reshaped = other;
+  if (dim != 2) {
+    std::vector<int64_t> output_size_reshaped = {
+        input_reshaped.size(0), mkldnn_weight.get_dim(0)};
+    output = output.reshape(output_size_reshaped);
+    other_reshaped = other.reshape(output_size_reshaped);
+  }
+
+  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  ideep::tensor mkldnn_output = itensor_from_tensor(output);
+
+  mkldnn_linear_binary_out(
+      input_reshaped,
+      other_reshaped,
       mkldnn_output,
       mkldnn_weight,
       context.at_bias_,
@@ -176,10 +274,47 @@ void run(ContextLinear& context, const Tensor& input, void* output) {
       context.attr_);
 }
 
+
+void run(ContextLinear& context, const Tensor& input, const Tensor& other, void* output) {
+  const ideep::tensor& mkldnn_weight = context.weight_packed_;
+
+  auto input_size = input.sizes();
+
+  const int64_t dim = input.dim();
+  auto input_reshaped =
+      dim == 2 ? input : input.reshape({-1, input.size(input.dim() - 1)});
+
+  std::vector<int64_t> output_size(input_size.begin(), input_size.end() - 1);
+  output_size.push_back(mkldnn_weight.get_dim(0));
+  std::vector<int64_t> output_size_reshaped = {
+      input_reshaped.size(0), mkldnn_weight.get_dim(0)};
+
+  auto other_reshaped = 
+      dim == 2 ? other : other.reshape(output_size_reshaped);
+  ideep::tensor::desc o_desc = {
+      output_size_reshaped, get_mkldnn_dtype(input.scalar_type())};
+  ideep::tensor mkldnn_output = {o_desc, output};
+
+  mkldnn_linear_binary_out(
+      input_reshaped,
+      other_reshaped,
+      mkldnn_output,
+      mkldnn_weight,
+      context.at_bias_,
+      context.attr_);
+}
+
 Tensor linear_run(
     const Tensor& input,
     const c10::intrusive_ptr<mkldnn::LinearOpContext>& op_context) {
   return op_context->run(input);
+}
+
+Tensor linear_binary_run(
+    const Tensor& input,
+    const Tensor& other,
+    const c10::intrusive_ptr<mkldnn::LinearOpContext>& op_context) {
+  return op_context->run(input, other);
 }
 
 } // namespace linear

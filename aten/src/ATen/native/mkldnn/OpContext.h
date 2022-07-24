@@ -117,8 +117,9 @@ class LinearOpContext : public torch::jit::CustomClassHolder {
   }
 
   virtual at::Tensor run(const at::Tensor& input) = 0;
-
-  virtual void run(const Tensor& input, void* output) = 0;
+  virtual at::Tensor run(const at::Tensor& input, const at::Tensor& other) = 0;
+  virtual void run(const at::Tensor& input, void* output) = 0;
+  virtual void run(const at::Tensor& input, const at::Tensor& other, void* output) = 0;
 };
 
 class MkldnnLinearOpContext final : public LinearOpContext {
@@ -139,7 +140,11 @@ class MkldnnLinearOpContext final : public LinearOpContext {
 
   at::Tensor run(const at::Tensor& input) override;
 
-  void run(const Tensor& input, void* output) override;
+  at::Tensor run(const at::Tensor& input, const at::Tensor& other) override;
+
+  void run(const at::Tensor& input, void* output) override;
+
+  void run(const Tensor& input, const at::Tensor& other, void* output) override;
 
   static c10::intrusive_ptr<LinearOpContext> create_context(
       at::Tensor&& weight,

@@ -28,6 +28,14 @@ Tensor computeMkldnnPrepackedLinearRun(
     const std::vector<ExprHandle>& outputStrides,
     const c10::optional<ScalarType>& outputType,
     at::Device device);
+
+Tensor computeMkldnnPrepackedLinearBinaryRun(
+    const std::vector<ArgValue>& inputs,
+    const std::vector<ExprHandle>& outputShape,
+    const std::vector<ExprHandle>& outputStrides,
+    const c10::optional<ScalarType>& outputType,
+    at::Device device);
+
 } // namespace tensorexpr
 } // namespace jit
 } // namespace torch

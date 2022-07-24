@@ -24,6 +24,11 @@ Tensor linear_run(
     const Tensor& input,
     const c10::intrusive_ptr<mkldnn::LinearOpContext>& op_context);
 
+Tensor linear_binary_run(
+    const Tensor& input,
+    const Tensor& other,
+    const c10::intrusive_ptr<mkldnn::LinearOpContext>& op_context);
+
 ContextLinear create(
     const Tensor& weight,
     const c10::optional<Tensor>& bias,
@@ -32,7 +37,11 @@ ContextLinear create(
 
 Tensor run(ContextLinear& context, const Tensor& input);
 
+Tensor run(ContextLinear& context, const Tensor& input, const Tensor& other);
+
 void run(ContextLinear& context, const Tensor& input, void* output);
+
+void run(ContextLinear& context, const Tensor& input, const Tensor& other, void* output);
 
 } // namespace linear
 } // namespace internal

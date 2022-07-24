@@ -71,6 +71,8 @@ TORCH_LIBRARY(mkldnn_prepacked, m) {
 
   m.def(TORCH_SELECTIVE_SCHEMA(
       "mkldnn_prepacked::linear_run(Tensor X, __torch__.torch.classes.mkldnn.LinearOpContext W_prepack) -> Tensor Y"));
+  m.def(TORCH_SELECTIVE_SCHEMA(
+      "mkldnn_prepacked::linear_binary_run(Tensor X, Tensor other, __torch__.torch.classes.mkldnn.LinearOpContext W_prepack) -> Tensor Y"));
 }
 
 TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
@@ -88,6 +90,10 @@ TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn_prepacked::linear_run"),
       TORCH_FN(linear_run));
+
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn_prepacked::linear_binary_run"),
+      TORCH_FN(linear_binary_run));
 }
 
 } // namespace mkldnn

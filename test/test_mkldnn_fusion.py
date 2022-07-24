@@ -249,6 +249,36 @@ class TestMkldnnFusion(JitTestCase):
                     graph = self._check_model(m, x)
                     self.assertFused(graph, ['aten::linear', 'aten::' + op_name])
                     self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+    
+    def test_linear_binary(self):
+        class M(nn.Module):
+            def __init__(self, binary_fn, in_channels, out_channels, bias, **kwargs):
+                super(M, self).__init__()
+                self.linear1 = torch.nn.Linear(in_channels, out_channels, bias=bias, **kwargs)
+                self.linear2 = torch.nn.Linear(in_channels, out_channels, bias=bias, **kwargs)
+                self.binary = binary_fn
+
+            def forward(self, x):
+                out1 = self.linear1(x)
+                out2 = self.linear2(x)
+                y = self.binary(out1, out2)
+                return y
+        iC = 2
+        oC = 3
+        for binary_fn, op_name in [[torch.add, "aten::add"]]:
+            for bias in [True, False]:
+                for x_shape in [
+                    [1, iC],
+                    [2, iC],
+                    [3, 2, iC]
+                ]:
+                    m = M(binary_fn, iC, oC, bias)
+                    x = torch.randn(x_shape)
+
+                    graph = self._check_model(m, x)
+                    print(graph)
+                    self.assertFused(graph, ['aten::linear', 'aten::' + op_name])
+                    self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
 
     def test_linear_clamp(self):
         modules = self._clamp_modules()

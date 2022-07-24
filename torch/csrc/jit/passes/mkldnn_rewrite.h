@@ -30,6 +30,7 @@ struct PostOp {
 };
 
 const std::map<std::string, PostOp>& fusion_attr_map();
+const std::map<std::string, ideep::algorithm>& fusion_binary_attr_map();
 
 } // namespace mkldnn
 
