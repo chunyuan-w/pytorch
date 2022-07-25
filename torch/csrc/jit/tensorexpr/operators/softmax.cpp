@@ -1,4 +1,6 @@
 #include <torch/csrc/jit/tensorexpr/operators/softmax.h>
+#include <torch/csrc/jit/tensorexpr/loopnest.h>
+#include <torch/csrc/jit/jit_log.h>
 
 namespace torch {
 namespace jit {
@@ -128,6 +130,79 @@ Tensor computeSoftmax(
         return e.load(move_softmax_dim_index_to_pos(indices));
       },
       {outputShape[softmax_dim]});
+
+LoopNest nest({sum});
+  constexpr int kChunkSize = 8;
+  // TODO: only handle reduce_dim == -1 for now
+    if (softmax_dim == rank - 1) {
+      // TODO: only handle rank == 1 for now
+        
+      auto loops = nest.getLoopStmtsFor(sum);
+
+      BufPtr rfac_buf;
+      ForPtr mi;
+      ForPtr tail;
+      nest.splitWithTail(loops.at(rank - 1), kChunkSize, &mi, &tail);
+
+      GRAPH_DEBUG("after splitWithMask", *nest.root_stmt());
+
+      ForPtr mo = loops.at(rank - 1);
+
+      nest.reorderAxis(mo, mi);
+      GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
+
+      auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
+      StmtPtr outerLoop = nullptr;
+std::cout << "writes size: " << writes.size() << "\n";
+      if (writes.size() == 2) {
+        if (StorePtr s = to<Store>(writes.back())) {
+          if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+            outerLoop = (StmtPtr)s; // NOLINT
+          }
+        }
+      }
+
+      if (writes.size() == 3) {
+        if (StorePtr s = to<Store>(writes[1])) {
+          if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+            outerLoop = (StmtPtr)s; // NOLINT
+          }
+        }
+      }
+
+      std::vector<ForPtr> result;
+      while (outerLoop) {
+        if (auto loop = to<For>(outerLoop)) {
+          result.push_back(loop);
+        }
+        outerLoop = outerLoop->get_parent();
+      }
+      std::reverse(result.begin(), result.end());
+
+      auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
+
+std::cout << "bt_body\n" << *bt_body << "\n";
+std::cout << "result 0\n" << *result.at(0) << "\n";
+std::cout << "result size " << result.size() << "\n";
+
+      nest.rfactor(bt_body, result.at(result.size()-2), &rfac_buf);
+      GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
+
+      nest.reorderAxis(result.at(result.size()-2), result.at(result.size()-1));
+      GRAPH_DEBUG("after 2nd reorderAxis", *nest.root_stmt());
+
+      loops = nest.getAllInnermostLoopsWritingToBuf(rfac_buf);
+
+      TORCH_CHECK(loops.size() == 2);
+      
+      // TODO: if we vectorize here, IR verifier will fail
+      // Modified the IR verifier to only check the scalar type but not the lanes
+      // nest.vectorize(loops.at(1));
+      // GRAPH_DEBUG("after vectorize", *nest.root_stmt());
+    }
+
+auto vectorized_sum = Tensor(sum.buf(), nest.root_stmt());
+
   if (!log_softmax) {
     auto result = Compute(
         "aten_softmax", outputShape, c10::nullopt, [&](ParameterList& indices) {
@@ -136,7 +211,7 @@ Tensor computeSoftmax(
     return Tensor(
         result.buf(),
         alloc<tensorexpr::Block>(std::vector<StmtPtr>(
-            {max.stmt(), e.stmt(), sum.stmt(), result.stmt()})));
+            {max.stmt(), e.stmt(), vectorized_sum.stmt(), result.stmt()})));
   }
 
   auto log_sum = Compute(
