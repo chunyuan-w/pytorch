@@ -823,16 +823,18 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
     preAllocIntermediateBufs(interm_bufs);
   }
 
+  if (backendType == kLLVMCodeGen) {
+    l.vectorizeInnerLoops();
+    GRAPH_DEBUG("after vectorization", *l.root_stmt());
+  }
+
   l.prepareForCodegen();
 
   GRAPH_DEBUG("after prepareForCodegen", *l.root_stmt());
   l.simplify();
   GRAPH_DEBUG("after simplification", *l.root_stmt());
 
-  if (backendType == kLLVMCodeGen && !hasReduction) {
-    l.vectorizeInnerLoops();
-    GRAPH_DEBUG("after vectorization", *l.root_stmt());
-  }
+
 
   StmtPtr stmt = l.root_stmt();
   // Arithmetic Simplification.

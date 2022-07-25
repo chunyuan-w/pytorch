@@ -69,7 +69,8 @@ class TestMkldnnFusion(JitTestCase):
             # [128],
             # [9],
             # [2, 256, 384, 384], # acc incorrect
-            [2, 8, 32, 32],
+            # [2, 8, 32, 32],
+            [2, 8, 32, 35],
             ]:
             print("size: ", size)
             x = torch.randn(size)
@@ -79,26 +80,26 @@ class TestMkldnnFusion(JitTestCase):
             self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
 
 
-    # def test_single_softmax(self):
-    #     class M(torch.nn.Module):
-    #         def __init__(self, eltwise, **kargs):
-    #             super(M, self).__init__()
-    #             self.eltwise = eltwise
-    #             self.kargs = kargs
+    def test_single_softmax(self):
+        class M(torch.nn.Module):
+            def __init__(self, eltwise, **kargs):
+                super(M, self).__init__()
+                self.eltwise = eltwise
+                self.kargs = kargs
 
-    #         def forward(self, x):
-    #             return self.eltwise(x, **self.kargs)
-    #     kwargs = {"dim": -1}
-    #     m = M(torch.softmax, **kwargs)
-    #     # x = torch.randn(1, 256, 384, 384)
-    #     # for size in [128, 9]:
-    #     for size in [128]:
-    #         print("size: ", size)
-    #         x = torch.randn(size)
-    #         # x = torch.randn(9)
-    #         graph = self._check_model(m, x)
-    #         self.assertFused(graph, ['aten::softmax'])
-    #         self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+            def forward(self, x):
+                return self.eltwise(x, **self.kargs)
+        kwargs = {"dim": -1}
+        m = M(torch.softmax, **kwargs)
+        # x = torch.randn(1, 256, 384, 384)
+        # for size in [128, 9]:
+        for size in [128]:
+            print("size: ", size)
+            x = torch.randn(size)
+            # x = torch.randn(9)
+            graph = self._check_model(m, x)
+            self.assertFused(graph, ['aten::softmax'])
+            self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
 
 if __name__ == "__main__":
     run_tests()
