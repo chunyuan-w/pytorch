@@ -473,22 +473,42 @@ void FuseBinaryWithPackedOps(std::shared_ptr<Graph>& graph) {
 
     auto filter = [](const Match& match,
                      const std::unordered_map<std::string, Value*>& vmap) {
-      auto linear_res = toIValue(match.values_map.at(vmap.at("linear_res")));
-      auto other = toIValue(match.values_map.at(vmap.at("other")));
-      // TODO: we can't get linear_res value, find a method to check it?
-      if (!linear_res.has_value() || !linear_res.value().isTensor()) {
+      auto binary_node = match.values_map.at(vmap.at("res"))->node();
+      auto linear_res = binary_node->inputs().at(0);
+      auto other = binary_node->inputs().at(1);
+      if (!linear_res->type()->cast<TensorType>()) {
         return false;
       }
-      const at::Tensor& linear_res_value = linear_res.value().toTensor();
-      if (other.has_value() && other.value().isTensor()) {
-        const at::Tensor& other_value = other.value().toTensor();
+      if (other->type()->cast<TensorType>()) {
+        auto linear_res_size_option = linear_res->type()
+                                                ->cast<TensorType>()
+                                                ->sizes()
+                                                .concrete_sizes();
+        
+        auto other_size_option = other->type()
+                                        ->cast<TensorType>()
+                                        ->sizes()
+                                        .concrete_sizes();
         // TODO: support broadcast.
-        if (other_value.sizes() != linear_res_value.sizes() ||
-            other_value.dtype() != linear_res_value.dtype() ||
-            !other_value.is_contiguous() ||
-            other_value.suggest_memory_format() !=
-                linear_res_value.suggest_memory_format() ||
-            other_value.device() != linear_res_value.device()) {
+        if (!linear_res_size_option.has_value() || !other_size_option.has_value()) {
+          return false;
+        }
+        auto linear_res_size_value = linear_res_size_option.value();
+        auto other_size_value = other_size_option.value();
+        auto linear_res_dtype_option = linear_res->type()->cast<TensorType>()->scalarType();
+        auto other_dtype_option = other->type()->cast<TensorType>()->scalarType();
+        if (!linear_res_dtype_option || !other_dtype_option) {
+          return false;
+        }
+        auto linear_res_device_option = linear_res->type()->cast<TensorType>()->device();
+        auto other_device_option = other->type()->cast<TensorType>()->device();
+        if (!linear_res_device_option || !other_device_option) {
+          return false;
+        }
+        if (linear_res_size_value.empty() || other_size_value.empty() ||
+           linear_res_size_value != other_size_value ||
+           linear_res_dtype_option.value() != other_dtype_option.value() ||
+           linear_res_device_option.value() != other_device_option.value())  {
           return false;
         }
       } else {
@@ -497,9 +517,9 @@ void FuseBinaryWithPackedOps(std::shared_ptr<Graph>& graph) {
       // alpha is optional
       if (vmap.find("alpha") != vmap.end()) {
         auto alpha = toIValue(match.values_map.at(vmap.at("alpha")));
-        if (alpha.has_value() && alpha.value().isDouble()) {
-          auto alpha_ = alpha.value().toDouble();
-          if (alpha_ != 1.0) {
+        if (alpha.has_value() && (alpha.value().isDouble() || alpha.value().isInt())) {
+          if (!(alpha.value().isDouble() && alpha.value().toDouble() == 1.0) &&
+              !(alpha.value().isInt() && static_cast<int>(alpha.value().toInt()) == 1)) {
             return false;
           }
         } else {
@@ -509,7 +529,6 @@ void FuseBinaryWithPackedOps(std::shared_ptr<Graph>& graph) {
       return true;
     };
     rewriter.runOnGraph(graph, filter);
-    //rewriter.runOnGraph(graph);
   }
 }
 
