@@ -667,13 +667,18 @@ static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
     }
     // The loop nest contains a reduction; give up.
     auto reductions = NodeFinder<ReduceOp>::find(loops[0]);
-    if (reductions.size() > 0) {
-      continue;
-    }
+    // if (reductions.size() > 0) {
+    //   continue;
+    // }
+
     // The loop nest has loop carried dependences; give up.
-    if (LoopNest::hasLoopCarriedDependence(loops[0])) {
-      continue;
-    }
+    // TODO: fix the seg fault here
+    // if (LoopNest::hasLoopCarriedDependence(loops[0])) {
+    //   printf("hasLoopCarriedDependence\n");
+
+    //   continue;
+    // }
+
     // Try to flatten the outer loops and parallelize them if successful.
     ForPtr flattened = nullptr;
     if (loops.size() == 1) {
