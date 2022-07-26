@@ -66,11 +66,11 @@ class TestMkldnnFusion(JitTestCase):
         # x = torch.randn(1, 256, 384, 384)
         # for size in [128, 9]:
         for size in [
-            # [128],
+            [128 * 128, 128],
             # [9],
             # [2, 256, 384, 384], # acc incorrect
             # [2, 8, 32, 32],
-            [2, 8, 32, 35],
+            # [2, 8, 32, 35],
             ]:
             print("size: ", size)
             x = torch.randn(size)
@@ -93,7 +93,13 @@ class TestMkldnnFusion(JitTestCase):
         m = M(torch.softmax, **kwargs)
         # x = torch.randn(1, 256, 384, 384)
         # for size in [128, 9]:
-        for size in [128]:
+        for size in [
+            [128 * 128, 128],
+            # [9],
+            # [2, 256, 384, 384], # acc incorrect
+            # [2, 8, 32, 32],
+            # [2, 8, 32, 35],
+            ]:
             print("size: ", size)
             x = torch.randn(size)
             # x = torch.randn(9)
