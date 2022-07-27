@@ -55,6 +55,9 @@ int nnc_lowerings_lazy_registration() {
   RegisterNNCLoweringsFunction mkldnn_prepacked_linear_binary_run(
       {"mkldnn_prepacked::linear_binary_run(Tensor X, Tensor other, __torch__.torch.classes.mkldnn.LinearOpContext W_prepack) -> (Tensor Y)"},
       computeMkldnnPrepackedLinearBinaryRun);
+  RegisterNNCLoweringsFunction mkldnn_matmul_binary_run(
+      {"mkldnn_prepacked::matmul_binary_run(Tensor X, Tensor other, Tensor weight, str post_op) -> (Tensor Y)"},
+      computeMkldnnMatmulBinaryRun);
 #endif // AT_MKLDNN_ENABLED()
 
   RegisterNNCLoweringsFunction aten_sub(

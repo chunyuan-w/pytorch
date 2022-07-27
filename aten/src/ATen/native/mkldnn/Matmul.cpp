@@ -26,6 +26,28 @@ bool use_mkldnn_bf16_matmul(
 } // namespace native
 } // namespace at
 
+
+
+namespace at {
+namespace native {
+namespace mkldnn {
+namespace internal {
+namespace linear {
+
+Tensor mkldnn_matmul_binary(
+    const Tensor &mat1,
+    const Tensor &other,
+    const Tensor &mat2,
+    std::string post_op) {
+  TORCH_CHECK(false, "mkldnn_matmul_binary: ATen not compiled with MKLDNN support");
+}
+
+} // namespace linear
+} // namespace internal
+} // namespace mkldnn
+} // namespace native
+} // names
+
 #else // AT_MKLDNN_ENABLED
 
 #include <ATen/native/mkldnn/MKLDNNCommon.h>
@@ -140,5 +162,39 @@ bool use_mkldnn_bf16_matmul(
 
 } // namespace native
 } // namespace at
+
+
+
+
+namespace at {
+namespace native {
+namespace mkldnn {
+namespace internal {
+namespace linear {
+
+Tensor mkldnn_matmul_binary_run(
+    const Tensor &mat1,
+    const Tensor &other,
+    const Tensor &mat2,
+    std::string post_op) {
+  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  const ideep::tensor x = itensor_view_from_dense(mat1);
+  const ideep::tensor w = itensor_view_from_dense(mat2);
+  const ideep::tensor other_ = itensor_view_from_dense(other);
+  at::Tensor result = at::empty_like(other);
+  ideep::tensor r = itensor_view_from_dense(result);
+  auto other_desc = ideep::tensor::desc(
+        other.sizes().vec(), get_mkldnn_dtype(other.scalar_type()));
+  auto op_attr = ideep::attr_t::fuse_binary(ideep::algorithm::binary_add, other_desc);
+  ideep::matmul_forward::compute_binary<false, false>(x, other_, w, r, 1.0f, op_attr);
+  return result;
+}
+
+} // namespace linear
+} // namespace internal
+} // namespace mkldnn
+} // namespace native
+} // names
+
 
 #endif // AT_MKLDNN_ENABLED

@@ -280,6 +280,33 @@ class TestMkldnnFusion(JitTestCase):
                     self.assertFused(graph, ['aten::linear', 'aten::' + op_name])
                     self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
 
+    def test_matmul_binary(self):
+        class M(nn.Module):
+            def __init__(self, binary_fn, **kwargs):
+                super(M, self).__init__()
+                self.binary = binary_fn
+
+            def forward(self, x):
+                out1 = torch.matmul(x, x + 1)
+                y = self.binary(out1, x.clone())
+                return y
+        iC = 2
+        oC = 3
+        for binary_fn, op_name in [[torch.add, "aten::add"]]:
+            for bias in [True, False]:
+                for x_shape in [
+                    #[1, iC],
+                    [33, 33],
+                    #[3, 2, iC]
+                ]:
+                    m = M(binary_fn)
+                    x = torch.randn(x_shape)
+
+                    graph = self._check_model(m, x)
+                    print(graph)
+                    self.assertFused(graph, ['aten::matmul', 'aten::' + op_name])
+                    self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+
     def test_linear_clamp(self):
         modules = self._clamp_modules()
         op_name = 'aten::clamp'

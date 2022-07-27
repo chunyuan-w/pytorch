@@ -1476,6 +1476,37 @@ void nnc_mkldnn_prepacked_linear_binary_run(
   context->run(x, other, buf_data[0]);
 }
 
+void nnc_mkldnn_matmul_binary_run(
+    int64_t bufs_num,
+    void** buf_data,
+    int64_t* buf_ranks,
+    int64_t* buf_dims,
+    int64_t* buf_strides,
+    int8_t* buf_dtypes,
+    int64_t args_num,
+    int64_t* extra_args) {
+  using namespace at::native::mkldnn;
+
+ auto tensors = constructTensors(
+      bufs_num, buf_data, buf_ranks, buf_dims, buf_strides, buf_dtypes);
+
+  at::Tensor& r = tensors[0];
+  const at::Tensor& x = tensors[1];
+  const at::Tensor& other = tensors[2];
+  const at::Tensor& w = tensors[3];
+  //std::string post_op = static_cast<std::string>(extra_args[0]);
+  std::string post_op("add");
+ // try {
+    const auto op =
+      c10::Dispatcher::singleton()
+          .findSchemaOrThrow("mkldnn_prepacked::matmul_binary_run", "")
+          .typed<at::Tensor(at::Tensor const&, at::Tensor const&, at::Tensor const&, std::string)>();
+    r = op.call(x, other, w, post_op);
+  //} catch (...) {
+ // }
+  memcpy(buf_data[0], r.data_ptr(), r.element_size() * r.numel());
+}
+
 #endif // AT_MKLDNN_ENABLED()
 
 #ifdef USE_XNNPACK
@@ -1668,6 +1699,10 @@ const static RegisterNNCExternalFunction reg_nnc_mkldnn_prepacked_linear_run(
 const static RegisterNNCExternalFunction reg_nnc_mkldnn_prepacked_linear_binary_run(
     "nnc_mkldnn_prepacked_linear_binary_run",
     nnc_mkldnn_prepacked_linear_binary_run);
+
+const static RegisterNNCExternalFunction reg_nnc_mkldnn_matmul_binary_run(
+    "nnc_mkldnn_matmul_binary_run",
+    nnc_mkldnn_matmul_binary_run);
 
 #endif // AT_MKLDNN_ENABLED()
 

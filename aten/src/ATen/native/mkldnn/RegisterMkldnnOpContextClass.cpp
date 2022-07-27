@@ -2,6 +2,7 @@
 #include <ATen/native/mkldnn/ConvPrepack.h>
 #include <ATen/native/mkldnn/LinearPrepack.h>
 #include <ATen/native/mkldnn/OpContext.h>
+#include <ATen/native/mkldnn/Matmul.h>
 #include <torch/custom_class.h>
 #include <torch/library.h>
 
@@ -73,6 +74,8 @@ TORCH_LIBRARY(mkldnn_prepacked, m) {
       "mkldnn_prepacked::linear_run(Tensor X, __torch__.torch.classes.mkldnn.LinearOpContext W_prepack) -> Tensor Y"));
   m.def(TORCH_SELECTIVE_SCHEMA(
       "mkldnn_prepacked::linear_binary_run(Tensor X, Tensor other, __torch__.torch.classes.mkldnn.LinearOpContext W_prepack) -> Tensor Y"));
+  m.def(TORCH_SELECTIVE_SCHEMA(
+      "mkldnn_prepacked::matmul_binary_run(Tensor X, Tensor other, Tensor weight, str post_op) -> Tensor Y"));
 }
 
 TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
@@ -94,6 +97,9 @@ TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn_prepacked::linear_binary_run"),
       TORCH_FN(linear_binary_run));
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn_prepacked::matmul_binary_run"),
+      TORCH_FN(mkldnn_matmul_binary_run));
 }
 
 } // namespace mkldnn

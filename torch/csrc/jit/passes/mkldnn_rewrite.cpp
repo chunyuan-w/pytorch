@@ -532,6 +532,50 @@ void FuseBinaryWithPackedOps(std::shared_ptr<Graph>& graph) {
   }
 }
 
+void FuseBinaryWithMatmul(std::shared_ptr<Graph>& graph) {
+  auto matmul_op_rstring = at::jit::CodeTemplate(R"(
+    graph(%input, %weight, %other, %alpha):
+        %matmul_res = aten::matmul(%input, %weight)
+        %res = aten::${op}(%matmul_res, %other, %alpha)
+        return (%res))");
+
+  auto matmul_op_fused_rstring = at::jit::CodeTemplate(R"(
+    graph(%input, %weight, %other, %alpha):
+        %attr: str = prim::Constant[value="${op_attr}"]()
+        %res = mkldnn_prepacked::matmul_binary_run(%input, %other, %weight, %attr)
+        return (%res))");
+
+  for (auto const& it : mkldnn::fusion_binary_attr_map()) {
+    std::string op = it.first;
+    at::jit::TemplateEnv env;
+    env.s("op", op);
+
+    at::jit::TemplateEnv env_fused;
+    env_fused.s("op_attr", op);
+
+    SubgraphRewriter rewriter;
+    rewriter.RegisterRewritePattern(
+        matmul_op_rstring.format(env), matmul_op_fused_rstring.format(env_fused));
+     auto filter = [](const Match& match,
+                     const std::unordered_map<std::string, Value*>& vmap) {
+      // alpha is optional
+      if (vmap.find("alpha") != vmap.end()) {
+        auto alpha = toIValue(match.values_map.at(vmap.at("alpha")));
+        if (alpha.has_value() && (alpha.value().isDouble() || alpha.value().isInt())) {
+          if (!(alpha.value().isDouble() && alpha.value().toDouble() == 1.0) &&
+              !(alpha.value().isInt() && static_cast<int>(alpha.value().toInt()) == 1)) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
+      return true;
+    };
+    rewriter.runOnGraph(graph, filter);
+  }
+}
+
 void PrePackingOpsFolder(Block* b) {
   auto is_foldable_op = [](const Node* n) -> bool {
     return (
@@ -588,7 +632,10 @@ void FuseConvWithEltwise(std::shared_ptr<Graph>& graph) {
       "After FuseEltwiseWithPackedOps, before FuseBinaryWithPackedOps\n", *graph);
   FuseBinaryWithPackedOps(graph);
   GRAPH_DEBUG(
-      "After FuseBinaryWithPackedOps, before ConstantPropagation\n", *graph);
+      "After FuseBinaryWithPackedOps, before FuseBinaryWithMatmul\n", *graph);
+  FuseBinaryWithMatmul(graph);
+  GRAPH_DEBUG(
+      "After FuseBinaryWithMatmul, before ConstantPropagation\n", *graph);
   ConstantPropagation(graph);
   GRAPH_DEBUG("After ConstantPropagation, before FoldPrePackingOps\n", *graph);
   FoldPrePackingOps(graph);
