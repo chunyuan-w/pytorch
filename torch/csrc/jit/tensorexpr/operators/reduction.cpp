@@ -168,8 +168,8 @@ Tensor computeSum(
       // TODO: if we vectorize here, IR verifier will fail
       // Modified the IR verifier to only check the scalar type but not the
       // lanes
-      nest.vectorize(loops.at(1));
-      GRAPH_DEBUG("after vectorize", *nest.root_stmt());
+      // nest.vectorize(loops.at(1));
+      // GRAPH_DEBUG("after vectorize", *nest.root_stmt());
 
       // nest.prepareForCodegen();
       // GRAPH_DEBUG("after prepareForCodegen", *nest.root_stmt());
