@@ -1,3 +1,5 @@
+#include <torch/csrc/jit/jit_log.h>
+#include <torch/csrc/jit/tensorexpr/loopnest.h>
 #include <torch/csrc/jit/tensorexpr/operators/reduction.h>
 
 using namespace torch::jit::tensorexpr;
@@ -70,7 +72,7 @@ Tensor computeSum(
     }
   }
 
-  return Reduce(
+  Tensor sum = Reduce(
       "sum",
       outputDims,
       outputStrides,
@@ -102,6 +104,79 @@ Tensor computeSum(
         }
       },
       reductionDims);
+
+  LoopNest nest({sum});
+
+  constexpr int kChunkSize = 8;
+  // TODO: only handle reduce_dim == -1 for now
+  if (axes.size() == 1) {
+    if (axes[0] == rank - 1) {
+      auto loops = nest.getLoopStmtsFor(sum);
+
+      BufPtr rfac_buf;
+      ForPtr mi;
+      ForPtr tail;
+      nest.splitWithTail(loops.at(rank - 1), kChunkSize, &mi, &tail);
+
+      GRAPH_DEBUG("after splitWithMask", *nest.root_stmt());
+
+      ForPtr mo = loops.at(rank - 1);
+
+      nest.reorderAxis(mo, mi);
+      GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
+
+      auto writes = WritesToBuf::find(nest.root_stmt(), sum.buf());
+      StmtPtr outerLoop = nullptr;
+      if (writes.size() == 2) {
+        if (StorePtr s = to<Store>(writes.back())) {
+          if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+            outerLoop = (StmtPtr)s; // NOLINT
+          }
+        }
+      }
+
+      if (writes.size() == 3) {
+        if (StorePtr s = to<Store>(writes[1])) {
+          if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
+            outerLoop = (StmtPtr)s; // NOLINT
+          }
+        }
+      }
+
+      std::vector<ForPtr> result;
+      while (outerLoop) {
+        if (auto loop = to<For>(outerLoop)) {
+          result.push_back(loop);
+        }
+        outerLoop = outerLoop->get_parent();
+      }
+      std::reverse(result.begin(), result.end());
+
+      auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
+
+      nest.rfactor(bt_body, result.at(result.size() - 2), &rfac_buf);
+      GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
+
+      nest.reorderAxis(
+          result.at(result.size() - 2), result.at(result.size() - 1));
+      GRAPH_DEBUG("after 2nd reorderAxis", *nest.root_stmt());
+
+      loops = nest.getAllInnermostLoopsWritingToBuf(rfac_buf);
+
+      TORCH_CHECK(loops.size() == 2);
+
+      // TODO: if we vectorize here, IR verifier will fail
+      // Modified the IR verifier to only check the scalar type but not the
+      // lanes
+      nest.vectorize(loops.at(1));
+      GRAPH_DEBUG("after vectorize", *nest.root_stmt());
+
+      // nest.prepareForCodegen();
+      // GRAPH_DEBUG("after prepareForCodegen", *nest.root_stmt());
+    }
+  }
+
+  return Tensor(sum.buf(), nest.root_stmt());
 }
 
 Tensor computeMean(
