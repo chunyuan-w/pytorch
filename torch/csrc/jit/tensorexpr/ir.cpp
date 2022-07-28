@@ -92,6 +92,8 @@ ExprPtr flatten_index(
 
   size_t ndim = dims.size();
   if (ndim != indices.size()) {
+std::cout << "ndim: " << ndim << "\n"    ;
+std::cout << "indices.size(): " << indices.size() << "\n"    ;
     throw malformed_input("dimensions mismatch in flatten_index");
   }
   if (ndim != strides.size()) {
