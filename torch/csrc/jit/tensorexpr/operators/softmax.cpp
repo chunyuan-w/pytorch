@@ -192,7 +192,17 @@ Tensor computeSoftmax(
       },
       {outputShape[softmax_dim]});
 
-  auto vectorized_max = prepareVectorizationForReduceOps(max, softmax_dim, rank);
+  // auto vectorized_max = prepareVectorizationForReduceOps(max, softmax_dim, rank);
+  BufHandle ResultBuf("max", outputShape, kFloat);
+  BufHandle InputBuf = c10::get<BufHandle>(inputs[0]);
+
+  auto vectorized_max = Tensor(
+      ResultBuf.node(),
+      ExternalCall::make(
+          ResultBuf,
+          "nnc_aten_max_red",
+          {InputBuf},
+          {outputShape[softmax_dim]}));
 
   auto e = Compute(
       "aten_softmax_exp",
