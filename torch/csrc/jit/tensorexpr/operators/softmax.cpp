@@ -35,7 +35,6 @@ LoopNest nest({sum});
 
       auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
       StmtPtr outerLoop = nullptr;
-std::cout << "writes size: " << writes.size() << "\n";
       if (writes.size() == 2) {
         if (StorePtr s = to<Store>(writes.back())) {
           if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
@@ -62,10 +61,6 @@ std::cout << "writes size: " << writes.size() << "\n";
       std::reverse(result.begin(), result.end());
 
       auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
-
-std::cout << "bt_body\n" << *bt_body << "\n";
-std::cout << "result 0\n" << *result.at(0) << "\n";
-std::cout << "result size " << result.size() << "\n";
 
       nest.rfactor(bt_body, result.at(result.size()-2), &rfac_buf);
       GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
@@ -235,7 +230,6 @@ LoopNest nest({sum});
 
       auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
       StmtPtr outerLoop = nullptr;
-std::cout << "writes size: " << writes.size() << "\n";
       if (writes.size() == 2) {
         if (StorePtr s = to<Store>(writes.back())) {
           if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
@@ -262,10 +256,6 @@ std::cout << "writes size: " << writes.size() << "\n";
       std::reverse(result.begin(), result.end());
 
       auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
-
-std::cout << "bt_body\n" << *bt_body << "\n";
-std::cout << "result 0\n" << *result.at(0) << "\n";
-std::cout << "result size " << result.size() << "\n";
 
       nest.rfactor(bt_body, result.at(result.size()-2), &rfac_buf);
       GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
