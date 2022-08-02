@@ -99,10 +99,13 @@ void _mkldnn_linear_out(
         w,
         b.value(),
         y,
+        ideep::scale_t(),
+        ideep::scale_t(),
+        ideep::scale_t(),
         attr);
   } else {
     ideep::inner_product_forward::compute(
-        x, w, y, attr);
+        x, w, y, ideep::scale_t(), ideep::scale_t(), ideep::scale_t(), attr);
   }
 }
 

@@ -2,6 +2,8 @@
 #include <ATen/Config.h>
 #include <ATen/NativeFunctions.h>
 #include <ATen/native/mkldnn/Matmul.h>
+#include <torch/csrc/jit/passes/mkldnn_rewrite.h>
+
 #if !AT_MKLDNN_ENABLED()
 
 namespace at {
@@ -183,10 +185,11 @@ Tensor mkldnn_matmul_binary_run(
   const ideep::tensor other_ = itensor_view_from_dense(other);
   at::Tensor result = at::empty_like(other);
   ideep::tensor r = itensor_view_from_dense(result);
+  auto it_binary = torch::jit::mkldnn::fusion_binary_attr_map().find(post_op);
   auto other_desc = ideep::tensor::desc(
         other.sizes().vec(), get_mkldnn_dtype(other.scalar_type()));
-  auto op_attr = ideep::attr_t::fuse_binary(ideep::algorithm::binary_add, other_desc);
-  ideep::matmul_forward::compute_binary<false, false>(x, other_, w, r, 1.0f, op_attr);
+  auto op_attr = ideep::attr_t::fuse_binary(it_binary->second, other_desc);
+  ideep::matmul_forward::compute_binary(x, other_, w, r, 1.0f, op_attr);
   return result;
 }
 
