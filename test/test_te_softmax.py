@@ -39,9 +39,9 @@ class TestMkldnnFusion(JitTestCase):
         script = torch.jit.freeze(script)
 
         with torch.no_grad():
-            y = warmup_and_run_forward(script, x)
-            y = script(x)
-            y_ref = m(x)
+            y = warmup_and_run_forward(script, *x)
+            y = script(*x)
+            y_ref = m(*x)
 
             graph = script.graph_for(*x)
             self.assertEqual(y, y_ref)
@@ -75,7 +75,7 @@ class TestMkldnnFusion(JitTestCase):
             print("size: ", size)
             x = torch.randn(size)
             # x = torch.randn(9)
-            graph = self._check_model(m, x)
+            graph = self._check_model(m, [x])
             self.assertFused(graph, ['aten::add'])
             self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
 
@@ -103,9 +103,30 @@ class TestMkldnnFusion(JitTestCase):
             print("size: ", size)
             x = torch.randn(size)
             # x = torch.randn(9)
-            graph = self._check_model(m, x)
+            graph = self._check_model(m, [x])
             self.assertFused(graph, ['aten::softmax'])
             self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+
+    def test_div_add_softmax(self):
+        class M(torch.nn.Module):
+            def __init__(self, eltwise, **kargs):
+                super(M, self).__init__()
+                self.eltwise = eltwise
+                self.kargs = kargs
+
+            def forward(self, x, y):
+                x = x / 8.
+                x = x + y
+                return self.eltwise(x, **self.kargs)
+        
+        kwargs = {"dim": -1}
+        m = M(torch.softmax, **kwargs)
+
+        x = torch.randn([8, 16, 384, 384])
+        y = torch.randn([8, 1, 1, 384])
+        graph = self._check_model(m, [x, y])
+        self.assertFused(graph, ['aten::div', 'aten::ad', 'aten::softmax'])
+        self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
 
 if __name__ == "__main__":
     run_tests()
