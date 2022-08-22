@@ -620,6 +620,7 @@ c10::optional<int64_t> tripCount(ForPtr loop) {
 // Prune innermost loops until iterations satisfies a minimum grain size.
 static void pruneByGrainSize(std::vector<ForPtr>& loops) {
   constexpr int64_t minGrainSize = 32768;
+  // constexpr int64_t minGrainSize = 32768 / (384 * 16);
   int64_t grainSize = 1;
   for (int64_t i = loops.size(); i > 0; i--) {
     auto tc = tripCount(loops[i - 1]);
@@ -636,17 +637,23 @@ static void pruneByGrainSize(std::vector<ForPtr>& loops) {
 // Retain enough outermost loops to fill the number of threads.
 static void pruneByThreadCount(std::vector<ForPtr>& loops) {
   int64_t trips = 1;
-  auto threads = at::get_num_threads();
+  // auto threads = at::get_num_threads();
+  auto threads = 256;
   auto it = loops.begin();
   for (; it != loops.end(); it++) {
     if (trips >= threads) {
       break;
     }
     auto tc = tripCount(*it);
+// std::cout << "tc: " << tc.value() << "\n"    ;
     if (!tc) {
       break;
     }
+// std::cout << "trips before: " << trips << "\n"    ;
+
     trips *= *tc;
+// std::cout << "trips after: " << trips << "\n"    ;
+
   }
   loops.erase(it, loops.end());
 }
@@ -658,8 +665,12 @@ template <typename Bufs>
 static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
   for (auto const& buf : bufs) {
     auto loops = l.getLoopStmtsFor(buf);
+// std::cout << "orig size: " << loops.size() << "\n"    ;
     pruneByGrainSize(loops);
+// std::cout << "after pruneByGrainSize: " << loops.size() << "\n"    ;
+
     pruneByThreadCount(loops);
+// std::cout << "after pruneByThreadCount: " << loops.size() << "\n"    ;
 
     // There are no loops to parallelize; give up.
     if (loops.size() == 0) {
