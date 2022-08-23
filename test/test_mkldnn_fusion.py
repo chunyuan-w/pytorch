@@ -82,12 +82,48 @@ class TestMkldnnFusion(JitTestCase):
                         groups=groups).to(memory_format=memory_format)
                     x = torch.randn(batch_size, iC, input_size, input_size).to(memory_format=memory_format)
                     graph = self._check_model(m, x, trace)
-                    conv_node_name = 'aten::_convolution'if trace else 'aten::conv2d'
+                    conv_node_name = 'aten::_convolution' if trace else 'aten::conv2d'
                     if enabled:
                         self.assertFused(graph, [conv_node_name])
                         self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
                     else:
                         self.assertGraphContains(graph, kind=conv_node_name)
+
+    def test_unsupported_conv(self):
+        class M(nn.Module):
+            def __init__(self, m, in_channels, out_channels, bias, **kwargs):
+                super(M, self).__init__()
+                self.conv = m(in_channels, out_channels, bias=bias, **kwargs)
+
+            def forward(self, x):
+                res = self.conv(x)
+                return res            
+
+        for memory_format in [
+            torch.contiguous_format,
+            torch.channels_last_3d,
+        ]:
+            trace = True
+            input_size = 224
+            batch_size = 1
+            kernel_size = 3
+            groups = 2
+            bias = True
+            iC = 3 * groups
+            oC = 10 * groups
+            dilation = 2
+            m = M(nn.Conv3d,
+                iC,
+                oC,
+                bias,
+                kernel_size=kernel_size,
+                stride=2,
+                padding=1,
+                dilation=dilation,
+                groups=groups).to(memory_format=memory_format)
+            x = torch.randn(batch_size, iC, input_size, input_size, input_size).to(memory_format=memory_format)
+            graph = self._check_model(m, x, trace)
+            self.assertGraphContains(graph, kind='aten::_convolution')
 
     def test_conv_eltwise(self):
         class M(nn.Module):
