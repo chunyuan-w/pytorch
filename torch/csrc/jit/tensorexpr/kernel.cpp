@@ -233,6 +233,20 @@ bool isContiguous(const torch::jit::Value* v, at::MemoryFormat memory_format) {
   return *strides == TensorType::contiguousStridesOf(*sizes, memory_format);
 }
 
+size_t get_conv_groups_index(const torch::jit::Node* node) {
+  switch (node->kind()) {
+    case aten::conv2d:
+      return 6;
+    case aten::_convolution:
+      return 8;
+    default:
+      TORCH_CHECK(
+          false,
+          "mkldnnPrepackedConvIsSupportedJit expects node kind to be conv2d or _convolution but got ",
+          node->kind());
+  }
+}
+
 // The fuser only supports conv2d with very specific properties:
 // - Static shapes: 4-d input and filter, 1-d bias.
 // - Constant strides/padding/dilation/groups
@@ -246,7 +260,8 @@ bool conv2dIsSupportedJit(const torch::jit::Node* node) {
   auto const& stride = toIValue(node->input(3));
   auto const& pad = toIValue(node->input(4));
   auto const& dilation = toIValue(node->input(5));
-  auto const& groups = toIValue(node->input(6));
+  size_t groups_index = get_conv_groups_index(node);
+  auto const& groups = toIValue(node->input(groups_index));
 
   // Everything should be statically known.
   if (!input || !weight || !bias || !stride || !pad || !dilation || !groups) {
@@ -278,7 +293,8 @@ bool mkldnnPrepackedConvIsSupportedJit(const torch::jit::Node* node) {
   auto const& stride = toIValue(node->input(3));
   auto const& pad = toIValue(node->input(4));
   auto const& dilation = toIValue(node->input(5));
-  auto const& groups = toIValue(node->input(6));
+  size_t groups_index = get_conv_groups_index(node);
+  auto const& groups = toIValue(node->input(groups_index));
 
   // Everything should be statically known (bias could be NoneType =
   // prim::Constant()).
