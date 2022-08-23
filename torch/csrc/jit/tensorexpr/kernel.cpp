@@ -346,9 +346,15 @@ bool isConv2d(const Node* node) {
       pad.value().toIntList().size()  != 2 ||
       dilation.value().toIntList().size()  != 2 ||
       output_padding.value().toIntList().size()  != 2) {
+    GRAPH_DEBUG("Conv not 2d");
     return false;
   }
-  return !transposed.value().toBool();
+
+  if (transposed.value().toBool()) {
+    GRAPH_DEBUG("transposed Conv");
+    return false;
+  }
+  return true;
 }
 
 // The fuser currently only supports matmul of 2D x 2D matrices
