@@ -82,11 +82,12 @@ class TestMkldnnFusion(JitTestCase):
                         groups=groups).to(memory_format=memory_format)
                     x = torch.randn(batch_size, iC, input_size, input_size).to(memory_format=memory_format)
                     graph = self._check_model(m, x, trace)
+                    conv_node_name = 'aten::_convolution'if trace else 'aten::conv2d'
                     if enabled:
-                        self.assertFused(graph, ['aten::conv2d'])
+                        self.assertFused(graph, [conv_node_name])
                         self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
                     else:
-                        self.assertGraphContains(graph, kind='aten::conv2d')
+                        self.assertGraphContains(graph, kind=conv_node_name)
 
     def test_conv_eltwise(self):
         class M(nn.Module):
