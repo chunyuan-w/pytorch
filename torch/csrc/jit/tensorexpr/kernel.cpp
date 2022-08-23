@@ -314,6 +314,27 @@ bool mkldnnPrepackedConvIsSupportedJit(const torch::jit::Node* node) {
   return false;
 }
 
+bool isConv2d(const Node* node) {
+  auto const& stride = toIValue(node->input(3));
+  auto const& pad = toIValue(node->input(4));
+  auto const& dilation = toIValue(node->input(5));
+  auto const& transposed = toIValue(node->input(6));
+  auto const& output_padding = toIValue(node->input(7));
+
+  if (!stride || !pad || !dilation || !transposed || !output_padding) {
+    GRAPH_DEBUG("some params aren't static");
+    return false;
+  }
+
+  if (stride.value().toIntList().size() != 2  ||
+      pad.value().toIntList().size()  != 2 ||
+      dilation.value().toIntList().size()  != 2 ||
+      output_padding.value().toIntList().size()  != 2) {
+    return false;
+  }
+  return !transposed.value().toBool();
+}
+
 // The fuser currently only supports matmul of 2D x 2D matrices
 bool matmulIsSupported(const torch::jit::Node* node) {
   auto const& input0 = getTensorInfoJit(node->input(0));
