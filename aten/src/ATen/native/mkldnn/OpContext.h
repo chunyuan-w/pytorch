@@ -57,7 +57,9 @@ class ConvOpContext : public torch::jit::CustomClassHolder {
   }
 
   virtual Tensor run(const Tensor& input) = 0;
+  virtual Tensor sum_run(const Tensor& input, const Tensor& other) = 0;
   virtual void run(const Tensor& input, void* output) = 0;
+  virtual void sum_run(const Tensor& input, const Tensor& other, Tensor& output) = 0;
 };
 
 class MkldnnConvOpContext final : public ConvOpContext {
@@ -86,7 +88,10 @@ class MkldnnConvOpContext final : public ConvOpContext {
 
   Tensor run(const Tensor& input) override;
 
+  Tensor sum_run(const Tensor& input, const Tensor& other) override;
+
   void run(const Tensor& input, void* output) override;
+  void sum_run(const Tensor& input, const Tensor& other, Tensor& output) override;
 
   static c10::intrusive_ptr<ConvOpContext> create_context(
       Tensor&& weight,

@@ -236,9 +236,56 @@ Tensor run(ContextConv& context, const Tensor& input) {
   return output;
 }
 
+Tensor sum_run(ContextConv& context, const Tensor& input, const Tensor& other) {
+  std::vector<int64_t> output_sizes = get_output_sizes(context, input);
+  auto output = at::empty(
+      output_sizes,
+      input.options().memory_format(input.suggest_memory_format()));
+
+  bool is_channels_last =
+      input.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
+  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  ideep::tensor mkldnn_output;
+
+  if (is_channels_last) {
+    output.copy_(other);
+    mkldnn_output = itensor_from_tensor(output);
+    mkldnn_convolution_out(
+        input,
+        mkldnn_output,
+        context.weight_packed_,
+        context.at_bias_,
+        context.padding_,
+        context.stride_,
+        context.dilation_,
+        output_sizes,
+        context.groups_,
+        context.attr_);
+  } else {
+    ideep::tensor y;
+    mkldnn_convolution_out(
+        input,
+        y,
+        context.weight_packed_,
+        context.at_bias_,
+        context.padding_,
+        context.stride_,
+        context.dilation_,
+        output_sizes,
+        context.groups_,
+        ideep::attr_t());
+    mkldnn_output.feed_from(y);
+    auto alpha = std::get<1>(context.attr_.get_params(0));
+    output.add_(other, alpha);
+    if (context.attr_.has_op_kind(ideep::kind::eltwise)) {
+      output.relu_();
+    }
+  }
+  return output;
+}
+
 void run(ContextConv& context, const Tensor& input, void* output) {
   std::vector<int64_t> output_sizes = get_output_sizes(context, input);
-
   bool is_channels_last =
       input.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
   ideep::tensor y;
@@ -247,7 +294,6 @@ void run(ContextConv& context, const Tensor& input, void* output) {
   ideep::tensor::desc o_desc = {
       output_sizes, get_mkldnn_dtype(input.scalar_type()), o_tag};
   ideep::tensor mkldnn_output = {o_desc, output};
-
   if (is_channels_last) {
     mkldnn_convolution_out(
         input,
@@ -276,10 +322,64 @@ void run(ContextConv& context, const Tensor& input, void* output) {
   }
 }
 
+void sum_run(ContextConv& context, const Tensor& input, const Tensor& other, Tensor& output) {
+  std::vector<int64_t> output_sizes = get_output_sizes(context, input);
+
+  bool is_channels_last =
+      input.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
+  bool other_is_channels_last =
+      input.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
+  ideep::tag o_tag = is_channels_last ? ideep::tag::nhwc : ideep::tag::nchw;
+  ideep::tensor::desc o_desc = {
+      output_sizes, get_mkldnn_dtype(input.scalar_type()), o_tag};
+  ideep::tensor mkldnn_output = {o_desc, output.data_ptr()};;
+  if (is_channels_last) {
+    output.copy_(other);
+    mkldnn_convolution_out(
+        input,
+        mkldnn_output,
+        context.weight_packed_,
+        context.at_bias_,
+        context.padding_,
+        context.stride_,
+        context.dilation_,
+        output_sizes,
+        context.groups_,
+        context.attr_);
+  } else {
+    std::cout<<"running none channels_last path"<<std::endl;
+    ideep::tensor y;
+    mkldnn_convolution_out(
+        input,
+        y,
+        context.weight_packed_,
+        context.at_bias_,
+        context.padding_,
+        context.stride_,
+        context.dilation_,
+        output_sizes,
+        context.groups_,
+        ideep::attr_t());
+    mkldnn_output.feed_from(y);
+    auto alpha = std::get<1>(context.attr_.get_params(0));
+    output.add_(other, alpha);
+    if (context.attr_.has_op_kind(ideep::kind::eltwise)) {
+      output.relu_();
+    }
+  }
+}
+
 Tensor conv_run(
     const Tensor& input,
     const c10::intrusive_ptr<mkldnn::ConvOpContext>& op_context) {
   return op_context->run(input);
+}
+
+Tensor conv_sum_run(
+    const Tensor& input,
+    const Tensor& other,
+    const c10::intrusive_ptr<mkldnn::ConvOpContext>& op_context) {
+  return op_context->sum_run(input, other);
 }
 
 } // namespace convolution

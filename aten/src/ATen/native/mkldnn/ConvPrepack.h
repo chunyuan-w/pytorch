@@ -28,6 +28,11 @@ Tensor conv_run(
     const Tensor& input,
     const c10::intrusive_ptr<mkldnn::ConvOpContext>& op_context);
 
+Tensor conv_sum_run(
+    const Tensor& input,
+    const Tensor& other,
+    const c10::intrusive_ptr<mkldnn::ConvOpContext>& op_context);
+
 ContextConv create(
     const Tensor& weight,
     const c10::optional<Tensor>& bias,
@@ -40,7 +45,11 @@ ContextConv create(
 
 Tensor run(ContextConv& context, const Tensor& input);
 
+Tensor sum_run(ContextConv& context, const Tensor& input, const Tensor& other);
+
 void run(ContextConv& context, const Tensor& input, void* output);
+
+void sum_run(ContextConv& context, const Tensor& input, const Tensor& other, Tensor& output);
 
 } // namespace convolution
 } // namespace internal

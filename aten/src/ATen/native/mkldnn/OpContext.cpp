@@ -63,6 +63,24 @@ AttrFunction attr_func_clamp =
       return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
     };
 
+AttrFunction attr_func_sum =
+    [](std::vector<c10::optional<at::Scalar>> scalars,
+       c10::optional<std::string> algorithm) {
+      float alpha_value =
+          scalars[0] ? scalars[0].value().to<float>() : 1.0;
+
+      return ideep::attr_t::fuse_sum(alpha_value);
+    };
+
+AttrFunction attr_func_sum_relu =
+    [](std::vector<c10::optional<at::Scalar>> scalars,
+       c10::optional<std::string> algorithm) {
+      float alpha_value =
+          scalars[0] ? scalars[0].value().to<float>() : 1.0;
+
+      return ideep::attr_t::residual(alpha_value);
+    };
+
 const std::map<std::string, AttrFunction>& fusion_attr_map() {
   static const std::map<std::string, AttrFunction> fusion_attr_map{
       {"none", attr_func_none},
@@ -73,6 +91,8 @@ const std::map<std::string, AttrFunction>& fusion_attr_map() {
       {"hardtanh", attr_func_hardtanh},
       {"gelu", attr_func_gelu},
       {"clamp", attr_func_clamp},
+      {"sum", attr_func_sum},
+      {"sum_relu", attr_func_sum_relu},
   };
   return fusion_attr_map;
 };
@@ -106,8 +126,16 @@ Tensor MkldnnConvOpContext::run(const Tensor& input) {
   return mkldnn::internal::convolution::run(op_context_, input);
 }
 
+Tensor MkldnnConvOpContext::sum_run(const Tensor& input, const Tensor& other) {
+  return mkldnn::internal::convolution::sum_run(op_context_, input, other);
+}
+
 void MkldnnConvOpContext::run(const Tensor& input, void* output) {
   return mkldnn::internal::convolution::run(op_context_, input, output);
+}
+
+void MkldnnConvOpContext::sum_run(const Tensor& input, const Tensor& other, Tensor& output) {
+  return mkldnn::internal::convolution::sum_run(op_context_, input, other, output);
 }
 
 } // namespace mkldnn
