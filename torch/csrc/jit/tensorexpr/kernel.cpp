@@ -8,6 +8,7 @@
 #include <c10/util/irange.h>
 #include <c10/util/string_utils.h>
 #include <torch/csrc/jit/jit_log.h>
+#include <torch/csrc/jit/passes/graph_rewrite_helper.h>
 #include <torch/csrc/jit/passes/mkldnn_rewrite.h>
 #include <torch/csrc/jit/passes/symbolic_shape_runtime_fusion.h>
 #include <torch/csrc/jit/tensorexpr/analysis.h>
@@ -1653,6 +1654,7 @@ void TensorExprKernel::optimizeOwningGraph() {
   deduceMemoryLayoutPolicy();
 
   // Fuse Conv with Eltwise Op
+  graph_rewrite_helper::replaceConvolutionWithAtenConv(graph_);
   FuseConvWithEltwise(graph_);
 
   // Optimize the concatenation
