@@ -331,6 +331,10 @@ bool mkldnnPrepackedConvIsSupportedJit(const torch::jit::Node* node) {
 }
 
 bool isConv2d(const Node* node) {
+  if (node->kind() != aten::_convolution) {
+    return false;
+  }
+
   auto const& stride = toIValue(node->input(3));
   auto const& pad = toIValue(node->input(4));
   auto const& dilation = toIValue(node->input(5));

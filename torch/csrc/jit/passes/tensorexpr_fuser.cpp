@@ -1044,18 +1044,11 @@ class TensorExprFuser {
       }
     }
 
-    if (node->kind() == aten::conv2d) {
-      if (!tensorexpr::conv2dIsSupportedJit(node) &&
-          !tensorexpr::mkldnnPrepackedConvIsSupportedJit(node)) {
-        GRAPH_DEBUG("Params of conv2d are not supported");
-        return false;
-      }
+    if (node->kind() == aten::_convolution && !tensorexpr::isConv2d(node)) {
+      GRAPH_DEBUG("This aten::_convolution node is not a 2D conv");
+      return false;
     }
-    // TODO: fix the duplicated check here
-    if (node->kind() == aten::_convolution) {
-      if (!tensorexpr::isConv2d(node)) {
-        return false;
-      }
+    if (node->kind() == aten::_convolution || node->kind() == aten::conv2d) {
       if (!tensorexpr::conv2dIsSupportedJit(node) &&
           !tensorexpr::mkldnnPrepackedConvIsSupportedJit(node)) {
         GRAPH_DEBUG("Params of conv2d are not supported");
