@@ -99,9 +99,11 @@ class TestMkldnnFusion(JitTestCase):
                 res = self.conv(x)
                 return res            
 
-        for memory_format in [
-            torch.contiguous_format,
-            torch.channels_last_3d,
+        for module, dim, memory_format in [
+            [nn.Conv3d, 3, torch.contiguous_format],
+            [nn.Conv3d, 3, torch.channels_last_3d],
+            [nn.ConvTranspose2d, 2, torch.contiguous_format],
+            [nn.ConvTranspose2d, 2, torch.channels_last],
         ]:
             trace = True
             input_size = 224
@@ -112,7 +114,7 @@ class TestMkldnnFusion(JitTestCase):
             iC = 3 * groups
             oC = 10 * groups
             dilation = 2
-            m = M(nn.Conv3d,
+            m = M(module,
                 iC,
                 oC,
                 bias,
@@ -121,7 +123,10 @@ class TestMkldnnFusion(JitTestCase):
                 padding=1,
                 dilation=dilation,
                 groups=groups).to(memory_format=memory_format)
-            x = torch.randn(batch_size, iC, input_size, input_size, input_size).to(memory_format=memory_format)
+            input_sizes = [batch_size, iC, input_size, input_size]
+            if dim == 3:
+                input_sizes.append(input_size)
+            x = torch.randn(input_sizes).to(memory_format=memory_format)
             graph = self._check_model(m, x, trace)
             self.assertGraphContains(graph, kind='aten::_convolution')
 
