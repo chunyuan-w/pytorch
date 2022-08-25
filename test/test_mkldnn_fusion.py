@@ -19,7 +19,7 @@ class TestMkldnnFusion(JitTestCase):
         for pat in fused_patterns:
             self.assertGraphContainsExactly(graph, pat, 0)
 
-    def _check_model(self, m, x, trace=False):
+    def _check_model(self, m, x, trace=False, bf16=False):
         old_fusion_inlining = torch._C._debug_get_fusion_group_inlining()
         torch._C._debug_set_fusion_group_inlining(False)
 
@@ -30,14 +30,14 @@ class TestMkldnnFusion(JitTestCase):
         torch._C._jit_set_te_must_use_llvm_cpu(False)
 
         m.eval()
-        with torch.no_grad():
+        with torch.no_grad(), torch.cpu.amp.autocast(enabled=bf16, cache_enabled=False):
             if trace:
                 script = torch.jit.trace(m, x)
             else:
                 script = torch.jit.script(m)
         script = torch.jit.freeze(script)
 
-        with torch.no_grad():
+        with torch.no_grad(), torch.cpu.amp.autocast(enabled=bf16):
             y = warmup_and_run_forward(script, x)
             y = script(x)
             y_ref = m(x)
@@ -65,29 +65,33 @@ class TestMkldnnFusion(JitTestCase):
             [torch.channels_last, True],
         ]:
             for trace in [True, False]:
-                input_size = 224
-                batch_size = 1
-                kernel_size = 3
-                options = itertools.product([True, False], [1, 2], [1, 4])
-                for bias, dilation, groups in options:
-                    iC = 3 * groups
-                    oC = 10 * groups
-                    m = M(iC,
-                          oC,
-                          bias,
-                          kernel_size=(kernel_size, kernel_size),
-                          stride=2,
-                          padding=1,
-                          dilation=dilation,
-                          groups=groups).to(memory_format=memory_format)
-                    x = torch.randn(batch_size, iC, input_size, input_size).to(memory_format=memory_format)
-                    graph = self._check_model(m, x, trace)
-                    conv_node_name = 'aten::_convolution' if trace else 'aten::conv2d'
-                    if enabled:
-                        self.assertFused(graph, [conv_node_name])
-                        self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
-                    else:
-                        self.assertGraphContains(graph, kind=conv_node_name)
+                for bf16 in [True, False]:
+                    # torch.jit.script doesn't work with autocast
+                    if not trace and bf16:
+                        continue
+                    input_size = 224
+                    batch_size = 1
+                    kernel_size = 3
+                    options = itertools.product([True, False], [1, 2], [1, 4])
+                    for bias, dilation, groups in options:
+                        iC = 3 * groups
+                        oC = 10 * groups
+                        m = M(iC,
+                            oC,
+                            bias,
+                            kernel_size=(kernel_size, kernel_size),
+                            stride=2,
+                            padding=1,
+                            dilation=dilation,
+                            groups=groups).to(memory_format=memory_format)
+                        x = torch.randn(batch_size, iC, input_size, input_size).to(memory_format=memory_format)
+                        graph = self._check_model(m, x, trace, bf16)
+                        conv_node_name = 'aten::_convolution' if trace else 'aten::conv2d'
+                        if enabled:
+                            self.assertFused(graph, [conv_node_name])
+                            self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+                        else:
+                            self.assertGraphContains(graph, kind=conv_node_name)
 
     def test_conv_eltwise(self):
         class M(nn.Module):
@@ -105,18 +109,23 @@ class TestMkldnnFusion(JitTestCase):
             [torch.contiguous_format, False],
             [torch.channels_last, True],
         ]:
-            for eltwise_fn in [torch.relu]:
-                for bias in [True, False]:
-                    for oC in [1, 10]:
-                        m = M(eltwise_fn, 3, oC, bias, kernel_size=(3, 3)).to(memory_format=memory_format)
-                        x = torch.randn(1, 3, 224, 224).to(memory_format=memory_format)
+            for trace in [True, False]:
+                for bf16 in [True, False]:
+                    # torch.jit.script doesn't work with autocast
+                    if not trace and bf16:
+                        continue                    
+                    for eltwise_fn in [torch.relu]:
+                        for bias in [True, False]:
+                            for oC in [1, 10]:
+                                m = M(eltwise_fn, 3, oC, bias, kernel_size=(3, 3)).to(memory_format=memory_format)
+                                x = torch.randn(1, 3, 224, 224).to(memory_format=memory_format)
 
-                        graph = self._check_model(m, x)
-                        if enabled:
-                            self.assertFused(graph, ['aten::conv2d', 'aten::' + eltwise_fn.__name__])
-                            self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
-                        else:
-                            self.assertGraphContains(graph, kind='aten::conv2d')
+                                graph = self._check_model(m, x, trace, bf16)
+                                if enabled:
+                                    self.assertFused(graph, ['aten::conv2d', 'aten::' + eltwise_fn.__name__])
+                                    self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+                                else:
+                                    self.assertGraphContains(graph, kind='aten::conv2d')
 
     def test_unsupported_conv(self):
         class M(nn.Module):
@@ -158,6 +167,43 @@ class TestMkldnnFusion(JitTestCase):
             x = torch.randn(input_sizes).to(memory_format=memory_format)
             graph = self._check_model(m, x, trace)
             self.assertGraphContains(graph, kind='aten::_convolution')
+
+    def test_save_load(self):
+        class M(nn.Module):
+            def __init__(self, eltwise_fn, in_channels, out_channels, bias, **kwargs):
+                super(M, self).__init__()
+                self.conv = torch.nn.Conv2d(in_channels, out_channels, bias=bias, **kwargs)
+                self.eltwise = eltwise_fn
+
+            def forward(self, x):
+                x = self.conv(x)
+                x = self.eltwise(x)
+                return x
+
+        memory_format = torch.channels_last
+        eltwise_fn = torch.relu
+        bias = True
+        oC = 10
+        m = M(eltwise_fn, 3, oC, bias, kernel_size=(3, 3)).to(memory_format=memory_format)
+        x = torch.randn(1, 3, 224, 224).to(memory_format=memory_format)
+        graph, script = self._check_model(m, x)
+        self.assertFused(graph, ['aten::conv2d', 'aten::' + eltwise_fn.__name__])
+        self.assertGraphContainsExactly(graph, FUSION_GROUP, 1)
+        
+        torch.jit.save(script, 'scriptmodule.pt')
+        load_model = torch.jit.load('scriptmodule.pt')
+
+        print("load")
+        with torch.no_grad():
+            print("1st")
+            print(load_model.graph_for(x))
+            
+            print("2nd")
+            print(load_model.graph_for(x))
+            print("compute")
+            y = load_model(x)
+            print("#" * 50)
+            self.assertEqual(y, m(x))
 
 
 if __name__ == "__main__":
