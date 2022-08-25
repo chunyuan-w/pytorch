@@ -19,7 +19,7 @@ class TestMkldnnFusion(JitTestCase):
         for pat in fused_patterns:
             self.assertGraphContainsExactly(graph, pat, 0)
 
-    def _check_model(self, m, x, trace=False):
+    def _check_model(self, m, x, trace=False, bf16=False):
         old_fusion_inlining = torch._C._debug_get_fusion_group_inlining()
         torch._C._debug_set_fusion_group_inlining(False)
 
@@ -30,14 +30,14 @@ class TestMkldnnFusion(JitTestCase):
         torch._C._jit_set_te_must_use_llvm_cpu(False)
 
         m.eval()
-        with torch.no_grad():
+        with torch.no_grad(), torch.cpu.amp.autocast(enabled=bf16, cache_enabled=False):
             if trace:
                 script = torch.jit.trace(m, x)
             else:
                 script = torch.jit.script(m)
         script = torch.jit.freeze(script)
 
-        with torch.no_grad():
+        with torch.no_grad(), torch.cpu.amp.autocast(enabled=bf16):
             y = warmup_and_run_forward(script, x)
             y = script(x)
             y_ref = m(x)
@@ -61,10 +61,11 @@ class TestMkldnnFusion(JitTestCase):
                 return res
 
         for memory_format, enabled in [
-            [torch.contiguous_format, False],
+            # [torch.contiguous_format, False],
             [torch.channels_last, True],
         ]:
-            for trace in [True, False]:
+            bf16 = True
+            for trace in [True]:
                 input_size = 224
                 batch_size = 1
                 kernel_size = 3
@@ -81,7 +82,7 @@ class TestMkldnnFusion(JitTestCase):
                         dilation=dilation,
                         groups=groups).to(memory_format=memory_format)
                     x = torch.randn(batch_size, iC, input_size, input_size).to(memory_format=memory_format)
-                    graph = self._check_model(m, x, trace)
+                    graph = self._check_model(m, x, trace, bf16)
                     conv_node_name = 'aten::_convolution' if trace else 'aten::conv2d'
                     if enabled:
                         self.assertFused(graph, [conv_node_name])
