@@ -6,6 +6,7 @@
 #include <torch/csrc/jit/passes/dead_code_elimination.h>
 #include <torch/csrc/jit/passes/graph_rewrite_helper.h>
 #include <torch/csrc/jit/passes/mkldnn_rewrite.h>
+#include <torch/csrc/jit/passes/mkldnn_rewrite_helper.h>
 #include <torch/csrc/jit/tensorexpr/kernel.h>
 
 namespace torch {
@@ -302,7 +303,7 @@ void FuseAddReluWithPackedOps(std::shared_ptr<Graph>& graph) {
   //  Y     conv
   //   \   /
   //    add
-  // Y = Y + alpha*conv_output, alpha need to one or none.
+  // Y = Y + alpha*conv_output, alpha should be one.
   auto conv_add_v2 = R"(
     graph(%input, %weight, %bias, %accumu, %alpha, %stride:int[], %padding:int[], %dilation:int[], %groups:int, %input_size:int[], 
           %attr_placeholder:str, %scalars_placeholder: Scalar?[], %algorithm_placeholder: str?):
@@ -343,8 +344,8 @@ void FuseAddReluWithPackedOps(std::shared_ptr<Graph>& graph) {
       conv_add_v2, conv_add_fused);
   rewriter_add_relu.RegisterRewritePattern(
       conv_add_relu, conv_add_relu_fused);
-  rewriter_add_v1.runOnGraph(graph);
-  rewriter_add_v2.runOnGraph(graph);
+  rewriter_add_v1.runOnGraph(graph, add_accumu_on_right);
+  rewriter_add_v2.runOnGraph(graph, add_accumu_on_left);
   rewriter_add_relu.runOnGraph(graph);
 }
 
@@ -401,6 +402,7 @@ void FuseConvWithEltwise(std::shared_ptr<Graph>& graph) {
   GRAPH_DEBUG(
       "After FuseEltwiseWithPackedOps, before FuseAddReluWithPackedOps\n",
       *graph);
+  // graph->dump();
   FuseAddReluWithPackedOps(graph);
   GRAPH_DEBUG(
       "After FuseAddReluWithPackedOps, before ConstantPropagation\n", *graph);

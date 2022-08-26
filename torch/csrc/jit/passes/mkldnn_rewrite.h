@@ -3,6 +3,7 @@
 #include <ATen/Config.h>
 #include <torch/csrc/jit/api/module.h>
 #include <torch/csrc/jit/ir/ir.h>
+#include <torch/csrc/jit/ir/subgraph_matcher.h>
 #include <torch/csrc/jit/passes/subgraph_rewrite.h>
 
 #if AT_MKLDNN_ENABLED()
