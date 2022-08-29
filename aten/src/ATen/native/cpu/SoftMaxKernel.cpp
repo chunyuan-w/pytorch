@@ -1,5 +1,6 @@
 #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
 #include <ATen/native/cpu/SoftmaxKernel.h>
+#include <ATen/ops/empty_like.h>
 
 #include <algorithm>
 #include <iterator>
@@ -102,6 +103,7 @@ template <typename scalar_t>
 inline void _vec_softmax_lastdim(
     scalar_t* input_data_base,
     scalar_t* output_data_base,
+    scalar_t* tmp_data_base,
     int64_t outer_size,
     int64_t dim_size) {
   using Vec = vec::Vectorized<scalar_t>;
@@ -110,22 +112,23 @@ inline void _vec_softmax_lastdim(
     for (const auto i : c10::irange(begin, end)) {
       scalar_t* input_data = input_data_base + i * dim_size;
       scalar_t* output_data = output_data_base + i * dim_size;
+      scalar_t* tmp_data = tmp_data_base + i * dim_size;
       scalar_t max_input = vec::reduce_all<scalar_t>(
           [](Vec& x, Vec& y) { return vec::maximum(x, y); },
           input_data,
           dim_size);
       vec::map(
           [max_input](Vec x) { return (x - Vec(max_input)).exp(); },
-          output_data,
+          tmp_data,
           input_data,
           dim_size);
       scalar_t tmp_sum = vec::reduce_all<scalar_t>(
-          [](Vec x, Vec y) { return x + y; }, output_data, dim_size);
+          [](Vec x, Vec y) { return x + y; }, tmp_data, dim_size);
       tmp_sum = 1 / tmp_sum;
       vec::map(
           [tmp_sum](Vec x) { return x * Vec(tmp_sum); },
           output_data,
-          output_data,
+          tmp_data,
           dim_size);
     }
   });
@@ -135,6 +138,7 @@ template <>
 inline void _vec_softmax_lastdim<BFloat16>(
     BFloat16* input_data_base,
     BFloat16* output_data_base,
+    BFloat16* tmp_data_base,
     int64_t outer_size,
     int64_t dim_size) {
   using bVec = vec::Vectorized<BFloat16>;
@@ -253,18 +257,22 @@ inline void _vec_host_softmax_backward_lastdim(
 template <typename scalar_t, bool LogSoftMax>
 struct vec_host_softmax_lastdim {
   static void apply(const Tensor& output, const Tensor& input) {
+    
+      auto tmp_buffer = at::empty_like(output);    
+    
     int64_t outer_size = 1;
     int64_t dim_size = input.size(input.ndimension() - 1);
     for (int64_t i = 0; i < input.ndimension() - 1; ++i)
       outer_size *= input.size(i);
     scalar_t* input_data_base = input.data_ptr<scalar_t>();
     scalar_t* output_data_base = output.data_ptr<scalar_t>();
+    scalar_t* tmp_data_base = tmp_buffer.data_ptr<scalar_t>();
     if (LogSoftMax) {
       _vec_log_softmax_lastdim(
           input_data_base, output_data_base, outer_size, dim_size);
     } else {
       _vec_softmax_lastdim(
-          input_data_base, output_data_base, outer_size, dim_size);
+          input_data_base, output_data_base, tmp_data_base, outer_size, dim_size);
     }
   }
 };
