@@ -278,7 +278,10 @@ auto vectorized_sum = Tensor(sum.buf(), nest.root_stmt());
   if (!log_softmax) {
     auto result = Compute(
         "aten_softmax", outputShape, c10::nullopt, [&](ParameterList& indices) {
-          return e.load(indices) / sum.load(remove_softmax_dim_index(indices));
+auto one = Cast::make(kFloat, 1);
+auto tmp_sum =  one / sum.load(remove_softmax_dim_index(indices));
+
+          return e.load(indices) * tmp_sum;
         });
     return Tensor(
         result.buf(),

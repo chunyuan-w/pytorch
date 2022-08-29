@@ -115,6 +115,7 @@ printf("enter computeSum\n")      ;
       // TODO: only handle rank == 1 for now
         
       auto loops = nest.getLoopStmtsFor(sum);
+      GRAPH_DEBUG("orig", *nest.root_stmt());
 
       BufPtr rfac_buf;
       ForPtr mi;
