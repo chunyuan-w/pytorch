@@ -1,0 +1,2047 @@
+size:  [16384, 128]
+[DEBUG tensorexpr_fuser.cpp:252] Before removeProfileNodesAndSpecializeTypes:
+[DEBUG tensorexpr_fuser.cpp:252] graph(%self : __torch__.___torch_mangle_1.M,
+[DEBUG tensorexpr_fuser.cpp:252]       %x : Tensor):
+[DEBUG tensorexpr_fuser.cpp:252]   %3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:252]   %2 : NoneType = prim::Constant()
+[DEBUG tensorexpr_fuser.cpp:252]   %4 : Tensor = prim::profile[profiled_type=Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu), seen_none=0](%x)
+[DEBUG tensorexpr_fuser.cpp:252]   %5 : Tensor = aten::softmax(%4, %3, %2) # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:252]   %6 : Tensor = prim::profile[profiled_type=Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu), seen_none=0](%5)
+[DEBUG tensorexpr_fuser.cpp:252]   return (%6)
+[DEBUG tensorexpr_fuser.cpp:190] Removing prim::profile: %4
+[DEBUG tensorexpr_fuser.cpp:190] Removing prim::profile: %6
+[DEBUG tensorexpr_fuser.cpp:254] After removeProfileNodesAndSpecializeTypes:
+[DEBUG tensorexpr_fuser.cpp:254] graph(%self : __torch__.___torch_mangle_1.M,
+[DEBUG tensorexpr_fuser.cpp:254]       %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DEBUG tensorexpr_fuser.cpp:254]   %3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:254]   %2 : NoneType = prim::Constant()
+[DEBUG tensorexpr_fuser.cpp:254]   %5 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %3, %2) # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:254]   return (%5)
+[DUMP tensorexpr_fuser.cpp:1294] Before TExprFuser: 
+[DUMP tensorexpr_fuser.cpp:1294] graph(%self : __torch__.___torch_mangle_1.M,
+[DUMP tensorexpr_fuser.cpp:1294]       %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:1294]   %3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:1294]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:1294]   %5 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %3, %2) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:1294]   return (%5)
+[DUMP tensorexpr_fuser.cpp:551] After removing redundant profile nodes: 
+[DUMP tensorexpr_fuser.cpp:551] graph(%self : __torch__.___torch_mangle_1.M,
+[DUMP tensorexpr_fuser.cpp:551]       %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:551]   %3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:551]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:551]   %5 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %3, %2) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:551]   return (%5)
+[DEBUG tensorexpr_fuser.cpp:646] Considering node:%5 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %3, %2) # test/test_te_softmax.py:91:0
+[UPDATE tensorexpr_fuser.cpp:575] Creating a tensorexpr::Group node from: %5 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %3, %2) # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:606] Iteratively pull input nodes into the fusion group...
+[DEBUG tensorexpr_fuser.cpp:625] Current fusion group: %8 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::TensorExprGroup[Subgraph=<Graph>](%x)
+[DEBUG tensorexpr_fuser.cpp:628] graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DEBUG tensorexpr_fuser.cpp:628]   %1 : int = prim::Constant[value=-1]()
+[DEBUG tensorexpr_fuser.cpp:628]   %2 : NoneType = prim::Constant()
+[DEBUG tensorexpr_fuser.cpp:628]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %1, %2) # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:628]   return (%3)
+[DEBUG tensorexpr_fuser.cpp:611] Trying to merge: %self : __torch__.___torch_mangle_1.M, %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::Param()
+[DEBUG tensorexpr_fuser.cpp:1094] Failed cond tensorexpr::pickDeviceType(node->inputs())
+[DEBUG tensorexpr_fuser.cpp:1127] Failed cond canHandle(producer) || producer->kind() == prim::TensorExprGroup
+[DEBUG tensorexpr_fuser.cpp:646] Considering node:%2 : NoneType = prim::Constant()
+[DEBUG tensorexpr_fuser.cpp:1094] Failed cond tensorexpr::pickDeviceType(node->inputs())
+[DEBUG tensorexpr_fuser.cpp:646] Considering node:%3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:1094] Failed cond tensorexpr::pickDeviceType(node->inputs())
+[DUMP tensorexpr_fuser.cpp:553] After creating fusion groups: 
+[DUMP tensorexpr_fuser.cpp:553] graph(%self : __torch__.___torch_mangle_1.M,
+[DUMP tensorexpr_fuser.cpp:553]       %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:553]   %3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:553]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:553]   %8 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::TensorExprGroup_0(%x)
+[DUMP tensorexpr_fuser.cpp:553]   return (%8)
+[DUMP tensorexpr_fuser.cpp:553] with prim::TensorExprGroup_0 = graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:553]   %1 : int = prim::Constant[value=-1]()
+[DUMP tensorexpr_fuser.cpp:553]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:553]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %1, %2) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:553]   return (%3)
+[DEBUG tensorexpr_fuser.cpp:763] 
+[DEBUG tensorexpr_fuser.cpp:763] <GRAPH_EXPORT>
+[DEBUG tensorexpr_fuser.cpp:763] graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DEBUG tensorexpr_fuser.cpp:763]   %2 : NoneType = prim::Constant()
+[DEBUG tensorexpr_fuser.cpp:763]   %1 : int = prim::Constant[value=-1]()
+[DEBUG tensorexpr_fuser.cpp:763]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %1, %2) # test/test_te_softmax.py:91:0
+[DEBUG tensorexpr_fuser.cpp:763]   return (%3)
+[DEBUG tensorexpr_fuser.cpp:763] </GRAPH_EXPORT>
+[DUMP tensorexpr_fuser.cpp:558] After inlining small fusion groups: 
+[DUMP tensorexpr_fuser.cpp:558] graph(%self : __torch__.___torch_mangle_1.M,
+[DUMP tensorexpr_fuser.cpp:558]       %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:558]   %3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:558]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:558]   %8 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::TensorExprGroup_0(%x)
+[DUMP tensorexpr_fuser.cpp:558]   return (%8)
+[DUMP tensorexpr_fuser.cpp:558] with prim::TensorExprGroup_0 = graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:558]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:558]   %1 : int = prim::Constant[value=-1]()
+[DUMP tensorexpr_fuser.cpp:558]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %1, %2) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:558]   return (%3)
+[DUMP tensorexpr_fuser.cpp:429] buildShapeExpressions for 
+[DUMP tensorexpr_fuser.cpp:429] graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:429]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:429]   %1 : int = prim::Constant[value=-1]()
+[DUMP tensorexpr_fuser.cpp:429]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %1, %2) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:429]   return (%3)
+[DEBUG tensorexpr_fuser.cpp:443] Adding a mapping for %x %9 : int[] = aten::size(%x)
+[DEBUG tensorexpr_fuser.cpp:303] Inserting a typecheck guard for a node%8 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::TensorExprGroup[Subgraph=<Graph>](%x)
+[DUMP tensorexpr_fuser.cpp:566] After guarding fusion groups: 
+[DUMP tensorexpr_fuser.cpp:566] graph(%self : __torch__.___torch_mangle_1.M,
+[DUMP tensorexpr_fuser.cpp:566]       %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:566]   %3 : int = prim::Constant[value=-1]() # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:566]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:566]   %11 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu), %12 : bool = prim::TypeCheck[types=[Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)]](%x)
+[DUMP tensorexpr_fuser.cpp:566]   %13 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::If(%12)
+[DUMP tensorexpr_fuser.cpp:566]     block0():
+[DUMP tensorexpr_fuser.cpp:566]       %8 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::TensorExprGroup_0(%11)
+[DUMP tensorexpr_fuser.cpp:566]       -> (%8)
+[DUMP tensorexpr_fuser.cpp:566]     block1():
+[DUMP tensorexpr_fuser.cpp:566]       %17 : Tensor = prim::FallbackGraph_1(%x)
+[DUMP tensorexpr_fuser.cpp:566]       -> (%17)
+[DUMP tensorexpr_fuser.cpp:566]   %9 : int[] = aten::size(%x)
+[DUMP tensorexpr_fuser.cpp:566]   %10 : int[] = aten::size(%13)
+[DUMP tensorexpr_fuser.cpp:566]   return (%13)
+[DUMP tensorexpr_fuser.cpp:566] with prim::TensorExprGroup_0 = graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:566]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:566]   %1 : int = prim::Constant[value=-1]()
+[DUMP tensorexpr_fuser.cpp:566]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %1, %2) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:566]   return (%3)
+[DUMP tensorexpr_fuser.cpp:566] with prim::FallbackGraph_1 = graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:566]   %1 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:566]   %2 : int = prim::Constant[value=-1]()
+[DUMP tensorexpr_fuser.cpp:566]   %3 : Tensor = aten::softmax(%x, %2, %1) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:566]   return (%3)
+[DUMP tensorexpr_fuser.cpp:1316] After TExprFuser: 
+[DUMP tensorexpr_fuser.cpp:1316] graph(%self : __torch__.___torch_mangle_1.M,
+[DUMP tensorexpr_fuser.cpp:1316]       %x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:1316]   %11 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu), %12 : bool = prim::TypeCheck[types=[Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)]](%x)
+[DUMP tensorexpr_fuser.cpp:1316]   %13 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::If(%12)
+[DUMP tensorexpr_fuser.cpp:1316]     block0():
+[DUMP tensorexpr_fuser.cpp:1316]       %8 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = prim::TensorExprGroup_0(%11)
+[DUMP tensorexpr_fuser.cpp:1316]       -> (%8)
+[DUMP tensorexpr_fuser.cpp:1316]     block1():
+[DUMP tensorexpr_fuser.cpp:1316]       %17 : Tensor = prim::FallbackGraph_1(%x)
+[DUMP tensorexpr_fuser.cpp:1316]       -> (%17)
+[DUMP tensorexpr_fuser.cpp:1316]   return (%13)
+[DUMP tensorexpr_fuser.cpp:1316] with prim::TensorExprGroup_0 = graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:1316]   %2 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:1316]   %1 : int = prim::Constant[value=-1]()
+[DUMP tensorexpr_fuser.cpp:1316]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %1, %2) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:1316]   return (%3)
+[DUMP tensorexpr_fuser.cpp:1316] with prim::FallbackGraph_1 = graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP tensorexpr_fuser.cpp:1316]   %1 : NoneType = prim::Constant()
+[DUMP tensorexpr_fuser.cpp:1316]   %2 : int = prim::Constant[value=-1]()
+[DUMP tensorexpr_fuser.cpp:1316]   %3 : Tensor = aten::softmax(%x, %2, %1) # test/test_te_softmax.py:91:0
+[DUMP tensorexpr_fuser.cpp:1316]   return (%3)
+[DUMP kernel.cpp:1560] TensorExprKernel graph (Before graph optimization):
+[DUMP kernel.cpp:1560] graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1560]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1560]   %2 : int = prim::Constant[value=-1]()
+[DUMP kernel.cpp:1560]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %2, %1) # test/test_te_softmax.py:91:0
+[DUMP kernel.cpp:1560]   return (%3)
+[DUMP kernel.cpp:1588] TensorExprKernel graph (After graph optimization):
+[DUMP kernel.cpp:1588] graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1588]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1588]   %2 : int = prim::Constant[value=-1]()
+[DUMP kernel.cpp:1588]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %2, %1) # test/test_te_softmax.py:91:0
+[DUMP kernel.cpp:1588]   return (%3)
+[DUMP kernel.cpp:1592] TensorExprKernel graph:
+[DUMP kernel.cpp:1592] graph(%x : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu)):
+[DUMP kernel.cpp:1592]   %1 : NoneType = prim::Constant()
+[DUMP kernel.cpp:1592]   %2 : int = prim::Constant[value=-1]()
+[DUMP kernel.cpp:1592]   %3 : Float(16384, 128, strides=[128, 1], requires_grad=0, device=cpu) = aten::softmax(%x, %2, %1) # test/test_te_softmax.py:91:0
+[DUMP kernel.cpp:1592]   return (%3)
+[DEBUG softmax.cpp:029] after splitWithMask{
+[DEBUG softmax.cpp:029]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:029]     aten_softmax_max[i] = float(1.175494350822288e-38f);
+[DEBUG softmax.cpp:029]     for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:029]       for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:029]         aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], tx[i, i_outer * 8ll + i_inner], 1), reduce_args={i_inner, i_outer});
+[DEBUG softmax.cpp:029]       }
+[DEBUG softmax.cpp:029]     }
+[DEBUG softmax.cpp:029]   }
+[DEBUG softmax.cpp:029] }
+[DEBUG softmax.cpp:034] after 1st reorderAxis{
+[DEBUG softmax.cpp:034]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:034]     aten_softmax_max[i] = float(1.175494350822288e-38f);
+[DEBUG softmax.cpp:034]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:034]       for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:034]         aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], tx[i, i_outer * 8ll + i_inner], 1), reduce_args={i_inner, i_outer});
+[DEBUG softmax.cpp:034]       }
+[DEBUG softmax.cpp:034]     }
+[DEBUG softmax.cpp:034]   }
+[DEBUG softmax.cpp:034] }
+[DEBUG softmax.cpp:066] after 1st rfactor{
+[DEBUG softmax.cpp:066]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:066]     aten_softmax_max[i] = float(1.175494350822288e-38f);
+[DEBUG softmax.cpp:066]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:066]       aten_softmax_max_rfac[i, i_inner] = float(1.175494350822288e-38f);
+[DEBUG softmax.cpp:066]       for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:066]         aten_softmax_max_rfac[i, i_inner] = ReduceOp(Max(aten_softmax_max_rfac[i, i_inner], tx[i, i_outer * 8ll + i_inner], 1), reduce_args={i_outer});
+[DEBUG softmax.cpp:066]       }
+[DEBUG softmax.cpp:066]       aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, i_inner], 1), reduce_args={i_inner});
+[DEBUG softmax.cpp:066]     }
+[DEBUG softmax.cpp:066]   }
+[DEBUG softmax.cpp:066] }
+[DEBUG softmax.cpp:069] after 2nd reorderAxis{
+[DEBUG softmax.cpp:069]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:069]     aten_softmax_max[i] = float(1.175494350822288e-38f);
+[DEBUG softmax.cpp:069]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:069]       aten_softmax_max_rfac[i, i_inner] = float(1.175494350822288e-38f);
+[DEBUG softmax.cpp:069]     }
+[DEBUG softmax.cpp:069]     for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:069]       for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:069]         aten_softmax_max_rfac[i, i_inner] = ReduceOp(Max(aten_softmax_max_rfac[i, i_inner], tx[i, i_outer * 8ll + i_inner], 1), reduce_args={i_outer});
+[DEBUG softmax.cpp:069]       }
+[DEBUG softmax.cpp:069]     }
+[DEBUG softmax.cpp:069]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:069]       aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, i_inner], 1), reduce_args={i_inner});
+[DEBUG softmax.cpp:069]     }
+[DEBUG softmax.cpp:069]   }
+[DEBUG softmax.cpp:069] }
+[DEBUG softmax.cpp:224] after splitWithMask{
+[DEBUG softmax.cpp:224]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:224]     aten_softmax_sum[i] = float(0);
+[DEBUG softmax.cpp:224]     for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:224]       for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:224]         aten_softmax_sum[i] = ReduceOp((aten_softmax_sum[i]) + (aten_softmax_exp[i, i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+[DEBUG softmax.cpp:224]       }
+[DEBUG softmax.cpp:224]     }
+[DEBUG softmax.cpp:224]   }
+[DEBUG softmax.cpp:224] }
+[DEBUG softmax.cpp:229] after 1st reorderAxis{
+[DEBUG softmax.cpp:229]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:229]     aten_softmax_sum[i] = float(0);
+[DEBUG softmax.cpp:229]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:229]       for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:229]         aten_softmax_sum[i] = ReduceOp((aten_softmax_sum[i]) + (aten_softmax_exp[i, i_outer * 8ll + i_inner]), reduce_args={i_inner, i_outer});
+[DEBUG softmax.cpp:229]       }
+[DEBUG softmax.cpp:229]     }
+[DEBUG softmax.cpp:229]   }
+[DEBUG softmax.cpp:229] }
+[DEBUG softmax.cpp:261] after 1st rfactor{
+[DEBUG softmax.cpp:261]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:261]     aten_softmax_sum[i] = float(0);
+[DEBUG softmax.cpp:261]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:261]       aten_softmax_sum_rfac[i, i_inner] = float(0);
+[DEBUG softmax.cpp:261]       for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:261]         aten_softmax_sum_rfac[i, i_inner] = ReduceOp((aten_softmax_sum_rfac[i, i_inner]) + (aten_softmax_exp[i, i_outer * 8ll + i_inner]), reduce_args={i_outer});
+[DEBUG softmax.cpp:261]       }
+[DEBUG softmax.cpp:261]       aten_softmax_sum[i] = ReduceOp((aten_softmax_sum[i]) + (aten_softmax_sum_rfac[i, i_inner]), reduce_args={i_inner});
+[DEBUG softmax.cpp:261]     }
+[DEBUG softmax.cpp:261]   }
+[DEBUG softmax.cpp:261] }
+[DEBUG softmax.cpp:264] after 2nd reorderAxis{
+[DEBUG softmax.cpp:264]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG softmax.cpp:264]     aten_softmax_sum[i] = float(0);
+[DEBUG softmax.cpp:264]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:264]       aten_softmax_sum_rfac[i, i_inner] = float(0);
+[DEBUG softmax.cpp:264]     }
+[DEBUG softmax.cpp:264]     for (int64_t i_outer = 0ll; i_outer < (128ll - 0ll) / 8ll; i_outer++) {
+[DEBUG softmax.cpp:264]       for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:264]         aten_softmax_sum_rfac[i, i_inner] = ReduceOp((aten_softmax_sum_rfac[i, i_inner]) + (aten_softmax_exp[i, i_outer * 8ll + i_inner]), reduce_args={i_outer});
+[DEBUG softmax.cpp:264]       }
+[DEBUG softmax.cpp:264]     }
+[DEBUG softmax.cpp:264]     for (int64_t i_inner = 0ll; i_inner < 8ll; i_inner++) {
+[DEBUG softmax.cpp:264]       aten_softmax_sum[i] = ReduceOp((aten_softmax_sum[i]) + (aten_softmax_sum_rfac[i, i_inner]), reduce_args={i_inner});
+[DEBUG softmax.cpp:264]     }
+[DEBUG softmax.cpp:264]   }
+[DEBUG softmax.cpp:264] }
+[DEBUG kernel.cpp:698] Original Stmt:
+[DEBUG kernel.cpp:698] {
+[DEBUG kernel.cpp:698]   {
+[DEBUG kernel.cpp:698]     {
+[DEBUG kernel.cpp:698]       for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG kernel.cpp:698]         aten_softmax_max[i] = float(1.175494350822288e-38f);
+[DEBUG kernel.cpp:698]         for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:698]           aten_softmax_max_rfac[i, j] = float(1.175494350822288e-38f);
+[DEBUG kernel.cpp:698]         }
+[DEBUG kernel.cpp:698]         for (int64_t j_1 = 0ll; j_1 < (128ll - 0ll) / 8ll; j_1++) {
+[DEBUG kernel.cpp:698]           for (int64_t k = 0ll; k < 8ll; k++) {
+[DEBUG kernel.cpp:698]             aten_softmax_max_rfac[i, k] = ReduceOp(Max(aten_softmax_max_rfac[i, k], tx[i, j_1 * 8ll + k], 1), reduce_args={j_1});
+[DEBUG kernel.cpp:698]           }
+[DEBUG kernel.cpp:698]         }
+[DEBUG kernel.cpp:698]         for (int64_t j_2 = 0ll; j_2 < 8ll; j_2++) {
+[DEBUG kernel.cpp:698]           aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, j_2], 1), reduce_args={j_2});
+[DEBUG kernel.cpp:698]         }
+[DEBUG kernel.cpp:698]       }
+[DEBUG kernel.cpp:698]     }
+[DEBUG kernel.cpp:698]     for (int64_t i_1 = 0ll; i_1 < 16384ll; i_1++) {
+[DEBUG kernel.cpp:698]       for (int64_t j_3 = 0ll; j_3 < 128ll; j_3++) {
+[DEBUG kernel.cpp:698]         aten_softmax_exp[i_1, j_3] = exp((tx[i_1, j_3]) - (aten_softmax_max[i_1]));
+[DEBUG kernel.cpp:698]       }
+[DEBUG kernel.cpp:698]     }
+[DEBUG kernel.cpp:698]     {
+[DEBUG kernel.cpp:698]       for (int64_t i_2 = 0ll; i_2 < 16384ll; i_2++) {
+[DEBUG kernel.cpp:698]         aten_softmax_sum[i_2] = float(0);
+[DEBUG kernel.cpp:698]         for (int64_t j_4 = 0ll; j_4 < 8ll; j_4++) {
+[DEBUG kernel.cpp:698]           aten_softmax_sum_rfac[i_2, j_4] = float(0);
+[DEBUG kernel.cpp:698]         }
+[DEBUG kernel.cpp:698]         for (int64_t j_5 = 0ll; j_5 < (128ll - 0ll) / 8ll; j_5++) {
+[DEBUG kernel.cpp:698]           for (int64_t k_1 = 0ll; k_1 < 8ll; k_1++) {
+[DEBUG kernel.cpp:698]             aten_softmax_sum_rfac[i_2, k_1] = ReduceOp((aten_softmax_sum_rfac[i_2, k_1]) + (aten_softmax_exp[i_2, j_5 * 8ll + k_1]), reduce_args={j_5});
+[DEBUG kernel.cpp:698]           }
+[DEBUG kernel.cpp:698]         }
+[DEBUG kernel.cpp:698]         for (int64_t j_6 = 0ll; j_6 < 8ll; j_6++) {
+[DEBUG kernel.cpp:698]           aten_softmax_sum[i_2] = ReduceOp((aten_softmax_sum[i_2]) + (aten_softmax_sum_rfac[i_2, j_6]), reduce_args={j_6});
+[DEBUG kernel.cpp:698]         }
+[DEBUG kernel.cpp:698]       }
+[DEBUG kernel.cpp:698]     }
+[DEBUG kernel.cpp:698]     for (int64_t i_3 = 0ll; i_3 < 16384ll; i_3++) {
+[DEBUG kernel.cpp:698]       for (int64_t j_7 = 0ll; j_7 < 128ll; j_7++) {
+[DEBUG kernel.cpp:698]         aten_softmax[i_3, j_7] = (aten_softmax_exp[i_3, j_7]) * (float(1) / (aten_softmax_sum[i_3]));
+[DEBUG kernel.cpp:698]       }
+[DEBUG kernel.cpp:698]     }
+[DEBUG kernel.cpp:698]   }
+[DEBUG kernel.cpp:698] }
+[DEBUG kernel.cpp:720] after simplify{
+[DEBUG kernel.cpp:720]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG kernel.cpp:720]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:720]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:720]       aten_softmax_max_rfac[i, j] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:720]       for (int64_t k = 0ll; k < 8ll; k++) {
+[DEBUG kernel.cpp:720]         aten_softmax_max_rfac[i, k] = ReduceOp(Max(aten_softmax_max_rfac[i, k], tx[i, k + 8ll * j_1], 1), reduce_args={j_1});
+[DEBUG kernel.cpp:720]       }
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]     for (int64_t j_2 = 0ll; j_2 < 8ll; j_2++) {
+[DEBUG kernel.cpp:720]       aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, j_2], 1), reduce_args={j_2});
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]   }
+[DEBUG kernel.cpp:720]   for (int64_t i_1 = 0ll; i_1 < 16384ll; i_1++) {
+[DEBUG kernel.cpp:720]     for (int64_t j_3 = 0ll; j_3 < 128ll; j_3++) {
+[DEBUG kernel.cpp:720]       aten_softmax_exp[i_1, j_3] = exp((tx[i_1, j_3]) - (aten_softmax_max[i_1]));
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]   }
+[DEBUG kernel.cpp:720]   for (int64_t i_2 = 0ll; i_2 < 16384ll; i_2++) {
+[DEBUG kernel.cpp:720]     aten_softmax_sum[i_2] = 0.f;
+[DEBUG kernel.cpp:720]     for (int64_t j_4 = 0ll; j_4 < 8ll; j_4++) {
+[DEBUG kernel.cpp:720]       aten_softmax_sum_rfac[i_2, j_4] = 0.f;
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:720]       for (int64_t k_1 = 0ll; k_1 < 8ll; k_1++) {
+[DEBUG kernel.cpp:720]         aten_softmax_sum_rfac[i_2, k_1] = ReduceOp((aten_softmax_sum_rfac[i_2, k_1]) + (aten_softmax_exp[i_2, k_1 + 8ll * j_5]), reduce_args={j_5});
+[DEBUG kernel.cpp:720]       }
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]     for (int64_t j_6 = 0ll; j_6 < 8ll; j_6++) {
+[DEBUG kernel.cpp:720]       aten_softmax_sum[i_2] = ReduceOp((aten_softmax_sum[i_2]) + (aten_softmax_sum_rfac[i_2, j_6]), reduce_args={j_6});
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]   }
+[DEBUG kernel.cpp:720]   for (int64_t i_3 = 0ll; i_3 < 16384ll; i_3++) {
+[DEBUG kernel.cpp:720]     for (int64_t j_7 = 0ll; j_7 < 128ll; j_7++) {
+[DEBUG kernel.cpp:720]       aten_softmax[i_3, j_7] = (aten_softmax_exp[i_3, j_7]) * (1.f / (aten_softmax_sum[i_3]));
+[DEBUG kernel.cpp:720]     }
+[DEBUG kernel.cpp:720]   }
+[DEBUG kernel.cpp:720] }
+[DEBUG kernel.cpp:730] after inline{
+[DEBUG kernel.cpp:730]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG kernel.cpp:730]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:730]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:730]       aten_softmax_max_rfac[i, j] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:730]       for (int64_t k = 0ll; k < 8ll; k++) {
+[DEBUG kernel.cpp:730]         aten_softmax_max_rfac[i, k] = ReduceOp(Max(aten_softmax_max_rfac[i, k], tx[i, k + 8ll * j_1], 1), reduce_args={j_1});
+[DEBUG kernel.cpp:730]       }
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]     for (int64_t j_2 = 0ll; j_2 < 8ll; j_2++) {
+[DEBUG kernel.cpp:730]       aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, j_2], 1), reduce_args={j_2});
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]   }
+[DEBUG kernel.cpp:730]   for (int64_t i_1 = 0ll; i_1 < 16384ll; i_1++) {
+[DEBUG kernel.cpp:730]     for (int64_t j_3 = 0ll; j_3 < 128ll; j_3++) {
+[DEBUG kernel.cpp:730]       aten_softmax_exp[i_1, j_3] = exp((tx[i_1, j_3]) - (aten_softmax_max[i_1]));
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]   }
+[DEBUG kernel.cpp:730]   for (int64_t i_2 = 0ll; i_2 < 16384ll; i_2++) {
+[DEBUG kernel.cpp:730]     aten_softmax_sum[i_2] = 0.f;
+[DEBUG kernel.cpp:730]     for (int64_t j_4 = 0ll; j_4 < 8ll; j_4++) {
+[DEBUG kernel.cpp:730]       aten_softmax_sum_rfac[i_2, j_4] = 0.f;
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:730]       for (int64_t k_1 = 0ll; k_1 < 8ll; k_1++) {
+[DEBUG kernel.cpp:730]         aten_softmax_sum_rfac[i_2, k_1] = ReduceOp((aten_softmax_sum_rfac[i_2, k_1]) + (aten_softmax_exp[i_2, k_1 + 8ll * j_5]), reduce_args={j_5});
+[DEBUG kernel.cpp:730]       }
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]     for (int64_t j_6 = 0ll; j_6 < 8ll; j_6++) {
+[DEBUG kernel.cpp:730]       aten_softmax_sum[i_2] = ReduceOp((aten_softmax_sum[i_2]) + (aten_softmax_sum_rfac[i_2, j_6]), reduce_args={j_6});
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]   }
+[DEBUG kernel.cpp:730]   for (int64_t i_3 = 0ll; i_3 < 16384ll; i_3++) {
+[DEBUG kernel.cpp:730]     for (int64_t j_7 = 0ll; j_7 < 128ll; j_7++) {
+[DEBUG kernel.cpp:730]       aten_softmax[i_3, j_7] = (aten_softmax_exp[i_3, j_7]) * (1.f / (aten_softmax_sum[i_3]));
+[DEBUG kernel.cpp:730]     }
+[DEBUG kernel.cpp:730]   }
+[DEBUG kernel.cpp:730] }
+[DEBUG kernel.cpp:746] after fuse{
+[DEBUG kernel.cpp:746]   for (int64_t i = 0ll; i < 16384ll; i++) {
+[DEBUG kernel.cpp:746]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:746]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:746]       aten_softmax_max_rfac[i, j] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:746]       for (int64_t k = 0ll; k < 8ll; k++) {
+[DEBUG kernel.cpp:746]         aten_softmax_max_rfac[i, k] = ReduceOp(Max(aten_softmax_max_rfac[i, k], tx[i, k + 8ll * j_1], 1), reduce_args={j_1});
+[DEBUG kernel.cpp:746]       }
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]     for (int64_t j_2 = 0ll; j_2 < 8ll; j_2++) {
+[DEBUG kernel.cpp:746]       aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, j_2], 1), reduce_args={j_2});
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]     for (int64_t j_3 = 0ll; j_3 < 128ll; j_3++) {
+[DEBUG kernel.cpp:746]       aten_softmax_exp[i, j_3] = exp((tx[i, j_3]) - (aten_softmax_max[i]));
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]     aten_softmax_sum[i] = 0.f;
+[DEBUG kernel.cpp:746]     for (int64_t j_4 = 0ll; j_4 < 8ll; j_4++) {
+[DEBUG kernel.cpp:746]       aten_softmax_sum_rfac[i, j_4] = 0.f;
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:746]       for (int64_t k_1 = 0ll; k_1 < 8ll; k_1++) {
+[DEBUG kernel.cpp:746]         aten_softmax_sum_rfac[i, k_1] = ReduceOp((aten_softmax_sum_rfac[i, k_1]) + (aten_softmax_exp[i, k_1 + 8ll * j_5]), reduce_args={j_5});
+[DEBUG kernel.cpp:746]       }
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]     for (int64_t j_6 = 0ll; j_6 < 8ll; j_6++) {
+[DEBUG kernel.cpp:746]       aten_softmax_sum[i] = ReduceOp((aten_softmax_sum[i]) + (aten_softmax_sum_rfac[i, j_6]), reduce_args={j_6});
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]     for (int64_t j_7 = 0ll; j_7 < 128ll; j_7++) {
+[DEBUG kernel.cpp:746]       aten_softmax[i, j_7] = (aten_softmax_exp[i, j_7]) * (1.f / (aten_softmax_sum[i]));
+[DEBUG kernel.cpp:746]     }
+[DEBUG kernel.cpp:746]   }
+[DEBUG kernel.cpp:746] }
+[DEBUG kernel.cpp:748] after parallelize{
+[DEBUG kernel.cpp:748]   for (int64_t i = 0ll; i < 16384ll; i++)  /* parallel */{
+[DEBUG kernel.cpp:748]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:748]     for (int64_t j = 0ll; j < 8ll; j++) {
+[DEBUG kernel.cpp:748]       aten_softmax_max_rfac[i, j] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:748]       for (int64_t k = 0ll; k < 8ll; k++) {
+[DEBUG kernel.cpp:748]         aten_softmax_max_rfac[i, k] = ReduceOp(Max(aten_softmax_max_rfac[i, k], tx[i, k + 8ll * j_1], 1), reduce_args={j_1});
+[DEBUG kernel.cpp:748]       }
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]     for (int64_t j_2 = 0ll; j_2 < 8ll; j_2++) {
+[DEBUG kernel.cpp:748]       aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, j_2], 1), reduce_args={j_2});
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]     for (int64_t j_3 = 0ll; j_3 < 128ll; j_3++) {
+[DEBUG kernel.cpp:748]       aten_softmax_exp[i, j_3] = exp((tx[i, j_3]) - (aten_softmax_max[i]));
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]     aten_softmax_sum[i] = 0.f;
+[DEBUG kernel.cpp:748]     for (int64_t j_4 = 0ll; j_4 < 8ll; j_4++) {
+[DEBUG kernel.cpp:748]       aten_softmax_sum_rfac[i, j_4] = 0.f;
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:748]       for (int64_t k_1 = 0ll; k_1 < 8ll; k_1++) {
+[DEBUG kernel.cpp:748]         aten_softmax_sum_rfac[i, k_1] = ReduceOp((aten_softmax_sum_rfac[i, k_1]) + (aten_softmax_exp[i, k_1 + 8ll * j_5]), reduce_args={j_5});
+[DEBUG kernel.cpp:748]       }
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]     for (int64_t j_6 = 0ll; j_6 < 8ll; j_6++) {
+[DEBUG kernel.cpp:748]       aten_softmax_sum[i] = ReduceOp((aten_softmax_sum[i]) + (aten_softmax_sum_rfac[i, j_6]), reduce_args={j_6});
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]     for (int64_t j_7 = 0ll; j_7 < 128ll; j_7++) {
+[DEBUG kernel.cpp:748]       aten_softmax[i, j_7] = (aten_softmax_exp[i, j_7]) * (1.f / (aten_softmax_sum[i]));
+[DEBUG kernel.cpp:748]     }
+[DEBUG kernel.cpp:748]   }
+[DEBUG kernel.cpp:748] }
+[DEBUG kernel.cpp:833] after vectorization{
+[DEBUG kernel.cpp:833]   for (int64_t i = 0ll; i < 16384ll; i++)  /* parallel */{
+[DEBUG kernel.cpp:833]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:833]     for (int64_t j_outer = 0ll; j_outer < (8ll - 0ll) / 8ll; j_outer++) {
+[DEBUG kernel.cpp:833]       {
+[DEBUG kernel.cpp:833]         aten_softmax_max_rfac[Ramp(8ll * (i + j_outer), 1ll, 8)] = Broadcast(1.175494350822288e-38f, 8);
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:833]       for (int64_t k_outer = 0ll; k_outer < (8ll - 0ll) / 8ll; k_outer++) {
+[DEBUG kernel.cpp:833]         {
+[DEBUG kernel.cpp:833]           aten_softmax_max_rfac[Ramp(8ll * (i + k_outer), 1ll, 8)] = ReduceOp(Max(aten_softmax_max_rfac[Ramp(8ll * (i + k_outer), 1ll, 8)], tx[Ramp(8ll * ((16ll * i + j_1) + k_outer), 1ll, 8)], 1), reduce_args={j_1});
+[DEBUG kernel.cpp:833]         }
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]     for (int64_t j_2_outer = 0ll; j_2_outer < (8ll - 0ll) / 8ll; j_2_outer++) {
+[DEBUG kernel.cpp:833]       for (int64_t j_2_inner = 0ll; j_2_inner < 8ll; j_2_inner++) {
+[DEBUG kernel.cpp:833]         aten_softmax_max[i] = ReduceOp(Max(aten_softmax_max[i], aten_softmax_max_rfac[i, j_2_outer * 8ll + j_2_inner], 1), reduce_args={j_2_inner, j_2_outer});
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]     for (int64_t j_3_outer = 0ll; j_3_outer < (128ll - 0ll) / 8ll; j_3_outer++) {
+[DEBUG kernel.cpp:833]       {
+[DEBUG kernel.cpp:833]         aten_softmax_exp[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)] = exp((tx[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)]) - (Broadcast(aten_softmax_max[i], 8)));
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]     aten_softmax_sum[i] = 0.f;
+[DEBUG kernel.cpp:833]     for (int64_t j_4_outer = 0ll; j_4_outer < (8ll - 0ll) / 8ll; j_4_outer++) {
+[DEBUG kernel.cpp:833]       {
+[DEBUG kernel.cpp:833]         aten_softmax_sum_rfac[Ramp(8ll * (i + j_4_outer), 1ll, 8)] = Broadcast(0.f, 8);
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:833]       for (int64_t k_1_outer = 0ll; k_1_outer < (8ll - 0ll) / 8ll; k_1_outer++) {
+[DEBUG kernel.cpp:833]         {
+[DEBUG kernel.cpp:833]           aten_softmax_sum_rfac[Ramp(8ll * (i + k_1_outer), 1ll, 8)] = ReduceOp((aten_softmax_sum_rfac[Ramp(8ll * (i + k_1_outer), 1ll, 8)]) + (aten_softmax_exp[Ramp(8ll * ((16ll * i + j_5) + k_1_outer), 1ll, 8)]), reduce_args={j_5});
+[DEBUG kernel.cpp:833]         }
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]     for (int64_t j_6_outer = 0ll; j_6_outer < (8ll - 0ll) / 8ll; j_6_outer++) {
+[DEBUG kernel.cpp:833]       for (int64_t j_6_inner = 0ll; j_6_inner < 8ll; j_6_inner++) {
+[DEBUG kernel.cpp:833]         aten_softmax_sum[i] = ReduceOp((aten_softmax_sum[i]) + (aten_softmax_sum_rfac[i, j_6_outer * 8ll + j_6_inner]), reduce_args={j_6_inner, j_6_outer});
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]     for (int64_t j_7_outer = 0ll; j_7_outer < (128ll - 0ll) / 8ll; j_7_outer++) {
+[DEBUG kernel.cpp:833]       {
+[DEBUG kernel.cpp:833]         aten_softmax[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)] = (aten_softmax_exp[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)]) * (Broadcast(1.f / (aten_softmax_sum[i]), 8));
+[DEBUG kernel.cpp:833]       }
+[DEBUG kernel.cpp:833]     }
+[DEBUG kernel.cpp:833]   }
+[DEBUG kernel.cpp:833] }
+[DEBUG kernel.cpp:838] after prepareForCodegen{
+[DEBUG kernel.cpp:838]   for (int64_t i = 0ll; i < 16384ll; i++)  /* parallel */{
+[DEBUG kernel.cpp:838]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:838]     for (int64_t j_outer = 0ll; j_outer < (8ll - 0ll) / 8ll; j_outer++) {
+[DEBUG kernel.cpp:838]       {
+[DEBUG kernel.cpp:838]         aten_softmax_max_rfac[Ramp(8ll * (i + j_outer), 1ll, 8)] = Broadcast(1.175494350822288e-38f, 8);
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:838]       for (int64_t k_outer = 0ll; k_outer < (8ll - 0ll) / 8ll; k_outer++) {
+[DEBUG kernel.cpp:838]         {
+[DEBUG kernel.cpp:838]           aten_softmax_max_rfac[Ramp(8ll * (i + k_outer), 1ll, 8)] = Max(aten_softmax_max_rfac[Ramp(8ll * (i + k_outer), 1ll, 8)], tx[Ramp(8ll * ((16ll * i + j_1) + k_outer), 1ll, 8)], 1);
+[DEBUG kernel.cpp:838]         }
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]     for (int64_t j_2_outer = 0ll; j_2_outer < (8ll - 0ll) / 8ll; j_2_outer++) {
+[DEBUG kernel.cpp:838]       for (int64_t j_2_inner = 0ll; j_2_inner < 8ll; j_2_inner++) {
+[DEBUG kernel.cpp:838]         aten_softmax_max[i] = Max(aten_softmax_max[i], aten_softmax_max_rfac[(0ll + i * (1ll * 8ll)) + (j_2_outer * 8ll + j_2_inner) * 1ll], 1);
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]     for (int64_t j_3_outer = 0ll; j_3_outer < (128ll - 0ll) / 8ll; j_3_outer++) {
+[DEBUG kernel.cpp:838]       {
+[DEBUG kernel.cpp:838]         aten_softmax_exp[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)] = exp((tx[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)]) - (Broadcast(aten_softmax_max[i], 8)));
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]     aten_softmax_sum[i] = 0.f;
+[DEBUG kernel.cpp:838]     for (int64_t j_4_outer = 0ll; j_4_outer < (8ll - 0ll) / 8ll; j_4_outer++) {
+[DEBUG kernel.cpp:838]       {
+[DEBUG kernel.cpp:838]         aten_softmax_sum_rfac[Ramp(8ll * (i + j_4_outer), 1ll, 8)] = Broadcast(0.f, 8);
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:838]       for (int64_t k_1_outer = 0ll; k_1_outer < (8ll - 0ll) / 8ll; k_1_outer++) {
+[DEBUG kernel.cpp:838]         {
+[DEBUG kernel.cpp:838]           aten_softmax_sum_rfac[Ramp(8ll * (i + k_1_outer), 1ll, 8)] = (aten_softmax_sum_rfac[Ramp(8ll * (i + k_1_outer), 1ll, 8)]) + (aten_softmax_exp[Ramp(8ll * ((16ll * i + j_5) + k_1_outer), 1ll, 8)]);
+[DEBUG kernel.cpp:838]         }
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]     for (int64_t j_6_outer = 0ll; j_6_outer < (8ll - 0ll) / 8ll; j_6_outer++) {
+[DEBUG kernel.cpp:838]       for (int64_t j_6_inner = 0ll; j_6_inner < 8ll; j_6_inner++) {
+[DEBUG kernel.cpp:838]         aten_softmax_sum[i] = (aten_softmax_sum[i]) + (aten_softmax_sum_rfac[(0ll + i * (1ll * 8ll)) + (j_6_outer * 8ll + j_6_inner) * 1ll]);
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]     for (int64_t j_7_outer = 0ll; j_7_outer < (128ll - 0ll) / 8ll; j_7_outer++) {
+[DEBUG kernel.cpp:838]       {
+[DEBUG kernel.cpp:838]         aten_softmax[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)] = (aten_softmax_exp[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)]) * (Broadcast(1.f / (aten_softmax_sum[i]), 8));
+[DEBUG kernel.cpp:838]       }
+[DEBUG kernel.cpp:838]     }
+[DEBUG kernel.cpp:838]   }
+[DEBUG kernel.cpp:838] }
+[DEBUG kernel.cpp:840] after simplification{
+[DEBUG kernel.cpp:840]   for (int64_t i = 0ll; i < 16384ll; i++)  /* parallel */{
+[DEBUG kernel.cpp:840]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:840]     aten_softmax_max_rfac[Ramp(8ll * i, 1ll, 8)] = Broadcast(1.175494350822288e-38f, 8);
+[DEBUG kernel.cpp:840]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:840]       aten_softmax_max_rfac[Ramp(8ll * i, 1ll, 8)] = Max(aten_softmax_max_rfac[Ramp(8ll * i, 1ll, 8)], tx[Ramp(8ll * (16ll * i + j_1), 1ll, 8)], 1);
+[DEBUG kernel.cpp:840]     }
+[DEBUG kernel.cpp:840]     for (int64_t j_2_inner = 0ll; j_2_inner < 8ll; j_2_inner++) {
+[DEBUG kernel.cpp:840]       aten_softmax_max[i] = Max(aten_softmax_max[i], aten_softmax_max_rfac[j_2_inner + 8ll * i], 1);
+[DEBUG kernel.cpp:840]     }
+[DEBUG kernel.cpp:840]     for (int64_t j_3_outer = 0ll; j_3_outer < 16ll; j_3_outer++) {
+[DEBUG kernel.cpp:840]       aten_softmax_exp[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)] = exp((tx[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)]) - (Broadcast(aten_softmax_max[i], 8)));
+[DEBUG kernel.cpp:840]     }
+[DEBUG kernel.cpp:840]     aten_softmax_sum[i] = 0.f;
+[DEBUG kernel.cpp:840]     aten_softmax_sum_rfac[Ramp(8ll * i, 1ll, 8)] = Broadcast(0.f, 8);
+[DEBUG kernel.cpp:840]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:840]       aten_softmax_sum_rfac[Ramp(8ll * i, 1ll, 8)] = (aten_softmax_sum_rfac[Ramp(8ll * i, 1ll, 8)]) + (aten_softmax_exp[Ramp(8ll * (16ll * i + j_5), 1ll, 8)]);
+[DEBUG kernel.cpp:840]     }
+[DEBUG kernel.cpp:840]     for (int64_t j_6_inner = 0ll; j_6_inner < 8ll; j_6_inner++) {
+[DEBUG kernel.cpp:840]       aten_softmax_sum[i] = (aten_softmax_sum[i]) + (aten_softmax_sum_rfac[j_6_inner + 8ll * i]);
+[DEBUG kernel.cpp:840]     }
+[DEBUG kernel.cpp:840]     for (int64_t j_7_outer = 0ll; j_7_outer < 16ll; j_7_outer++) {
+[DEBUG kernel.cpp:840]       aten_softmax[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)] = (aten_softmax_exp[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)]) * (Broadcast(1.f / (aten_softmax_sum[i]), 8));
+[DEBUG kernel.cpp:840]     }
+[DEBUG kernel.cpp:840]   }
+[DEBUG kernel.cpp:840] }
+[DEBUG kernel.cpp:847] Final Stmt:
+[DEBUG kernel.cpp:847] {
+[DEBUG kernel.cpp:847]   for (int64_t i = 0ll; i < 16384ll; i++)  /* parallel */{
+[DEBUG kernel.cpp:847]     aten_softmax_max[i] = 1.175494350822288e-38f;
+[DEBUG kernel.cpp:847]     aten_softmax_max_rfac[Ramp(8ll * i, 1ll, 8)] = Broadcast(1.175494350822288e-38f, 8);
+[DEBUG kernel.cpp:847]     for (int64_t j_1 = 0ll; j_1 < 16ll; j_1++) {
+[DEBUG kernel.cpp:847]       aten_softmax_max_rfac[Ramp(8ll * i, 1ll, 8)] = Max(aten_softmax_max_rfac[Ramp(8ll * i, 1ll, 8)], tx[Ramp(8ll * (16ll * i + j_1), 1ll, 8)], 1);
+[DEBUG kernel.cpp:847]     }
+[DEBUG kernel.cpp:847]     for (int64_t j_2_inner = 0ll; j_2_inner < 8ll; j_2_inner++) {
+[DEBUG kernel.cpp:847]       aten_softmax_max[i] = Max(aten_softmax_max[i], aten_softmax_max_rfac[j_2_inner + 8ll * i], 1);
+[DEBUG kernel.cpp:847]     }
+[DEBUG kernel.cpp:847]     for (int64_t j_3_outer = 0ll; j_3_outer < 16ll; j_3_outer++) {
+[DEBUG kernel.cpp:847]       aten_softmax_exp[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)] = exp((tx[Ramp(8ll * (16ll * i + j_3_outer), 1ll, 8)]) - (Broadcast(aten_softmax_max[i], 8)));
+[DEBUG kernel.cpp:847]     }
+[DEBUG kernel.cpp:847]     aten_softmax_sum[i] = 0.f;
+[DEBUG kernel.cpp:847]     aten_softmax_sum_rfac[Ramp(8ll * i, 1ll, 8)] = Broadcast(0.f, 8);
+[DEBUG kernel.cpp:847]     for (int64_t j_5 = 0ll; j_5 < 16ll; j_5++) {
+[DEBUG kernel.cpp:847]       aten_softmax_sum_rfac[Ramp(8ll * i, 1ll, 8)] = (aten_softmax_sum_rfac[Ramp(8ll * i, 1ll, 8)]) + (aten_softmax_exp[Ramp(8ll * (16ll * i + j_5), 1ll, 8)]);
+[DEBUG kernel.cpp:847]     }
+[DEBUG kernel.cpp:847]     for (int64_t j_6_inner = 0ll; j_6_inner < 8ll; j_6_inner++) {
+[DEBUG kernel.cpp:847]       aten_softmax_sum[i] = (aten_softmax_sum[i]) + (aten_softmax_sum_rfac[j_6_inner + 8ll * i]);
+[DEBUG kernel.cpp:847]     }
+[DEBUG kernel.cpp:847]     for (int64_t j_7_outer = 0ll; j_7_outer < 16ll; j_7_outer++) {
+[DEBUG kernel.cpp:847]       aten_softmax[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)] = (aten_softmax_exp[Ramp(8ll * (16ll * i + j_7_outer), 1ll, 8)]) * (Broadcast(1.f / (aten_softmax_sum[i]), 8));
+[DEBUG kernel.cpp:847]     }
+[DEBUG kernel.cpp:847]   }
+[DEBUG kernel.cpp:847] }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] LLVM module before optimizations
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] ; ModuleID = 'pytorch'
+[DEBUG llvm_codegen.cpp:632] source_filename = "pytorch"
+[DEBUG llvm_codegen.cpp:632] target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+[DEBUG llvm_codegen.cpp:632] target triple = "x86_64-unknown-linux-gnu"
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] %0 = type { float*, float*, float*, float*, float*, float*, float* }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] ; Function Attrs: alwaysinline
+[DEBUG llvm_codegen.cpp:632] define private i32 @pytorch(float* noalias %0, float* noalias %1) #0 {
+[DEBUG llvm_codegen.cpp:632] entry:
+[DEBUG llvm_codegen.cpp:632]   %malloccall = tail call i8* @malloc(i64 65536)
+[DEBUG llvm_codegen.cpp:632]   %2 = bitcast i8* %malloccall to float*
+[DEBUG llvm_codegen.cpp:632]   %malloccall1 = tail call i8* @malloc(i64 524288)
+[DEBUG llvm_codegen.cpp:632]   %3 = bitcast i8* %malloccall1 to float*
+[DEBUG llvm_codegen.cpp:632]   %malloccall2 = tail call i8* @malloc(i64 8388608)
+[DEBUG llvm_codegen.cpp:632]   %4 = bitcast i8* %malloccall2 to float*
+[DEBUG llvm_codegen.cpp:632]   %malloccall3 = tail call i8* @malloc(i64 65536)
+[DEBUG llvm_codegen.cpp:632]   %5 = bitcast i8* %malloccall3 to float*
+[DEBUG llvm_codegen.cpp:632]   %malloccall4 = tail call i8* @malloc(i64 524288)
+[DEBUG llvm_codegen.cpp:632]   %6 = bitcast i8* %malloccall4 to float*
+[DEBUG llvm_codegen.cpp:632]   %7 = alloca %0, align 8
+[DEBUG llvm_codegen.cpp:632]   %8 = getelementptr inbounds %0, %0* %7, i32 0, i32 0
+[DEBUG llvm_codegen.cpp:632]   store float* %0, float** %8, align 8
+[DEBUG llvm_codegen.cpp:632]   %9 = getelementptr inbounds %0, %0* %7, i32 0, i32 1
+[DEBUG llvm_codegen.cpp:632]   store float* %6, float** %9, align 8
+[DEBUG llvm_codegen.cpp:632]   %10 = getelementptr inbounds %0, %0* %7, i32 0, i32 2
+[DEBUG llvm_codegen.cpp:632]   store float* %5, float** %10, align 8
+[DEBUG llvm_codegen.cpp:632]   %11 = getelementptr inbounds %0, %0* %7, i32 0, i32 3
+[DEBUG llvm_codegen.cpp:632]   store float* %2, float** %11, align 8
+[DEBUG llvm_codegen.cpp:632]   %12 = getelementptr inbounds %0, %0* %7, i32 0, i32 4
+[DEBUG llvm_codegen.cpp:632]   store float* %3, float** %12, align 8
+[DEBUG llvm_codegen.cpp:632]   %13 = getelementptr inbounds %0, %0* %7, i32 0, i32 5
+[DEBUG llvm_codegen.cpp:632]   store float* %1, float** %13, align 8
+[DEBUG llvm_codegen.cpp:632]   %14 = getelementptr inbounds %0, %0* %7, i32 0, i32 6
+[DEBUG llvm_codegen.cpp:632]   store float* %4, float** %14, align 8
+[DEBUG llvm_codegen.cpp:632]   %15 = bitcast %0* %7 to i8*
+[DEBUG llvm_codegen.cpp:632]   call void @DispatchParallel(i8* bitcast (void (i64, i8*)* @func to i8*), i64 0, i64 16384, i8* %15)
+[DEBUG llvm_codegen.cpp:632]   %16 = bitcast float* %6 to i8*
+[DEBUG llvm_codegen.cpp:632]   tail call void @free(i8* %16)
+[DEBUG llvm_codegen.cpp:632]   %17 = bitcast float* %5 to i8*
+[DEBUG llvm_codegen.cpp:632]   tail call void @free(i8* %17)
+[DEBUG llvm_codegen.cpp:632]   %18 = bitcast float* %4 to i8*
+[DEBUG llvm_codegen.cpp:632]   tail call void @free(i8* %18)
+[DEBUG llvm_codegen.cpp:632]   %19 = bitcast float* %3 to i8*
+[DEBUG llvm_codegen.cpp:632]   tail call void @free(i8* %19)
+[DEBUG llvm_codegen.cpp:632]   %20 = bitcast float* %2 to i8*
+[DEBUG llvm_codegen.cpp:632]   tail call void @free(i8* %20)
+[DEBUG llvm_codegen.cpp:632]   %21 = alloca i8*, i32 0, align 8
+[DEBUG llvm_codegen.cpp:632]   call void @nnc_aten_free(i64 0, i8** %21)
+[DEBUG llvm_codegen.cpp:632]   ret i32 0
+[DEBUG llvm_codegen.cpp:632] }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] define i32 @fused_softmax(i8** %0) {
+[DEBUG llvm_codegen.cpp:632] wrapBB:
+[DEBUG llvm_codegen.cpp:632]   %1 = getelementptr i8*, i8** %0, i32 0
+[DEBUG llvm_codegen.cpp:632]   %2 = load i8*, i8** %1, align 8
+[DEBUG llvm_codegen.cpp:632]   %3 = bitcast i8* %2 to float*
+[DEBUG llvm_codegen.cpp:632]   %4 = getelementptr i8*, i8** %0, i32 1
+[DEBUG llvm_codegen.cpp:632]   %5 = load i8*, i8** %4, align 8
+[DEBUG llvm_codegen.cpp:632]   %6 = bitcast i8* %5 to float*
+[DEBUG llvm_codegen.cpp:632]   %7 = call i32 @pytorch(float* %3, float* %6)
+[DEBUG llvm_codegen.cpp:632]   ret i32 %7
+[DEBUG llvm_codegen.cpp:632] }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] declare noalias i8* @malloc(i64)
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] define private void @func(i64 %0, i8* %1) {
+[DEBUG llvm_codegen.cpp:632] func_body:
+[DEBUG llvm_codegen.cpp:632]   %2 = bitcast i8* %1 to %0*
+[DEBUG llvm_codegen.cpp:632]   %3 = getelementptr inbounds %0, %0* %2, i32 0, i32 0
+[DEBUG llvm_codegen.cpp:632]   %4 = load float*, float** %3, align 8
+[DEBUG llvm_codegen.cpp:632]   %5 = getelementptr inbounds %0, %0* %2, i32 0, i32 1
+[DEBUG llvm_codegen.cpp:632]   %6 = load float*, float** %5, align 8
+[DEBUG llvm_codegen.cpp:632]   %7 = getelementptr inbounds %0, %0* %2, i32 0, i32 2
+[DEBUG llvm_codegen.cpp:632]   %8 = load float*, float** %7, align 8
+[DEBUG llvm_codegen.cpp:632]   %9 = getelementptr inbounds %0, %0* %2, i32 0, i32 3
+[DEBUG llvm_codegen.cpp:632]   %10 = load float*, float** %9, align 8
+[DEBUG llvm_codegen.cpp:632]   %11 = getelementptr inbounds %0, %0* %2, i32 0, i32 4
+[DEBUG llvm_codegen.cpp:632]   %12 = load float*, float** %11, align 8
+[DEBUG llvm_codegen.cpp:632]   %13 = getelementptr inbounds %0, %0* %2, i32 0, i32 5
+[DEBUG llvm_codegen.cpp:632]   %14 = load float*, float** %13, align 8
+[DEBUG llvm_codegen.cpp:632]   %15 = getelementptr inbounds %0, %0* %2, i32 0, i32 6
+[DEBUG llvm_codegen.cpp:632]   %16 = load float*, float** %15, align 8
+[DEBUG llvm_codegen.cpp:632]   %17 = getelementptr float, float* %8, i64 %0
+[DEBUG llvm_codegen.cpp:632]   store float 0x3810000000000000, float* %17, align 4
+[DEBUG llvm_codegen.cpp:632]   %18 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %19 = getelementptr float, float* %6, i64 %18
+[DEBUG llvm_codegen.cpp:632]   %20 = bitcast float* %19 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   store <8 x float> <float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000>, <8 x float>* %20, align 4
+[DEBUG llvm_codegen.cpp:632]   br label %cond
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] cond:                                             ; preds = %body, %func_body
+[DEBUG llvm_codegen.cpp:632]   %21 = phi i64 [ 0, %func_body ], [ %40, %body ]
+[DEBUG llvm_codegen.cpp:632]   %22 = icmp slt i64 %21, 16
+[DEBUG llvm_codegen.cpp:632]   br i1 %22, label %body, label %exit
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] body:                                             ; preds = %cond
+[DEBUG llvm_codegen.cpp:632]   %23 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %24 = getelementptr float, float* %6, i64 %23
+[DEBUG llvm_codegen.cpp:632]   %25 = bitcast float* %24 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   %26 = load <8 x float>, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:632]   %27 = mul i64 16, %0
+[DEBUG llvm_codegen.cpp:632]   %28 = add i64 %27, %21
+[DEBUG llvm_codegen.cpp:632]   %29 = mul i64 8, %28
+[DEBUG llvm_codegen.cpp:632]   %30 = getelementptr float, float* %4, i64 %29
+[DEBUG llvm_codegen.cpp:632]   %31 = bitcast float* %30 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   %32 = load <8 x float>, <8 x float>* %31, align 4
+[DEBUG llvm_codegen.cpp:632]   %33 = fcmp ogt <8 x float> %26, %32
+[DEBUG llvm_codegen.cpp:632]   %34 = select <8 x i1> %33, <8 x float> %26, <8 x float> %32
+[DEBUG llvm_codegen.cpp:632]   %35 = fcmp uno <8 x float> %26, zeroinitializer
+[DEBUG llvm_codegen.cpp:632]   %36 = select <8 x i1> %35, <8 x float> %26, <8 x float> %34
+[DEBUG llvm_codegen.cpp:632]   %37 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %38 = getelementptr float, float* %6, i64 %37
+[DEBUG llvm_codegen.cpp:632]   %39 = bitcast float* %38 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   store <8 x float> %36, <8 x float>* %39, align 4
+[DEBUG llvm_codegen.cpp:632]   %40 = add i64 %21, 1
+[DEBUG llvm_codegen.cpp:632]   br label %cond
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] exit:                                             ; preds = %cond
+[DEBUG llvm_codegen.cpp:632]   br label %cond1
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] cond1:                                            ; preds = %body2, %exit
+[DEBUG llvm_codegen.cpp:632]   %41 = phi i64 [ 0, %exit ], [ %54, %body2 ]
+[DEBUG llvm_codegen.cpp:632]   %42 = icmp slt i64 %41, 8
+[DEBUG llvm_codegen.cpp:632]   br i1 %42, label %body2, label %exit3
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] body2:                                            ; preds = %cond1
+[DEBUG llvm_codegen.cpp:632]   %43 = getelementptr float, float* %8, i64 %0
+[DEBUG llvm_codegen.cpp:632]   %44 = load float, float* %43, align 4
+[DEBUG llvm_codegen.cpp:632]   %45 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %46 = add i64 %41, %45
+[DEBUG llvm_codegen.cpp:632]   %47 = getelementptr float, float* %6, i64 %46
+[DEBUG llvm_codegen.cpp:632]   %48 = load float, float* %47, align 4
+[DEBUG llvm_codegen.cpp:632]   %49 = fcmp ogt float %44, %48
+[DEBUG llvm_codegen.cpp:632]   %50 = select i1 %49, float %44, float %48
+[DEBUG llvm_codegen.cpp:632]   %51 = fcmp uno float %44, 0.000000e+00
+[DEBUG llvm_codegen.cpp:632]   %52 = select i1 %51, float %44, float %50
+[DEBUG llvm_codegen.cpp:632]   %53 = getelementptr float, float* %8, i64 %0
+[DEBUG llvm_codegen.cpp:632]   store float %52, float* %53, align 4
+[DEBUG llvm_codegen.cpp:632]   %54 = add i64 %41, 1
+[DEBUG llvm_codegen.cpp:632]   br label %cond1
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] exit3:                                            ; preds = %cond1
+[DEBUG llvm_codegen.cpp:632]   br label %cond4
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] cond4:                                            ; preds = %body5, %exit3
+[DEBUG llvm_codegen.cpp:632]   %55 = phi i64 [ 0, %exit3 ], [ %72, %body5 ]
+[DEBUG llvm_codegen.cpp:632]   %56 = icmp slt i64 %55, 16
+[DEBUG llvm_codegen.cpp:632]   br i1 %56, label %body5, label %exit6
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] body5:                                            ; preds = %cond4
+[DEBUG llvm_codegen.cpp:632]   %57 = mul i64 16, %0
+[DEBUG llvm_codegen.cpp:632]   %58 = add i64 %57, %55
+[DEBUG llvm_codegen.cpp:632]   %59 = mul i64 8, %58
+[DEBUG llvm_codegen.cpp:632]   %60 = getelementptr float, float* %4, i64 %59
+[DEBUG llvm_codegen.cpp:632]   %61 = bitcast float* %60 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   %62 = load <8 x float>, <8 x float>* %61, align 4
+[DEBUG llvm_codegen.cpp:632]   %63 = getelementptr float, float* %8, i64 %0
+[DEBUG llvm_codegen.cpp:632]   %64 = load float, float* %63, align 4
+[DEBUG llvm_codegen.cpp:632]   %.splatinsert = insertelement <8 x float> poison, float %64, i32 0
+[DEBUG llvm_codegen.cpp:632]   %.splat = shufflevector <8 x float> %.splatinsert, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:632]   %65 = fsub <8 x float> %62, %.splat
+[DEBUG llvm_codegen.cpp:632]   %66 = call <8 x float> @Sleef_expf8(<8 x float> %65)
+[DEBUG llvm_codegen.cpp:632]   %67 = mul i64 16, %0
+[DEBUG llvm_codegen.cpp:632]   %68 = add i64 %67, %55
+[DEBUG llvm_codegen.cpp:632]   %69 = mul i64 8, %68
+[DEBUG llvm_codegen.cpp:632]   %70 = getelementptr float, float* %16, i64 %69
+[DEBUG llvm_codegen.cpp:632]   %71 = bitcast float* %70 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   store <8 x float> %66, <8 x float>* %71, align 4
+[DEBUG llvm_codegen.cpp:632]   %72 = add i64 %55, 1
+[DEBUG llvm_codegen.cpp:632]   br label %cond4
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] exit6:                                            ; preds = %cond4
+[DEBUG llvm_codegen.cpp:632]   %73 = getelementptr float, float* %10, i64 %0
+[DEBUG llvm_codegen.cpp:632]   store float 0.000000e+00, float* %73, align 4
+[DEBUG llvm_codegen.cpp:632]   %74 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %75 = getelementptr float, float* %12, i64 %74
+[DEBUG llvm_codegen.cpp:632]   %76 = bitcast float* %75 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   store <8 x float> zeroinitializer, <8 x float>* %76, align 4
+[DEBUG llvm_codegen.cpp:632]   br label %cond7
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] cond7:                                            ; preds = %body8, %exit6
+[DEBUG llvm_codegen.cpp:632]   %77 = phi i64 [ 0, %exit6 ], [ %93, %body8 ]
+[DEBUG llvm_codegen.cpp:632]   %78 = icmp slt i64 %77, 16
+[DEBUG llvm_codegen.cpp:632]   br i1 %78, label %body8, label %exit9
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] body8:                                            ; preds = %cond7
+[DEBUG llvm_codegen.cpp:632]   %79 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %80 = getelementptr float, float* %12, i64 %79
+[DEBUG llvm_codegen.cpp:632]   %81 = bitcast float* %80 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   %82 = load <8 x float>, <8 x float>* %81, align 4
+[DEBUG llvm_codegen.cpp:632]   %83 = mul i64 16, %0
+[DEBUG llvm_codegen.cpp:632]   %84 = add i64 %83, %77
+[DEBUG llvm_codegen.cpp:632]   %85 = mul i64 8, %84
+[DEBUG llvm_codegen.cpp:632]   %86 = getelementptr float, float* %16, i64 %85
+[DEBUG llvm_codegen.cpp:632]   %87 = bitcast float* %86 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   %88 = load <8 x float>, <8 x float>* %87, align 4
+[DEBUG llvm_codegen.cpp:632]   %89 = fadd <8 x float> %82, %88
+[DEBUG llvm_codegen.cpp:632]   %90 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %91 = getelementptr float, float* %12, i64 %90
+[DEBUG llvm_codegen.cpp:632]   %92 = bitcast float* %91 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   store <8 x float> %89, <8 x float>* %92, align 4
+[DEBUG llvm_codegen.cpp:632]   %93 = add i64 %77, 1
+[DEBUG llvm_codegen.cpp:632]   br label %cond7
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] exit9:                                            ; preds = %cond7
+[DEBUG llvm_codegen.cpp:632]   br label %cond10
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] cond10:                                           ; preds = %body11, %exit9
+[DEBUG llvm_codegen.cpp:632]   %94 = phi i64 [ 0, %exit9 ], [ %104, %body11 ]
+[DEBUG llvm_codegen.cpp:632]   %95 = icmp slt i64 %94, 8
+[DEBUG llvm_codegen.cpp:632]   br i1 %95, label %body11, label %exit12
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] body11:                                           ; preds = %cond10
+[DEBUG llvm_codegen.cpp:632]   %96 = getelementptr float, float* %10, i64 %0
+[DEBUG llvm_codegen.cpp:632]   %97 = load float, float* %96, align 4
+[DEBUG llvm_codegen.cpp:632]   %98 = mul i64 8, %0
+[DEBUG llvm_codegen.cpp:632]   %99 = add i64 %94, %98
+[DEBUG llvm_codegen.cpp:632]   %100 = getelementptr float, float* %12, i64 %99
+[DEBUG llvm_codegen.cpp:632]   %101 = load float, float* %100, align 4
+[DEBUG llvm_codegen.cpp:632]   %102 = fadd float %97, %101
+[DEBUG llvm_codegen.cpp:632]   %103 = getelementptr float, float* %10, i64 %0
+[DEBUG llvm_codegen.cpp:632]   store float %102, float* %103, align 4
+[DEBUG llvm_codegen.cpp:632]   %104 = add i64 %94, 1
+[DEBUG llvm_codegen.cpp:632]   br label %cond10
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] exit12:                                           ; preds = %cond10
+[DEBUG llvm_codegen.cpp:632]   br label %cond13
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] cond13:                                           ; preds = %body14, %exit12
+[DEBUG llvm_codegen.cpp:632]   %105 = phi i64 [ 0, %exit12 ], [ %122, %body14 ]
+[DEBUG llvm_codegen.cpp:632]   %106 = icmp slt i64 %105, 16
+[DEBUG llvm_codegen.cpp:632]   br i1 %106, label %body14, label %exit15
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] body14:                                           ; preds = %cond13
+[DEBUG llvm_codegen.cpp:632]   %107 = mul i64 16, %0
+[DEBUG llvm_codegen.cpp:632]   %108 = add i64 %107, %105
+[DEBUG llvm_codegen.cpp:632]   %109 = mul i64 8, %108
+[DEBUG llvm_codegen.cpp:632]   %110 = getelementptr float, float* %16, i64 %109
+[DEBUG llvm_codegen.cpp:632]   %111 = bitcast float* %110 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   %112 = load <8 x float>, <8 x float>* %111, align 4
+[DEBUG llvm_codegen.cpp:632]   %113 = getelementptr float, float* %10, i64 %0
+[DEBUG llvm_codegen.cpp:632]   %114 = load float, float* %113, align 4
+[DEBUG llvm_codegen.cpp:632]   %115 = fdiv float 1.000000e+00, %114
+[DEBUG llvm_codegen.cpp:632]   %.splatinsert16 = insertelement <8 x float> poison, float %115, i32 0
+[DEBUG llvm_codegen.cpp:632]   %.splat17 = shufflevector <8 x float> %.splatinsert16, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:632]   %116 = fmul <8 x float> %112, %.splat17
+[DEBUG llvm_codegen.cpp:632]   %117 = mul i64 16, %0
+[DEBUG llvm_codegen.cpp:632]   %118 = add i64 %117, %105
+[DEBUG llvm_codegen.cpp:632]   %119 = mul i64 8, %118
+[DEBUG llvm_codegen.cpp:632]   %120 = getelementptr float, float* %14, i64 %119
+[DEBUG llvm_codegen.cpp:632]   %121 = bitcast float* %120 to <8 x float>*
+[DEBUG llvm_codegen.cpp:632]   store <8 x float> %116, <8 x float>* %121, align 4
+[DEBUG llvm_codegen.cpp:632]   %122 = add i64 %105, 1
+[DEBUG llvm_codegen.cpp:632]   br label %cond13
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] exit15:                                           ; preds = %cond13
+[DEBUG llvm_codegen.cpp:632]   ret void
+[DEBUG llvm_codegen.cpp:632] }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] ; Function Attrs: nofree nounwind readnone willreturn
+[DEBUG llvm_codegen.cpp:632] declare <8 x float> @Sleef_expf8(<8 x float>) #1
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] ; Function Attrs: nounwind
+[DEBUG llvm_codegen.cpp:632] declare void @DispatchParallel(i8*, i64, i64, i8*) #2
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] declare void @free(i8*)
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] ; Function Attrs: nounwind
+[DEBUG llvm_codegen.cpp:632] declare void @nnc_aten_free(i64, i8**) #2
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:632] attributes #0 = { alwaysinline }
+[DEBUG llvm_codegen.cpp:632] attributes #1 = { nofree nounwind readnone willreturn }
+[DEBUG llvm_codegen.cpp:632] attributes #2 = { nounwind }
+[DEBUG llvm_codegen.cpp:632] 
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] LLVM module after optimizations
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; ModuleID = 'pytorch'
+[DEBUG llvm_codegen.cpp:644] source_filename = "pytorch"
+[DEBUG llvm_codegen.cpp:644] target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+[DEBUG llvm_codegen.cpp:644] target triple = "x86_64-unknown-linux-gnu"
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] %0 = type { float*, float*, float*, float*, float*, float*, float* }
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: nounwind
+[DEBUG llvm_codegen.cpp:644] define i32 @fused_softmax(i8** nocapture readonly %0) local_unnamed_addr #0 {
+[DEBUG llvm_codegen.cpp:644] wrapBB:
+[DEBUG llvm_codegen.cpp:644]   %1 = alloca [0 x i8*], align 8
+[DEBUG llvm_codegen.cpp:644]   %2 = alloca %0, align 8
+[DEBUG llvm_codegen.cpp:644]   %3 = bitcast i8** %0 to float**
+[DEBUG llvm_codegen.cpp:644]   %4 = load float*, float** %3, align 8
+[DEBUG llvm_codegen.cpp:644]   %5 = getelementptr i8*, i8** %0, i64 1
+[DEBUG llvm_codegen.cpp:644]   %6 = bitcast i8** %5 to float**
+[DEBUG llvm_codegen.cpp:644]   %7 = load float*, float** %6, align 8
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.experimental.noalias.scope.decl(metadata !0)
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.experimental.noalias.scope.decl(metadata !3)
+[DEBUG llvm_codegen.cpp:644]   %8 = bitcast [0 x i8*]* %1 to i8*
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.lifetime.start.p0i8(i64 0, i8* %8)
+[DEBUG llvm_codegen.cpp:644]   %9 = bitcast %0* %2 to i8*
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.lifetime.start.p0i8(i64 56, i8* %9)
+[DEBUG llvm_codegen.cpp:644]   %malloccall.i = tail call dereferenceable_or_null(65536) i8* @malloc(i64 65536) #0
+[DEBUG llvm_codegen.cpp:644]   %malloccall1.i = tail call dereferenceable_or_null(524288) i8* @malloc(i64 524288) #0
+[DEBUG llvm_codegen.cpp:644]   %malloccall2.i = tail call dereferenceable_or_null(8388608) i8* @malloc(i64 8388608) #0
+[DEBUG llvm_codegen.cpp:644]   %malloccall3.i = tail call dereferenceable_or_null(65536) i8* @malloc(i64 65536) #0
+[DEBUG llvm_codegen.cpp:644]   %malloccall4.i = tail call dereferenceable_or_null(524288) i8* @malloc(i64 524288) #0
+[DEBUG llvm_codegen.cpp:644]   %10 = getelementptr inbounds %0, %0* %2, i64 0, i32 0
+[DEBUG llvm_codegen.cpp:644]   store float* %4, float** %10, align 8, !noalias !5
+[DEBUG llvm_codegen.cpp:644]   %11 = getelementptr inbounds %0, %0* %2, i64 0, i32 1
+[DEBUG llvm_codegen.cpp:644]   %12 = bitcast float** %11 to i8**
+[DEBUG llvm_codegen.cpp:644]   store i8* %malloccall4.i, i8** %12, align 8, !noalias !5
+[DEBUG llvm_codegen.cpp:644]   %13 = getelementptr inbounds %0, %0* %2, i64 0, i32 2
+[DEBUG llvm_codegen.cpp:644]   %14 = bitcast float** %13 to i8**
+[DEBUG llvm_codegen.cpp:644]   store i8* %malloccall3.i, i8** %14, align 8, !noalias !5
+[DEBUG llvm_codegen.cpp:644]   %15 = getelementptr inbounds %0, %0* %2, i64 0, i32 3
+[DEBUG llvm_codegen.cpp:644]   %16 = bitcast float** %15 to i8**
+[DEBUG llvm_codegen.cpp:644]   store i8* %malloccall.i, i8** %16, align 8, !noalias !5
+[DEBUG llvm_codegen.cpp:644]   %17 = getelementptr inbounds %0, %0* %2, i64 0, i32 4
+[DEBUG llvm_codegen.cpp:644]   %18 = bitcast float** %17 to i8**
+[DEBUG llvm_codegen.cpp:644]   store i8* %malloccall1.i, i8** %18, align 8, !noalias !5
+[DEBUG llvm_codegen.cpp:644]   %19 = getelementptr inbounds %0, %0* %2, i64 0, i32 5
+[DEBUG llvm_codegen.cpp:644]   store float* %7, float** %19, align 8, !noalias !5
+[DEBUG llvm_codegen.cpp:644]   %20 = getelementptr inbounds %0, %0* %2, i64 0, i32 6
+[DEBUG llvm_codegen.cpp:644]   %21 = bitcast float** %20 to i8**
+[DEBUG llvm_codegen.cpp:644]   store i8* %malloccall2.i, i8** %21, align 8, !noalias !5
+[DEBUG llvm_codegen.cpp:644]   call void @DispatchParallel(i8* bitcast (void (i64, i8*)* @func to i8*), i64 0, i64 16384, i8* nonnull %9) #0
+[DEBUG llvm_codegen.cpp:644]   tail call void @free(i8* %malloccall4.i) #0
+[DEBUG llvm_codegen.cpp:644]   tail call void @free(i8* %malloccall3.i) #0
+[DEBUG llvm_codegen.cpp:644]   tail call void @free(i8* %malloccall2.i) #0
+[DEBUG llvm_codegen.cpp:644]   tail call void @free(i8* %malloccall1.i) #0
+[DEBUG llvm_codegen.cpp:644]   tail call void @free(i8* %malloccall.i) #0
+[DEBUG llvm_codegen.cpp:644]   %.sub.i = getelementptr inbounds [0 x i8*], [0 x i8*]* %1, i64 0, i64 0
+[DEBUG llvm_codegen.cpp:644]   call void @nnc_aten_free(i64 0, i8** nonnull %.sub.i) #0
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.lifetime.end.p0i8(i64 0, i8* %8)
+[DEBUG llvm_codegen.cpp:644]   call void @llvm.lifetime.end.p0i8(i64 56, i8* %9)
+[DEBUG llvm_codegen.cpp:644]   ret i32 0
+[DEBUG llvm_codegen.cpp:644] }
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: inaccessiblememonly mustprogress nofree nounwind willreturn
+[DEBUG llvm_codegen.cpp:644] declare noalias noundef i8* @malloc(i64 noundef) local_unnamed_addr #1
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: nofree nosync nounwind
+[DEBUG llvm_codegen.cpp:644] define private void @func(i64 %0, i8* nocapture readonly %1) #2 {
+[DEBUG llvm_codegen.cpp:644] func_body:
+[DEBUG llvm_codegen.cpp:644]   %2 = bitcast i8* %1 to float**
+[DEBUG llvm_codegen.cpp:644]   %3 = load float*, float** %2, align 8
+[DEBUG llvm_codegen.cpp:644]   %4 = getelementptr inbounds i8, i8* %1, i64 8
+[DEBUG llvm_codegen.cpp:644]   %5 = bitcast i8* %4 to float**
+[DEBUG llvm_codegen.cpp:644]   %6 = load float*, float** %5, align 8
+[DEBUG llvm_codegen.cpp:644]   %7 = getelementptr inbounds i8, i8* %1, i64 16
+[DEBUG llvm_codegen.cpp:644]   %8 = bitcast i8* %7 to float**
+[DEBUG llvm_codegen.cpp:644]   %9 = load float*, float** %8, align 8
+[DEBUG llvm_codegen.cpp:644]   %10 = getelementptr inbounds i8, i8* %1, i64 24
+[DEBUG llvm_codegen.cpp:644]   %11 = bitcast i8* %10 to float**
+[DEBUG llvm_codegen.cpp:644]   %12 = load float*, float** %11, align 8
+[DEBUG llvm_codegen.cpp:644]   %13 = getelementptr inbounds i8, i8* %1, i64 32
+[DEBUG llvm_codegen.cpp:644]   %14 = bitcast i8* %13 to float**
+[DEBUG llvm_codegen.cpp:644]   %15 = load float*, float** %14, align 8
+[DEBUG llvm_codegen.cpp:644]   %16 = getelementptr inbounds i8, i8* %1, i64 40
+[DEBUG llvm_codegen.cpp:644]   %17 = bitcast i8* %16 to float**
+[DEBUG llvm_codegen.cpp:644]   %18 = load float*, float** %17, align 8
+[DEBUG llvm_codegen.cpp:644]   %19 = getelementptr inbounds i8, i8* %1, i64 48
+[DEBUG llvm_codegen.cpp:644]   %20 = bitcast i8* %19 to float**
+[DEBUG llvm_codegen.cpp:644]   %21 = load float*, float** %20, align 8
+[DEBUG llvm_codegen.cpp:644]   %22 = getelementptr float, float* %9, i64 %0
+[DEBUG llvm_codegen.cpp:644]   store float 0x3810000000000000, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %23 = shl i64 %0, 3
+[DEBUG llvm_codegen.cpp:644]   %24 = getelementptr float, float* %6, i64 %23
+[DEBUG llvm_codegen.cpp:644]   %25 = bitcast float* %24 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> <float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000>, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %26 = shl i64 %0, 7
+[DEBUG llvm_codegen.cpp:644]   %27 = getelementptr float, float* %3, i64 %26
+[DEBUG llvm_codegen.cpp:644]   %28 = bitcast float* %27 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %29 = load <8 x float>, <8 x float>* %28, align 4
+[DEBUG llvm_codegen.cpp:644]   %30 = fcmp olt <8 x float> %29, <float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000>
+[DEBUG llvm_codegen.cpp:644]   %31 = select <8 x i1> %30, <8 x float> <float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000, float 0x3810000000000000>, <8 x float> %29
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %31, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %32 = or i64 %26, 8
+[DEBUG llvm_codegen.cpp:644]   %33 = getelementptr float, float* %3, i64 %32
+[DEBUG llvm_codegen.cpp:644]   %34 = bitcast float* %33 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %35 = load <8 x float>, <8 x float>* %34, align 4
+[DEBUG llvm_codegen.cpp:644]   %36 = fcmp ogt <8 x float> %31, %35
+[DEBUG llvm_codegen.cpp:644]   %37 = fcmp uno <8 x float> %31, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %38 = select <8 x i1> %37, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %36
+[DEBUG llvm_codegen.cpp:644]   %39 = select <8 x i1> %38, <8 x float> %31, <8 x float> %35
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %39, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %40 = or i64 %26, 16
+[DEBUG llvm_codegen.cpp:644]   %41 = getelementptr float, float* %3, i64 %40
+[DEBUG llvm_codegen.cpp:644]   %42 = bitcast float* %41 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %43 = load <8 x float>, <8 x float>* %42, align 4
+[DEBUG llvm_codegen.cpp:644]   %44 = fcmp ogt <8 x float> %39, %43
+[DEBUG llvm_codegen.cpp:644]   %45 = fcmp uno <8 x float> %39, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %46 = select <8 x i1> %45, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %44
+[DEBUG llvm_codegen.cpp:644]   %47 = select <8 x i1> %46, <8 x float> %39, <8 x float> %43
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %47, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %48 = or i64 %26, 24
+[DEBUG llvm_codegen.cpp:644]   %49 = getelementptr float, float* %3, i64 %48
+[DEBUG llvm_codegen.cpp:644]   %50 = bitcast float* %49 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %51 = load <8 x float>, <8 x float>* %50, align 4
+[DEBUG llvm_codegen.cpp:644]   %52 = fcmp ogt <8 x float> %47, %51
+[DEBUG llvm_codegen.cpp:644]   %53 = fcmp uno <8 x float> %47, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %54 = select <8 x i1> %53, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %52
+[DEBUG llvm_codegen.cpp:644]   %55 = select <8 x i1> %54, <8 x float> %47, <8 x float> %51
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %55, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %56 = or i64 %26, 32
+[DEBUG llvm_codegen.cpp:644]   %57 = getelementptr float, float* %3, i64 %56
+[DEBUG llvm_codegen.cpp:644]   %58 = bitcast float* %57 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %59 = load <8 x float>, <8 x float>* %58, align 4
+[DEBUG llvm_codegen.cpp:644]   %60 = fcmp ogt <8 x float> %55, %59
+[DEBUG llvm_codegen.cpp:644]   %61 = fcmp uno <8 x float> %55, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %62 = select <8 x i1> %61, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %60
+[DEBUG llvm_codegen.cpp:644]   %63 = select <8 x i1> %62, <8 x float> %55, <8 x float> %59
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %63, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %64 = or i64 %26, 40
+[DEBUG llvm_codegen.cpp:644]   %65 = getelementptr float, float* %3, i64 %64
+[DEBUG llvm_codegen.cpp:644]   %66 = bitcast float* %65 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %67 = load <8 x float>, <8 x float>* %66, align 4
+[DEBUG llvm_codegen.cpp:644]   %68 = fcmp ogt <8 x float> %63, %67
+[DEBUG llvm_codegen.cpp:644]   %69 = fcmp uno <8 x float> %63, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %70 = select <8 x i1> %69, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %68
+[DEBUG llvm_codegen.cpp:644]   %71 = select <8 x i1> %70, <8 x float> %63, <8 x float> %67
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %71, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %72 = or i64 %26, 48
+[DEBUG llvm_codegen.cpp:644]   %73 = getelementptr float, float* %3, i64 %72
+[DEBUG llvm_codegen.cpp:644]   %74 = bitcast float* %73 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %75 = load <8 x float>, <8 x float>* %74, align 4
+[DEBUG llvm_codegen.cpp:644]   %76 = fcmp ogt <8 x float> %71, %75
+[DEBUG llvm_codegen.cpp:644]   %77 = fcmp uno <8 x float> %71, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %78 = select <8 x i1> %77, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %76
+[DEBUG llvm_codegen.cpp:644]   %79 = select <8 x i1> %78, <8 x float> %71, <8 x float> %75
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %79, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %80 = or i64 %26, 56
+[DEBUG llvm_codegen.cpp:644]   %81 = getelementptr float, float* %3, i64 %80
+[DEBUG llvm_codegen.cpp:644]   %82 = bitcast float* %81 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %83 = load <8 x float>, <8 x float>* %82, align 4
+[DEBUG llvm_codegen.cpp:644]   %84 = fcmp ogt <8 x float> %79, %83
+[DEBUG llvm_codegen.cpp:644]   %85 = fcmp uno <8 x float> %79, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %86 = select <8 x i1> %85, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %84
+[DEBUG llvm_codegen.cpp:644]   %87 = select <8 x i1> %86, <8 x float> %79, <8 x float> %83
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %87, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %88 = or i64 %26, 64
+[DEBUG llvm_codegen.cpp:644]   %89 = getelementptr float, float* %3, i64 %88
+[DEBUG llvm_codegen.cpp:644]   %90 = bitcast float* %89 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %91 = load <8 x float>, <8 x float>* %90, align 4
+[DEBUG llvm_codegen.cpp:644]   %92 = fcmp ogt <8 x float> %87, %91
+[DEBUG llvm_codegen.cpp:644]   %93 = fcmp uno <8 x float> %87, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %94 = select <8 x i1> %93, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %92
+[DEBUG llvm_codegen.cpp:644]   %95 = select <8 x i1> %94, <8 x float> %87, <8 x float> %91
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %95, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %96 = or i64 %26, 72
+[DEBUG llvm_codegen.cpp:644]   %97 = getelementptr float, float* %3, i64 %96
+[DEBUG llvm_codegen.cpp:644]   %98 = bitcast float* %97 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %99 = load <8 x float>, <8 x float>* %98, align 4
+[DEBUG llvm_codegen.cpp:644]   %100 = fcmp ogt <8 x float> %95, %99
+[DEBUG llvm_codegen.cpp:644]   %101 = fcmp uno <8 x float> %95, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %102 = select <8 x i1> %101, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %100
+[DEBUG llvm_codegen.cpp:644]   %103 = select <8 x i1> %102, <8 x float> %95, <8 x float> %99
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %103, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %104 = or i64 %26, 80
+[DEBUG llvm_codegen.cpp:644]   %105 = getelementptr float, float* %3, i64 %104
+[DEBUG llvm_codegen.cpp:644]   %106 = bitcast float* %105 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %107 = load <8 x float>, <8 x float>* %106, align 4
+[DEBUG llvm_codegen.cpp:644]   %108 = fcmp ogt <8 x float> %103, %107
+[DEBUG llvm_codegen.cpp:644]   %109 = fcmp uno <8 x float> %103, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %110 = select <8 x i1> %109, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %108
+[DEBUG llvm_codegen.cpp:644]   %111 = select <8 x i1> %110, <8 x float> %103, <8 x float> %107
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %111, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %112 = or i64 %26, 88
+[DEBUG llvm_codegen.cpp:644]   %113 = getelementptr float, float* %3, i64 %112
+[DEBUG llvm_codegen.cpp:644]   %114 = bitcast float* %113 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %115 = load <8 x float>, <8 x float>* %114, align 4
+[DEBUG llvm_codegen.cpp:644]   %116 = fcmp ogt <8 x float> %111, %115
+[DEBUG llvm_codegen.cpp:644]   %117 = fcmp uno <8 x float> %111, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %118 = select <8 x i1> %117, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %116
+[DEBUG llvm_codegen.cpp:644]   %119 = select <8 x i1> %118, <8 x float> %111, <8 x float> %115
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %119, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %120 = or i64 %26, 96
+[DEBUG llvm_codegen.cpp:644]   %121 = getelementptr float, float* %3, i64 %120
+[DEBUG llvm_codegen.cpp:644]   %122 = bitcast float* %121 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %123 = load <8 x float>, <8 x float>* %122, align 4
+[DEBUG llvm_codegen.cpp:644]   %124 = fcmp ogt <8 x float> %119, %123
+[DEBUG llvm_codegen.cpp:644]   %125 = fcmp uno <8 x float> %119, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %126 = select <8 x i1> %125, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %124
+[DEBUG llvm_codegen.cpp:644]   %127 = select <8 x i1> %126, <8 x float> %119, <8 x float> %123
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %127, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %128 = or i64 %26, 104
+[DEBUG llvm_codegen.cpp:644]   %129 = getelementptr float, float* %3, i64 %128
+[DEBUG llvm_codegen.cpp:644]   %130 = bitcast float* %129 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %131 = load <8 x float>, <8 x float>* %130, align 4
+[DEBUG llvm_codegen.cpp:644]   %132 = fcmp ogt <8 x float> %127, %131
+[DEBUG llvm_codegen.cpp:644]   %133 = fcmp uno <8 x float> %127, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %134 = select <8 x i1> %133, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %132
+[DEBUG llvm_codegen.cpp:644]   %135 = select <8 x i1> %134, <8 x float> %127, <8 x float> %131
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %135, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %136 = or i64 %26, 112
+[DEBUG llvm_codegen.cpp:644]   %137 = getelementptr float, float* %3, i64 %136
+[DEBUG llvm_codegen.cpp:644]   %138 = bitcast float* %137 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %139 = load <8 x float>, <8 x float>* %138, align 4
+[DEBUG llvm_codegen.cpp:644]   %140 = fcmp ogt <8 x float> %135, %139
+[DEBUG llvm_codegen.cpp:644]   %141 = fcmp uno <8 x float> %135, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %142 = select <8 x i1> %141, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %140
+[DEBUG llvm_codegen.cpp:644]   %143 = select <8 x i1> %142, <8 x float> %135, <8 x float> %139
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %143, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %144 = or i64 %26, 120
+[DEBUG llvm_codegen.cpp:644]   %145 = getelementptr float, float* %3, i64 %144
+[DEBUG llvm_codegen.cpp:644]   %146 = bitcast float* %145 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   %147 = load <8 x float>, <8 x float>* %146, align 4
+[DEBUG llvm_codegen.cpp:644]   %148 = fcmp ogt <8 x float> %143, %147
+[DEBUG llvm_codegen.cpp:644]   %149 = fcmp uno <8 x float> %143, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %150 = select <8 x i1> %149, <8 x i1> <i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true, i1 true>, <8 x i1> %148
+[DEBUG llvm_codegen.cpp:644]   %151 = select <8 x i1> %150, <8 x float> %143, <8 x float> %147
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %151, <8 x float>* %25, align 4
+[DEBUG llvm_codegen.cpp:644]   %152 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %153 = extractelement <8 x float> %151, i32 0
+[DEBUG llvm_codegen.cpp:644]   %154 = fcmp ogt float %152, %153
+[DEBUG llvm_codegen.cpp:644]   %155 = fcmp uno float %152, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %156 = select i1 %155, i1 true, i1 %154
+[DEBUG llvm_codegen.cpp:644]   %157 = select i1 %156, float %152, float %153
+[DEBUG llvm_codegen.cpp:644]   store float %157, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %158 = or i64 %23, 1
+[DEBUG llvm_codegen.cpp:644]   %159 = getelementptr float, float* %6, i64 %158
+[DEBUG llvm_codegen.cpp:644]   %160 = load float, float* %159, align 4
+[DEBUG llvm_codegen.cpp:644]   %161 = fcmp ogt float %157, %160
+[DEBUG llvm_codegen.cpp:644]   %162 = fcmp uno float %157, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %163 = select i1 %162, i1 true, i1 %161
+[DEBUG llvm_codegen.cpp:644]   %164 = select i1 %163, float %157, float %160
+[DEBUG llvm_codegen.cpp:644]   store float %164, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %165 = or i64 %23, 2
+[DEBUG llvm_codegen.cpp:644]   %166 = getelementptr float, float* %6, i64 %165
+[DEBUG llvm_codegen.cpp:644]   %167 = load float, float* %166, align 4
+[DEBUG llvm_codegen.cpp:644]   %168 = fcmp ogt float %164, %167
+[DEBUG llvm_codegen.cpp:644]   %169 = fcmp uno float %164, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %170 = select i1 %169, i1 true, i1 %168
+[DEBUG llvm_codegen.cpp:644]   %171 = select i1 %170, float %164, float %167
+[DEBUG llvm_codegen.cpp:644]   store float %171, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %172 = or i64 %23, 3
+[DEBUG llvm_codegen.cpp:644]   %173 = getelementptr float, float* %6, i64 %172
+[DEBUG llvm_codegen.cpp:644]   %174 = load float, float* %173, align 4
+[DEBUG llvm_codegen.cpp:644]   %175 = fcmp ogt float %171, %174
+[DEBUG llvm_codegen.cpp:644]   %176 = fcmp uno float %171, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %177 = select i1 %176, i1 true, i1 %175
+[DEBUG llvm_codegen.cpp:644]   %178 = select i1 %177, float %171, float %174
+[DEBUG llvm_codegen.cpp:644]   store float %178, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %179 = or i64 %23, 4
+[DEBUG llvm_codegen.cpp:644]   %180 = getelementptr float, float* %6, i64 %179
+[DEBUG llvm_codegen.cpp:644]   %181 = load float, float* %180, align 4
+[DEBUG llvm_codegen.cpp:644]   %182 = fcmp ogt float %178, %181
+[DEBUG llvm_codegen.cpp:644]   %183 = fcmp uno float %178, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %184 = select i1 %183, i1 true, i1 %182
+[DEBUG llvm_codegen.cpp:644]   %185 = select i1 %184, float %178, float %181
+[DEBUG llvm_codegen.cpp:644]   store float %185, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %186 = or i64 %23, 5
+[DEBUG llvm_codegen.cpp:644]   %187 = getelementptr float, float* %6, i64 %186
+[DEBUG llvm_codegen.cpp:644]   %188 = load float, float* %187, align 4
+[DEBUG llvm_codegen.cpp:644]   %189 = fcmp ogt float %185, %188
+[DEBUG llvm_codegen.cpp:644]   %190 = fcmp uno float %185, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %191 = select i1 %190, i1 true, i1 %189
+[DEBUG llvm_codegen.cpp:644]   %192 = select i1 %191, float %185, float %188
+[DEBUG llvm_codegen.cpp:644]   store float %192, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %193 = or i64 %23, 6
+[DEBUG llvm_codegen.cpp:644]   %194 = getelementptr float, float* %6, i64 %193
+[DEBUG llvm_codegen.cpp:644]   %195 = load float, float* %194, align 4
+[DEBUG llvm_codegen.cpp:644]   %196 = fcmp ogt float %192, %195
+[DEBUG llvm_codegen.cpp:644]   %197 = fcmp uno float %192, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %198 = select i1 %197, i1 true, i1 %196
+[DEBUG llvm_codegen.cpp:644]   %199 = select i1 %198, float %192, float %195
+[DEBUG llvm_codegen.cpp:644]   store float %199, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %200 = or i64 %23, 7
+[DEBUG llvm_codegen.cpp:644]   %201 = getelementptr float, float* %6, i64 %200
+[DEBUG llvm_codegen.cpp:644]   %202 = load float, float* %201, align 4
+[DEBUG llvm_codegen.cpp:644]   %203 = fcmp ogt float %199, %202
+[DEBUG llvm_codegen.cpp:644]   %204 = fcmp uno float %199, 0.000000e+00
+[DEBUG llvm_codegen.cpp:644]   %205 = select i1 %204, i1 true, i1 %203
+[DEBUG llvm_codegen.cpp:644]   %206 = select i1 %205, float %199, float %202
+[DEBUG llvm_codegen.cpp:644]   store float %206, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %207 = load <8 x float>, <8 x float>* %28, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert = insertelement <8 x float> poison, float %206, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat = shufflevector <8 x float> %.splatinsert, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %208 = fsub <8 x float> %207, %.splat
+[DEBUG llvm_codegen.cpp:644]   %209 = tail call <8 x float> @Sleef_expf8(<8 x float> %208)
+[DEBUG llvm_codegen.cpp:644]   %210 = getelementptr float, float* %21, i64 %26
+[DEBUG llvm_codegen.cpp:644]   %211 = bitcast float* %210 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %209, <8 x float>* %211, align 4
+[DEBUG llvm_codegen.cpp:644]   %212 = load <8 x float>, <8 x float>* %34, align 4
+[DEBUG llvm_codegen.cpp:644]   %213 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.1 = insertelement <8 x float> poison, float %213, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.1 = shufflevector <8 x float> %.splatinsert.1, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %214 = fsub <8 x float> %212, %.splat.1
+[DEBUG llvm_codegen.cpp:644]   %215 = tail call <8 x float> @Sleef_expf8(<8 x float> %214)
+[DEBUG llvm_codegen.cpp:644]   %216 = getelementptr float, float* %21, i64 %32
+[DEBUG llvm_codegen.cpp:644]   %217 = bitcast float* %216 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %215, <8 x float>* %217, align 4
+[DEBUG llvm_codegen.cpp:644]   %218 = load <8 x float>, <8 x float>* %42, align 4
+[DEBUG llvm_codegen.cpp:644]   %219 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.2 = insertelement <8 x float> poison, float %219, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.2 = shufflevector <8 x float> %.splatinsert.2, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %220 = fsub <8 x float> %218, %.splat.2
+[DEBUG llvm_codegen.cpp:644]   %221 = tail call <8 x float> @Sleef_expf8(<8 x float> %220)
+[DEBUG llvm_codegen.cpp:644]   %222 = getelementptr float, float* %21, i64 %40
+[DEBUG llvm_codegen.cpp:644]   %223 = bitcast float* %222 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %221, <8 x float>* %223, align 4
+[DEBUG llvm_codegen.cpp:644]   %224 = load <8 x float>, <8 x float>* %50, align 4
+[DEBUG llvm_codegen.cpp:644]   %225 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.3 = insertelement <8 x float> poison, float %225, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.3 = shufflevector <8 x float> %.splatinsert.3, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %226 = fsub <8 x float> %224, %.splat.3
+[DEBUG llvm_codegen.cpp:644]   %227 = tail call <8 x float> @Sleef_expf8(<8 x float> %226)
+[DEBUG llvm_codegen.cpp:644]   %228 = getelementptr float, float* %21, i64 %48
+[DEBUG llvm_codegen.cpp:644]   %229 = bitcast float* %228 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %227, <8 x float>* %229, align 4
+[DEBUG llvm_codegen.cpp:644]   %230 = load <8 x float>, <8 x float>* %58, align 4
+[DEBUG llvm_codegen.cpp:644]   %231 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.4 = insertelement <8 x float> poison, float %231, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.4 = shufflevector <8 x float> %.splatinsert.4, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %232 = fsub <8 x float> %230, %.splat.4
+[DEBUG llvm_codegen.cpp:644]   %233 = tail call <8 x float> @Sleef_expf8(<8 x float> %232)
+[DEBUG llvm_codegen.cpp:644]   %234 = getelementptr float, float* %21, i64 %56
+[DEBUG llvm_codegen.cpp:644]   %235 = bitcast float* %234 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %233, <8 x float>* %235, align 4
+[DEBUG llvm_codegen.cpp:644]   %236 = load <8 x float>, <8 x float>* %66, align 4
+[DEBUG llvm_codegen.cpp:644]   %237 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.5 = insertelement <8 x float> poison, float %237, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.5 = shufflevector <8 x float> %.splatinsert.5, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %238 = fsub <8 x float> %236, %.splat.5
+[DEBUG llvm_codegen.cpp:644]   %239 = tail call <8 x float> @Sleef_expf8(<8 x float> %238)
+[DEBUG llvm_codegen.cpp:644]   %240 = getelementptr float, float* %21, i64 %64
+[DEBUG llvm_codegen.cpp:644]   %241 = bitcast float* %240 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %239, <8 x float>* %241, align 4
+[DEBUG llvm_codegen.cpp:644]   %242 = load <8 x float>, <8 x float>* %74, align 4
+[DEBUG llvm_codegen.cpp:644]   %243 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.6 = insertelement <8 x float> poison, float %243, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.6 = shufflevector <8 x float> %.splatinsert.6, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %244 = fsub <8 x float> %242, %.splat.6
+[DEBUG llvm_codegen.cpp:644]   %245 = tail call <8 x float> @Sleef_expf8(<8 x float> %244)
+[DEBUG llvm_codegen.cpp:644]   %246 = getelementptr float, float* %21, i64 %72
+[DEBUG llvm_codegen.cpp:644]   %247 = bitcast float* %246 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %245, <8 x float>* %247, align 4
+[DEBUG llvm_codegen.cpp:644]   %248 = load <8 x float>, <8 x float>* %82, align 4
+[DEBUG llvm_codegen.cpp:644]   %249 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.7 = insertelement <8 x float> poison, float %249, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.7 = shufflevector <8 x float> %.splatinsert.7, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %250 = fsub <8 x float> %248, %.splat.7
+[DEBUG llvm_codegen.cpp:644]   %251 = tail call <8 x float> @Sleef_expf8(<8 x float> %250)
+[DEBUG llvm_codegen.cpp:644]   %252 = getelementptr float, float* %21, i64 %80
+[DEBUG llvm_codegen.cpp:644]   %253 = bitcast float* %252 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %251, <8 x float>* %253, align 4
+[DEBUG llvm_codegen.cpp:644]   %254 = load <8 x float>, <8 x float>* %90, align 4
+[DEBUG llvm_codegen.cpp:644]   %255 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.8 = insertelement <8 x float> poison, float %255, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.8 = shufflevector <8 x float> %.splatinsert.8, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %256 = fsub <8 x float> %254, %.splat.8
+[DEBUG llvm_codegen.cpp:644]   %257 = tail call <8 x float> @Sleef_expf8(<8 x float> %256)
+[DEBUG llvm_codegen.cpp:644]   %258 = getelementptr float, float* %21, i64 %88
+[DEBUG llvm_codegen.cpp:644]   %259 = bitcast float* %258 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %257, <8 x float>* %259, align 4
+[DEBUG llvm_codegen.cpp:644]   %260 = load <8 x float>, <8 x float>* %98, align 4
+[DEBUG llvm_codegen.cpp:644]   %261 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.9 = insertelement <8 x float> poison, float %261, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.9 = shufflevector <8 x float> %.splatinsert.9, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %262 = fsub <8 x float> %260, %.splat.9
+[DEBUG llvm_codegen.cpp:644]   %263 = tail call <8 x float> @Sleef_expf8(<8 x float> %262)
+[DEBUG llvm_codegen.cpp:644]   %264 = getelementptr float, float* %21, i64 %96
+[DEBUG llvm_codegen.cpp:644]   %265 = bitcast float* %264 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %263, <8 x float>* %265, align 4
+[DEBUG llvm_codegen.cpp:644]   %266 = load <8 x float>, <8 x float>* %106, align 4
+[DEBUG llvm_codegen.cpp:644]   %267 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.10 = insertelement <8 x float> poison, float %267, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.10 = shufflevector <8 x float> %.splatinsert.10, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %268 = fsub <8 x float> %266, %.splat.10
+[DEBUG llvm_codegen.cpp:644]   %269 = tail call <8 x float> @Sleef_expf8(<8 x float> %268)
+[DEBUG llvm_codegen.cpp:644]   %270 = getelementptr float, float* %21, i64 %104
+[DEBUG llvm_codegen.cpp:644]   %271 = bitcast float* %270 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %269, <8 x float>* %271, align 4
+[DEBUG llvm_codegen.cpp:644]   %272 = load <8 x float>, <8 x float>* %114, align 4
+[DEBUG llvm_codegen.cpp:644]   %273 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.11 = insertelement <8 x float> poison, float %273, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.11 = shufflevector <8 x float> %.splatinsert.11, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %274 = fsub <8 x float> %272, %.splat.11
+[DEBUG llvm_codegen.cpp:644]   %275 = tail call <8 x float> @Sleef_expf8(<8 x float> %274)
+[DEBUG llvm_codegen.cpp:644]   %276 = getelementptr float, float* %21, i64 %112
+[DEBUG llvm_codegen.cpp:644]   %277 = bitcast float* %276 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %275, <8 x float>* %277, align 4
+[DEBUG llvm_codegen.cpp:644]   %278 = load <8 x float>, <8 x float>* %122, align 4
+[DEBUG llvm_codegen.cpp:644]   %279 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.12 = insertelement <8 x float> poison, float %279, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.12 = shufflevector <8 x float> %.splatinsert.12, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %280 = fsub <8 x float> %278, %.splat.12
+[DEBUG llvm_codegen.cpp:644]   %281 = tail call <8 x float> @Sleef_expf8(<8 x float> %280)
+[DEBUG llvm_codegen.cpp:644]   %282 = getelementptr float, float* %21, i64 %120
+[DEBUG llvm_codegen.cpp:644]   %283 = bitcast float* %282 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %281, <8 x float>* %283, align 4
+[DEBUG llvm_codegen.cpp:644]   %284 = load <8 x float>, <8 x float>* %130, align 4
+[DEBUG llvm_codegen.cpp:644]   %285 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.13 = insertelement <8 x float> poison, float %285, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.13 = shufflevector <8 x float> %.splatinsert.13, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %286 = fsub <8 x float> %284, %.splat.13
+[DEBUG llvm_codegen.cpp:644]   %287 = tail call <8 x float> @Sleef_expf8(<8 x float> %286)
+[DEBUG llvm_codegen.cpp:644]   %288 = getelementptr float, float* %21, i64 %128
+[DEBUG llvm_codegen.cpp:644]   %289 = bitcast float* %288 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %287, <8 x float>* %289, align 4
+[DEBUG llvm_codegen.cpp:644]   %290 = load <8 x float>, <8 x float>* %138, align 4
+[DEBUG llvm_codegen.cpp:644]   %291 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.14 = insertelement <8 x float> poison, float %291, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.14 = shufflevector <8 x float> %.splatinsert.14, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %292 = fsub <8 x float> %290, %.splat.14
+[DEBUG llvm_codegen.cpp:644]   %293 = tail call <8 x float> @Sleef_expf8(<8 x float> %292)
+[DEBUG llvm_codegen.cpp:644]   %294 = getelementptr float, float* %21, i64 %136
+[DEBUG llvm_codegen.cpp:644]   %295 = bitcast float* %294 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %293, <8 x float>* %295, align 4
+[DEBUG llvm_codegen.cpp:644]   %296 = load <8 x float>, <8 x float>* %146, align 4
+[DEBUG llvm_codegen.cpp:644]   %297 = load float, float* %22, align 4
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert.15 = insertelement <8 x float> poison, float %297, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat.15 = shufflevector <8 x float> %.splatinsert.15, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %298 = fsub <8 x float> %296, %.splat.15
+[DEBUG llvm_codegen.cpp:644]   %299 = tail call <8 x float> @Sleef_expf8(<8 x float> %298)
+[DEBUG llvm_codegen.cpp:644]   %300 = getelementptr float, float* %21, i64 %144
+[DEBUG llvm_codegen.cpp:644]   %301 = bitcast float* %300 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %299, <8 x float>* %301, align 4
+[DEBUG llvm_codegen.cpp:644]   %302 = getelementptr float, float* %12, i64 %0
+[DEBUG llvm_codegen.cpp:644]   store float 0.000000e+00, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %303 = getelementptr float, float* %15, i64 %23
+[DEBUG llvm_codegen.cpp:644]   %304 = bitcast float* %303 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> zeroinitializer, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %305 = load <8 x float>, <8 x float>* %211, align 4
+[DEBUG llvm_codegen.cpp:644]   %306 = fadd <8 x float> %305, zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %306, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %307 = load <8 x float>, <8 x float>* %217, align 4
+[DEBUG llvm_codegen.cpp:644]   %308 = fadd <8 x float> %306, %307
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %308, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %309 = load <8 x float>, <8 x float>* %223, align 4
+[DEBUG llvm_codegen.cpp:644]   %310 = fadd <8 x float> %308, %309
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %310, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %311 = load <8 x float>, <8 x float>* %229, align 4
+[DEBUG llvm_codegen.cpp:644]   %312 = fadd <8 x float> %310, %311
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %312, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %313 = load <8 x float>, <8 x float>* %235, align 4
+[DEBUG llvm_codegen.cpp:644]   %314 = fadd <8 x float> %312, %313
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %314, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %315 = load <8 x float>, <8 x float>* %241, align 4
+[DEBUG llvm_codegen.cpp:644]   %316 = fadd <8 x float> %314, %315
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %316, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %317 = load <8 x float>, <8 x float>* %247, align 4
+[DEBUG llvm_codegen.cpp:644]   %318 = fadd <8 x float> %316, %317
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %318, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %319 = load <8 x float>, <8 x float>* %253, align 4
+[DEBUG llvm_codegen.cpp:644]   %320 = fadd <8 x float> %318, %319
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %320, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %321 = load <8 x float>, <8 x float>* %259, align 4
+[DEBUG llvm_codegen.cpp:644]   %322 = fadd <8 x float> %320, %321
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %322, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %323 = load <8 x float>, <8 x float>* %265, align 4
+[DEBUG llvm_codegen.cpp:644]   %324 = fadd <8 x float> %322, %323
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %324, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %325 = load <8 x float>, <8 x float>* %271, align 4
+[DEBUG llvm_codegen.cpp:644]   %326 = fadd <8 x float> %324, %325
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %326, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %327 = load <8 x float>, <8 x float>* %277, align 4
+[DEBUG llvm_codegen.cpp:644]   %328 = fadd <8 x float> %326, %327
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %328, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %329 = load <8 x float>, <8 x float>* %283, align 4
+[DEBUG llvm_codegen.cpp:644]   %330 = fadd <8 x float> %328, %329
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %330, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %331 = load <8 x float>, <8 x float>* %289, align 4
+[DEBUG llvm_codegen.cpp:644]   %332 = fadd <8 x float> %330, %331
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %332, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %333 = load <8 x float>, <8 x float>* %295, align 4
+[DEBUG llvm_codegen.cpp:644]   %334 = fadd <8 x float> %332, %333
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %334, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %335 = load <8 x float>, <8 x float>* %301, align 4
+[DEBUG llvm_codegen.cpp:644]   %336 = fadd <8 x float> %334, %335
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %336, <8 x float>* %304, align 4
+[DEBUG llvm_codegen.cpp:644]   %337 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %338 = extractelement <8 x float> %336, i32 0
+[DEBUG llvm_codegen.cpp:644]   %339 = fadd float %337, %338
+[DEBUG llvm_codegen.cpp:644]   store float %339, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %340 = getelementptr float, float* %15, i64 %158
+[DEBUG llvm_codegen.cpp:644]   %341 = load float, float* %340, align 4
+[DEBUG llvm_codegen.cpp:644]   %342 = fadd float %339, %341
+[DEBUG llvm_codegen.cpp:644]   store float %342, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %343 = getelementptr float, float* %15, i64 %165
+[DEBUG llvm_codegen.cpp:644]   %344 = load float, float* %343, align 4
+[DEBUG llvm_codegen.cpp:644]   %345 = fadd float %342, %344
+[DEBUG llvm_codegen.cpp:644]   store float %345, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %346 = getelementptr float, float* %15, i64 %172
+[DEBUG llvm_codegen.cpp:644]   %347 = load float, float* %346, align 4
+[DEBUG llvm_codegen.cpp:644]   %348 = fadd float %345, %347
+[DEBUG llvm_codegen.cpp:644]   store float %348, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %349 = getelementptr float, float* %15, i64 %179
+[DEBUG llvm_codegen.cpp:644]   %350 = load float, float* %349, align 4
+[DEBUG llvm_codegen.cpp:644]   %351 = fadd float %348, %350
+[DEBUG llvm_codegen.cpp:644]   store float %351, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %352 = getelementptr float, float* %15, i64 %186
+[DEBUG llvm_codegen.cpp:644]   %353 = load float, float* %352, align 4
+[DEBUG llvm_codegen.cpp:644]   %354 = fadd float %351, %353
+[DEBUG llvm_codegen.cpp:644]   store float %354, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %355 = getelementptr float, float* %15, i64 %193
+[DEBUG llvm_codegen.cpp:644]   %356 = load float, float* %355, align 4
+[DEBUG llvm_codegen.cpp:644]   %357 = fadd float %354, %356
+[DEBUG llvm_codegen.cpp:644]   store float %357, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %358 = getelementptr float, float* %15, i64 %200
+[DEBUG llvm_codegen.cpp:644]   %359 = load float, float* %358, align 4
+[DEBUG llvm_codegen.cpp:644]   %360 = fadd float %357, %359
+[DEBUG llvm_codegen.cpp:644]   store float %360, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %361 = load <8 x float>, <8 x float>* %211, align 4
+[DEBUG llvm_codegen.cpp:644]   %362 = fdiv float 1.000000e+00, %360
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16 = insertelement <8 x float> poison, float %362, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17 = shufflevector <8 x float> %.splatinsert16, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %363 = fmul <8 x float> %361, %.splat17
+[DEBUG llvm_codegen.cpp:644]   %364 = getelementptr float, float* %18, i64 %26
+[DEBUG llvm_codegen.cpp:644]   %365 = bitcast float* %364 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %363, <8 x float>* %365, align 4
+[DEBUG llvm_codegen.cpp:644]   %366 = load <8 x float>, <8 x float>* %217, align 4
+[DEBUG llvm_codegen.cpp:644]   %367 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %368 = fdiv float 1.000000e+00, %367
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.1 = insertelement <8 x float> poison, float %368, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.1 = shufflevector <8 x float> %.splatinsert16.1, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %369 = fmul <8 x float> %366, %.splat17.1
+[DEBUG llvm_codegen.cpp:644]   %370 = getelementptr float, float* %18, i64 %32
+[DEBUG llvm_codegen.cpp:644]   %371 = bitcast float* %370 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %369, <8 x float>* %371, align 4
+[DEBUG llvm_codegen.cpp:644]   %372 = load <8 x float>, <8 x float>* %223, align 4
+[DEBUG llvm_codegen.cpp:644]   %373 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %374 = fdiv float 1.000000e+00, %373
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.2 = insertelement <8 x float> poison, float %374, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.2 = shufflevector <8 x float> %.splatinsert16.2, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %375 = fmul <8 x float> %372, %.splat17.2
+[DEBUG llvm_codegen.cpp:644]   %376 = getelementptr float, float* %18, i64 %40
+[DEBUG llvm_codegen.cpp:644]   %377 = bitcast float* %376 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %375, <8 x float>* %377, align 4
+[DEBUG llvm_codegen.cpp:644]   %378 = load <8 x float>, <8 x float>* %229, align 4
+[DEBUG llvm_codegen.cpp:644]   %379 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %380 = fdiv float 1.000000e+00, %379
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.3 = insertelement <8 x float> poison, float %380, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.3 = shufflevector <8 x float> %.splatinsert16.3, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %381 = fmul <8 x float> %378, %.splat17.3
+[DEBUG llvm_codegen.cpp:644]   %382 = getelementptr float, float* %18, i64 %48
+[DEBUG llvm_codegen.cpp:644]   %383 = bitcast float* %382 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %381, <8 x float>* %383, align 4
+[DEBUG llvm_codegen.cpp:644]   %384 = load <8 x float>, <8 x float>* %235, align 4
+[DEBUG llvm_codegen.cpp:644]   %385 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %386 = fdiv float 1.000000e+00, %385
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.4 = insertelement <8 x float> poison, float %386, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.4 = shufflevector <8 x float> %.splatinsert16.4, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %387 = fmul <8 x float> %384, %.splat17.4
+[DEBUG llvm_codegen.cpp:644]   %388 = getelementptr float, float* %18, i64 %56
+[DEBUG llvm_codegen.cpp:644]   %389 = bitcast float* %388 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %387, <8 x float>* %389, align 4
+[DEBUG llvm_codegen.cpp:644]   %390 = load <8 x float>, <8 x float>* %241, align 4
+[DEBUG llvm_codegen.cpp:644]   %391 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %392 = fdiv float 1.000000e+00, %391
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.5 = insertelement <8 x float> poison, float %392, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.5 = shufflevector <8 x float> %.splatinsert16.5, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %393 = fmul <8 x float> %390, %.splat17.5
+[DEBUG llvm_codegen.cpp:644]   %394 = getelementptr float, float* %18, i64 %64
+[DEBUG llvm_codegen.cpp:644]   %395 = bitcast float* %394 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %393, <8 x float>* %395, align 4
+[DEBUG llvm_codegen.cpp:644]   %396 = load <8 x float>, <8 x float>* %247, align 4
+[DEBUG llvm_codegen.cpp:644]   %397 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %398 = fdiv float 1.000000e+00, %397
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.6 = insertelement <8 x float> poison, float %398, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.6 = shufflevector <8 x float> %.splatinsert16.6, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %399 = fmul <8 x float> %396, %.splat17.6
+[DEBUG llvm_codegen.cpp:644]   %400 = getelementptr float, float* %18, i64 %72
+[DEBUG llvm_codegen.cpp:644]   %401 = bitcast float* %400 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %399, <8 x float>* %401, align 4
+[DEBUG llvm_codegen.cpp:644]   %402 = load <8 x float>, <8 x float>* %253, align 4
+[DEBUG llvm_codegen.cpp:644]   %403 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %404 = fdiv float 1.000000e+00, %403
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.7 = insertelement <8 x float> poison, float %404, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.7 = shufflevector <8 x float> %.splatinsert16.7, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %405 = fmul <8 x float> %402, %.splat17.7
+[DEBUG llvm_codegen.cpp:644]   %406 = getelementptr float, float* %18, i64 %80
+[DEBUG llvm_codegen.cpp:644]   %407 = bitcast float* %406 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %405, <8 x float>* %407, align 4
+[DEBUG llvm_codegen.cpp:644]   %408 = load <8 x float>, <8 x float>* %259, align 4
+[DEBUG llvm_codegen.cpp:644]   %409 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %410 = fdiv float 1.000000e+00, %409
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.8 = insertelement <8 x float> poison, float %410, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.8 = shufflevector <8 x float> %.splatinsert16.8, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %411 = fmul <8 x float> %408, %.splat17.8
+[DEBUG llvm_codegen.cpp:644]   %412 = getelementptr float, float* %18, i64 %88
+[DEBUG llvm_codegen.cpp:644]   %413 = bitcast float* %412 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %411, <8 x float>* %413, align 4
+[DEBUG llvm_codegen.cpp:644]   %414 = load <8 x float>, <8 x float>* %265, align 4
+[DEBUG llvm_codegen.cpp:644]   %415 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %416 = fdiv float 1.000000e+00, %415
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.9 = insertelement <8 x float> poison, float %416, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.9 = shufflevector <8 x float> %.splatinsert16.9, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %417 = fmul <8 x float> %414, %.splat17.9
+[DEBUG llvm_codegen.cpp:644]   %418 = getelementptr float, float* %18, i64 %96
+[DEBUG llvm_codegen.cpp:644]   %419 = bitcast float* %418 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %417, <8 x float>* %419, align 4
+[DEBUG llvm_codegen.cpp:644]   %420 = load <8 x float>, <8 x float>* %271, align 4
+[DEBUG llvm_codegen.cpp:644]   %421 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %422 = fdiv float 1.000000e+00, %421
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.10 = insertelement <8 x float> poison, float %422, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.10 = shufflevector <8 x float> %.splatinsert16.10, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %423 = fmul <8 x float> %420, %.splat17.10
+[DEBUG llvm_codegen.cpp:644]   %424 = getelementptr float, float* %18, i64 %104
+[DEBUG llvm_codegen.cpp:644]   %425 = bitcast float* %424 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %423, <8 x float>* %425, align 4
+[DEBUG llvm_codegen.cpp:644]   %426 = load <8 x float>, <8 x float>* %277, align 4
+[DEBUG llvm_codegen.cpp:644]   %427 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %428 = fdiv float 1.000000e+00, %427
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.11 = insertelement <8 x float> poison, float %428, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.11 = shufflevector <8 x float> %.splatinsert16.11, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %429 = fmul <8 x float> %426, %.splat17.11
+[DEBUG llvm_codegen.cpp:644]   %430 = getelementptr float, float* %18, i64 %112
+[DEBUG llvm_codegen.cpp:644]   %431 = bitcast float* %430 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %429, <8 x float>* %431, align 4
+[DEBUG llvm_codegen.cpp:644]   %432 = load <8 x float>, <8 x float>* %283, align 4
+[DEBUG llvm_codegen.cpp:644]   %433 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %434 = fdiv float 1.000000e+00, %433
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.12 = insertelement <8 x float> poison, float %434, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.12 = shufflevector <8 x float> %.splatinsert16.12, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %435 = fmul <8 x float> %432, %.splat17.12
+[DEBUG llvm_codegen.cpp:644]   %436 = getelementptr float, float* %18, i64 %120
+[DEBUG llvm_codegen.cpp:644]   %437 = bitcast float* %436 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %435, <8 x float>* %437, align 4
+[DEBUG llvm_codegen.cpp:644]   %438 = load <8 x float>, <8 x float>* %289, align 4
+[DEBUG llvm_codegen.cpp:644]   %439 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %440 = fdiv float 1.000000e+00, %439
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.13 = insertelement <8 x float> poison, float %440, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.13 = shufflevector <8 x float> %.splatinsert16.13, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %441 = fmul <8 x float> %438, %.splat17.13
+[DEBUG llvm_codegen.cpp:644]   %442 = getelementptr float, float* %18, i64 %128
+[DEBUG llvm_codegen.cpp:644]   %443 = bitcast float* %442 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %441, <8 x float>* %443, align 4
+[DEBUG llvm_codegen.cpp:644]   %444 = load <8 x float>, <8 x float>* %295, align 4
+[DEBUG llvm_codegen.cpp:644]   %445 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %446 = fdiv float 1.000000e+00, %445
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.14 = insertelement <8 x float> poison, float %446, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.14 = shufflevector <8 x float> %.splatinsert16.14, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %447 = fmul <8 x float> %444, %.splat17.14
+[DEBUG llvm_codegen.cpp:644]   %448 = getelementptr float, float* %18, i64 %136
+[DEBUG llvm_codegen.cpp:644]   %449 = bitcast float* %448 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %447, <8 x float>* %449, align 4
+[DEBUG llvm_codegen.cpp:644]   %450 = load <8 x float>, <8 x float>* %301, align 4
+[DEBUG llvm_codegen.cpp:644]   %451 = load float, float* %302, align 4
+[DEBUG llvm_codegen.cpp:644]   %452 = fdiv float 1.000000e+00, %451
+[DEBUG llvm_codegen.cpp:644]   %.splatinsert16.15 = insertelement <8 x float> poison, float %452, i32 0
+[DEBUG llvm_codegen.cpp:644]   %.splat17.15 = shufflevector <8 x float> %.splatinsert16.15, <8 x float> poison, <8 x i32> zeroinitializer
+[DEBUG llvm_codegen.cpp:644]   %453 = fmul <8 x float> %450, %.splat17.15
+[DEBUG llvm_codegen.cpp:644]   %454 = getelementptr float, float* %18, i64 %144
+[DEBUG llvm_codegen.cpp:644]   %455 = bitcast float* %454 to <8 x float>*
+[DEBUG llvm_codegen.cpp:644]   store <8 x float> %453, <8 x float>* %455, align 4
+[DEBUG llvm_codegen.cpp:644]   ret void
+[DEBUG llvm_codegen.cpp:644] }
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: mustprogress nofree nosync nounwind readnone willreturn
+[DEBUG llvm_codegen.cpp:644] declare <8 x float> @Sleef_expf8(<8 x float>) local_unnamed_addr #3
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: nounwind
+[DEBUG llvm_codegen.cpp:644] declare void @DispatchParallel(i8*, i64, i64, i8*) local_unnamed_addr #0
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: inaccessiblemem_or_argmemonly mustprogress nounwind willreturn
+[DEBUG llvm_codegen.cpp:644] declare void @free(i8* nocapture noundef) local_unnamed_addr #4
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: nounwind
+[DEBUG llvm_codegen.cpp:644] declare void @nnc_aten_free(i64, i8**) local_unnamed_addr #0
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: inaccessiblememonly nofree nosync nounwind willreturn
+[DEBUG llvm_codegen.cpp:644] declare void @llvm.experimental.noalias.scope.decl(metadata) #5
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: argmemonly nofree nosync nounwind willreturn
+[DEBUG llvm_codegen.cpp:644] declare void @llvm.lifetime.start.p0i8(i64 immarg, i8* nocapture) #6
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] ; Function Attrs: argmemonly nofree nosync nounwind willreturn
+[DEBUG llvm_codegen.cpp:644] declare void @llvm.lifetime.end.p0i8(i64 immarg, i8* nocapture) #6
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] attributes #0 = { nounwind }
+[DEBUG llvm_codegen.cpp:644] attributes #1 = { inaccessiblememonly mustprogress nofree nounwind willreturn }
+[DEBUG llvm_codegen.cpp:644] attributes #2 = { nofree nosync nounwind }
+[DEBUG llvm_codegen.cpp:644] attributes #3 = { mustprogress nofree nosync nounwind readnone willreturn }
+[DEBUG llvm_codegen.cpp:644] attributes #4 = { inaccessiblemem_or_argmemonly mustprogress nounwind willreturn }
+[DEBUG llvm_codegen.cpp:644] attributes #5 = { inaccessiblememonly nofree nosync nounwind willreturn }
+[DEBUG llvm_codegen.cpp:644] attributes #6 = { argmemonly nofree nosync nounwind willreturn }
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:644] !0 = !{!1}
+[DEBUG llvm_codegen.cpp:644] !1 = distinct !{!1, !2, !"pytorch: argument 0"}
+[DEBUG llvm_codegen.cpp:644] !2 = distinct !{!2, !"pytorch"}
+[DEBUG llvm_codegen.cpp:644] !3 = !{!4}
+[DEBUG llvm_codegen.cpp:644] !4 = distinct !{!4, !2, !"pytorch: argument 1"}
+[DEBUG llvm_codegen.cpp:644] !5 = !{!1, !4}
+[DEBUG llvm_codegen.cpp:644] 
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] LLVM generated assembly code
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.text
+[DEBUG llvm_codegen.cpp:662] 	.file	"pytorch"
+[DEBUG llvm_codegen.cpp:662] 	.globl	fused_softmax
+[DEBUG llvm_codegen.cpp:662] 	.p2align	4, 0x90
+[DEBUG llvm_codegen.cpp:662] 	.type	fused_softmax,@function
+[DEBUG llvm_codegen.cpp:662] fused_softmax:
+[DEBUG llvm_codegen.cpp:662] 	endbr64
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r15
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r14
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r13
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r12
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	subq	$72, %rsp
+[DEBUG llvm_codegen.cpp:662] 	movq	(%rdi), %rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rdi), %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, 8(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$malloc, %rbx
+[DEBUG llvm_codegen.cpp:662] 	movl	$65536, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r14
+[DEBUG llvm_codegen.cpp:662] 	movl	$524288, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r15
+[DEBUG llvm_codegen.cpp:662] 	movl	$8388608, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r12
+[DEBUG llvm_codegen.cpp:662] 	movl	$65536, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r13
+[DEBUG llvm_codegen.cpp:662] 	movl	$524288, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rbp, 16(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, 24(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r13, 32(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r14, 40(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r15, 48(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rsp), %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, 56(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r12, 64(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$.Lfunc, %rdi
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$DispatchParallel, %rax
+[DEBUG llvm_codegen.cpp:662] 	leaq	16(%rsp), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movl	$16384, %edx
+[DEBUG llvm_codegen.cpp:662] 	xorl	%esi, %esi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$free, %rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%rbx, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r13, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r12, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r15, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r14, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$nnc_aten_free, %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	%rsp, %rsi
+[DEBUG llvm_codegen.cpp:662] 	xorl	%edi, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	xorl	%eax, %eax
+[DEBUG llvm_codegen.cpp:662] 	addq	$72, %rsp
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	popq	%r12
+[DEBUG llvm_codegen.cpp:662] 	popq	%r13
+[DEBUG llvm_codegen.cpp:662] 	popq	%r14
+[DEBUG llvm_codegen.cpp:662] 	popq	%r15
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	retq
+[DEBUG llvm_codegen.cpp:662] .Lfunc_end0:
+[DEBUG llvm_codegen.cpp:662] 	.size	fused_softmax, .Lfunc_end0-fused_softmax
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.section	.rodata.cst4,"aM",@progbits,4
+[DEBUG llvm_codegen.cpp:662] 	.p2align	2
+[DEBUG llvm_codegen.cpp:662] .LCPI1_0:
+[DEBUG llvm_codegen.cpp:662] 	.long	0x00800000
+[DEBUG llvm_codegen.cpp:662] .LCPI1_1:
+[DEBUG llvm_codegen.cpp:662] 	.long	0x3f800000
+[DEBUG llvm_codegen.cpp:662] 	.text
+[DEBUG llvm_codegen.cpp:662] 	.p2align	4, 0x90
+[DEBUG llvm_codegen.cpp:662] 	.type	.Lfunc,@function
+[DEBUG llvm_codegen.cpp:662] .Lfunc:
+[DEBUG llvm_codegen.cpp:662] 	endbr64
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r15
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r14
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r13
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r12
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	subq	$24, %rsp
+[DEBUG llvm_codegen.cpp:662] 	movq	%rdi, %r14
+[DEBUG llvm_codegen.cpp:662] 	movq	(%rsi), %r15
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rsi), %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	16(%rsi), %rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	24(%rsi), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rcx, 8(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	32(%rsi), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rcx, (%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	40(%rsi), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rcx, 16(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	48(%rsi), %r12
+[DEBUG llvm_codegen.cpp:662] 	movl	$8388608, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	movq	%rdi, %r13
+[DEBUG llvm_codegen.cpp:662] 	shlq	$5, %r13
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$.LCPI1_0, %rcx
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	(%rcx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	movq	%rdi, %rbx
+[DEBUG llvm_codegen.cpp:662] 	shlq	$9, %rbx
+[DEBUG llvm_codegen.cpp:662] 	vmaxps	(%r15,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	32(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm2, %xmm2, %xmm2
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	64(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	96(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	128(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	160(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	192(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	224(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	256(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	288(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	320(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	352(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	384(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	416(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	448(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	480(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovss	(%rbp,%rdi,4), %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	%xmm1, %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	4(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	8(%rax,%r13), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	12(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	16(%rax,%r13), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	20(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	24(%rax,%r13), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	28(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	%ymm0, %ymm1, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	32(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 32(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	64(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 64(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	96(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 96(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	128(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 128(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	160(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 160(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	192(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 192(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	224(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 224(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	256(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 256(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	288(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 288(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	320(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 320(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	352(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 352(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	384(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 384(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	416(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 416(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	448(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 448(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	480(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 480(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rsp), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movl	$0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	movq	(%rsp), %rax
+[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm0, %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	32(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	64(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	96(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	128(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	160(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	192(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	224(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	256(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	288(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	320(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	352(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	384(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	416(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	448(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	480(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	(%rcx,%r14,4), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	4(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	8(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	12(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	16(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	20(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	24(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	28(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$.LCPI1_1, %rax
+[DEBUG llvm_codegen.cpp:662] 	vmovss	(%rax), %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vdivss	%xmm0, %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movq	16(%rsp), %rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	32(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 32(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	64(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 64(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	96(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 96(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	128(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 128(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	160(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 160(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	192(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 192(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	224(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 224(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	256(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 256(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	288(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 288(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	320(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 320(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	352(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 352(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	384(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 384(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	416(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 416(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	448(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 448(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	480(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 480(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	addq	$24, %rsp
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	popq	%r12
+[DEBUG llvm_codegen.cpp:662] 	popq	%r13
+[DEBUG llvm_codegen.cpp:662] 	popq	%r14
+[DEBUG llvm_codegen.cpp:662] 	popq	%r15
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	vzeroupper
+[DEBUG llvm_codegen.cpp:662] 	retq
+[DEBUG llvm_codegen.cpp:662] .Lfunc_end1:
+[DEBUG llvm_codegen.cpp:662] 	.size	.Lfunc, .Lfunc_end1-.Lfunc
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.section	".note.GNU-stack","",@progbits
+[DEBUG llvm_codegen.cpp:662] 
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.938s
+
+OK

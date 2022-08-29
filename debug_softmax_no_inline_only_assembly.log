@@ -1,0 +1,460 @@
+
+[DEBUG llvm_codegen.cpp:662] LLVM generated assembly code
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.text
+[DEBUG llvm_codegen.cpp:662] 	.file	"pytorch"
+[DEBUG llvm_codegen.cpp:662] 	.globl	fused_softmax
+[DEBUG llvm_codegen.cpp:662] 	.p2align	4, 0x90
+[DEBUG llvm_codegen.cpp:662] 	.type	fused_softmax,@function
+[DEBUG llvm_codegen.cpp:662] fused_softmax:
+[DEBUG llvm_codegen.cpp:662] 	endbr64
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r15
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r14
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r13
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r12
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	subq	$72, %rsp
+[DEBUG llvm_codegen.cpp:662] 	movq	(%rdi), %rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rdi), %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, 8(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$malloc, %rbx
+[DEBUG llvm_codegen.cpp:662] 	movl	$65536, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r14
+[DEBUG llvm_codegen.cpp:662] 	movl	$524288, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r15
+[DEBUG llvm_codegen.cpp:662] 	movl	$8388608, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r12
+[DEBUG llvm_codegen.cpp:662] 	movl	$65536, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %r13
+[DEBUG llvm_codegen.cpp:662] 	movl	$524288, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, %rbx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rbp, 16(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, 24(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r13, 32(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r14, 40(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r15, 48(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rsp), %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	%rax, 56(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	%r12, 64(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$.Lfunc, %rdi
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$DispatchParallel, %rax
+[DEBUG llvm_codegen.cpp:662] 	leaq	16(%rsp), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movl	$16384, %edx
+[DEBUG llvm_codegen.cpp:662] 	xorl	%esi, %esi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$free, %rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%rbx, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r13, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r12, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r15, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	%r14, %rdi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rbp
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$nnc_aten_free, %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	%rsp, %rsi
+[DEBUG llvm_codegen.cpp:662] 	xorl	%edi, %edi
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	xorl	%eax, %eax
+[DEBUG llvm_codegen.cpp:662] 	addq	$72, %rsp
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	popq	%r12
+[DEBUG llvm_codegen.cpp:662] 	popq	%r13
+[DEBUG llvm_codegen.cpp:662] 	popq	%r14
+[DEBUG llvm_codegen.cpp:662] 	popq	%r15
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	retq
+[DEBUG llvm_codegen.cpp:662] .Lfunc_end0:
+[DEBUG llvm_codegen.cpp:662] 	.size	fused_softmax, .Lfunc_end0-fused_softmax
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.section	.rodata.cst4,"aM",@progbits,4
+[DEBUG llvm_codegen.cpp:662] 	.p2align	2
+[DEBUG llvm_codegen.cpp:662] .LCPI1_0:
+[DEBUG llvm_codegen.cpp:662] 	.long	0x00800000
+[DEBUG llvm_codegen.cpp:662] .LCPI1_1:
+[DEBUG llvm_codegen.cpp:662] 	.long	0x3f800000
+[DEBUG llvm_codegen.cpp:662] 	.text
+[DEBUG llvm_codegen.cpp:662] 	.p2align	4, 0x90
+[DEBUG llvm_codegen.cpp:662] 	.type	.Lfunc,@function
+[DEBUG llvm_codegen.cpp:662] .Lfunc:
+[DEBUG llvm_codegen.cpp:662] 	endbr64
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r15
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r14
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r13
+[DEBUG llvm_codegen.cpp:662] 	pushq	%r12
+[DEBUG llvm_codegen.cpp:662] 	pushq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	subq	$24, %rsp
+[DEBUG llvm_codegen.cpp:662] 	movq	%rdi, %r14
+[DEBUG llvm_codegen.cpp:662] 	movq	(%rsi), %r15
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rsi), %rax
+[DEBUG llvm_codegen.cpp:662] 	movq	16(%rsi), %rbp
+[DEBUG llvm_codegen.cpp:662] 	movq	24(%rsi), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rcx, 8(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	32(%rsi), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rcx, (%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	40(%rsi), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movq	%rcx, 16(%rsp)
+[DEBUG llvm_codegen.cpp:662] 	movq	48(%rsi), %r12
+[DEBUG llvm_codegen.cpp:662] 	movl	$8388608, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	movq	%rdi, %r13
+[DEBUG llvm_codegen.cpp:662] 	shlq	$5, %r13
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$.LCPI1_0, %rcx
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	(%rcx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	movq	%rdi, %rbx
+[DEBUG llvm_codegen.cpp:662] 	shlq	$9, %rbx
+[DEBUG llvm_codegen.cpp:662] 	vmaxps	(%r15,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	32(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm2, %xmm2, %xmm2
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	64(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	96(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	128(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	160(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	192(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	224(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	256(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	288(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	320(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	352(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	384(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	416(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	448(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm1, %ymm0, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm1, %ymm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	480(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpltps	%ymm0, %ymm1, %k0
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordps	%ymm2, %ymm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	korb	%k0, %k1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovaps	%ymm0, %ymm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm1, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vmovss	(%rbp,%rdi,4), %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	%xmm1, %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	4(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	8(%rax,%r13), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	12(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	16(%rax,%r13), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	20(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm0, %xmm0, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	24(%rax,%r13), %xmm0, %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, %xmm1, %xmm1 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vcmpunordss	%xmm1, %xmm1, %k1
+[DEBUG llvm_codegen.cpp:662] 	vmaxss	28(%rax,%r13), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm1, %xmm0, %xmm0 {%k1}
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rbp,%rdi,4)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	(%r15,%rbx), %ymm1
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	%ymm0, %ymm1, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	32(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 32(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	64(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 64(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	96(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 96(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	128(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 128(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	160(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 160(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	192(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 192(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	224(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 224(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	256(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 256(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	288(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 288(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	320(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 320(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	352(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 352(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	384(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 384(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	416(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 416(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	448(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$Sleef_expf8, %rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 448(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vmovups	480(%r15,%rbx), %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vsubps	(%rbp,%r14,4){1to8}, %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	callq	*%rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 480(%r12,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	movq	8(%rsp), %rcx
+[DEBUG llvm_codegen.cpp:662] 	movl	$0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	movq	(%rsp), %rax
+[DEBUG llvm_codegen.cpp:662] 	vxorps	%xmm0, %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	32(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	64(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	96(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	128(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	160(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	192(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	224(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	256(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	288(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	320(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	352(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	384(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	416(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	448(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddps	480(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%r13)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	(%rcx,%r14,4), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	4(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	8(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	12(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	16(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	20(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	24(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	vaddss	28(%rax,%r13), %xmm0, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vmovss	%xmm0, (%rcx,%r14,4)
+[DEBUG llvm_codegen.cpp:662] 	movabsq	$.LCPI1_1, %rax
+[DEBUG llvm_codegen.cpp:662] 	vmovss	(%rax), %xmm1
+[DEBUG llvm_codegen.cpp:662] 	vdivss	%xmm0, %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	movq	16(%rsp), %rax
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, (%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	32(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 32(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	64(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 64(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	96(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 96(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	128(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 128(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	160(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 160(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	192(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 192(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	224(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 224(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	256(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 256(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	288(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 288(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	320(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 320(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	352(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 352(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	384(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 384(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	416(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 416(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	448(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 448(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	vdivss	(%rcx,%r14,4), %xmm1, %xmm0
+[DEBUG llvm_codegen.cpp:662] 	vbroadcastss	%xmm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmulps	480(%r12,%rbx), %ymm0, %ymm0
+[DEBUG llvm_codegen.cpp:662] 	vmovups	%ymm0, 480(%rax,%rbx)
+[DEBUG llvm_codegen.cpp:662] 	addq	$24, %rsp
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbx
+[DEBUG llvm_codegen.cpp:662] 	popq	%r12
+[DEBUG llvm_codegen.cpp:662] 	popq	%r13
+[DEBUG llvm_codegen.cpp:662] 	popq	%r14
+[DEBUG llvm_codegen.cpp:662] 	popq	%r15
+[DEBUG llvm_codegen.cpp:662] 	popq	%rbp
+[DEBUG llvm_codegen.cpp:662] 	vzeroupper
+[DEBUG llvm_codegen.cpp:662] 	retq
+[DEBUG llvm_codegen.cpp:662] .Lfunc_end1:
+[DEBUG llvm_codegen.cpp:662] 	.size	.Lfunc, .Lfunc_end1-.Lfunc
+[DEBUG llvm_codegen.cpp:662] 
+[DEBUG llvm_codegen.cpp:662] 	.section	".note.GNU-stack","",@progbits
+[DEBUG llvm_codegen.cpp:662] 
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.938s
+
+OK
