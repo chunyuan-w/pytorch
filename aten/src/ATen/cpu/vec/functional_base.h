@@ -39,18 +39,19 @@ struct VecReduceAllSIMD {
 template <typename Op>
 struct VecReduceAllSIMD<float, Op> {
   static inline float apply(const Op& vec_fun, Vectorized<float> acc_vec) {
-    using Vec = Vectorized<float>;
-    Vec v = acc_vec;
-    // 128-bit shuffle
-    Vec v1 = _mm256_permute2f128_ps(v, v, 0x1);
-    v = vec_fun(v, v1);
-    // 64-bit shuffle
-    v1 = _mm256_shuffle_ps(v, v, 0x4E);
-    v = vec_fun(v, v1);
-    // 32-bit shuffle
-    v1 = _mm256_shuffle_ps(v, v, 0xB1);
-    v = vec_fun(v, v1);
-    return _mm256_cvtss_f32(v);
+    return vec_reduce_all(vec_fun, acc_vec, Vectorized<float>::size());
+    // using Vec = Vectorized<float>;
+    // Vec v = acc_vec;
+    // // 128-bit shuffle
+    // Vec v1 = _mm256_permute2f128_ps(v, v, 0x1);
+    // v = vec_fun(v, v1);
+    // // 64-bit shuffle
+    // v1 = _mm256_shuffle_ps(v, v, 0x4E);
+    // v = vec_fun(v, v1);
+    // // 32-bit shuffle
+    // v1 = _mm256_shuffle_ps(v, v, 0xB1);
+    // v = vec_fun(v, v1);
+    // return _mm256_cvtss_f32(v);
   }
 };
 #endif // defined(CPU_CAPABILITY_AVX2)
