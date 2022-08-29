@@ -21,6 +21,7 @@
 #include <llvm/Support/Host.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
+#include <llvm/ExecutionEngine/JITEventListener.h>
 
 #include <torch/csrc/jit/tensorexpr/external_functions_registry.h>
 
@@ -147,6 +148,14 @@ class TORCH_API PytorchLLVMJITImpl {
                               .setJITTargetMachineBuilder(
                                   makeTargetMachineBuilder(triple, cpu, attrs))
                               .create())) {
+#if LLVM_USE_INTEL_JITEVENTS
+    auto *ObjLayer = &LLJ->getObjLinkingLayer();
+    if (auto *RTDyldObjLayer = dyn_cast<orc::RTDyldObjectLinkingLayer>(ObjLayer)) {
+      RTDyldObjLayer->registerJITEventListener(
+        *JITEventListener::createIntelJITEventListener());
+    }
+#endif
+
     auto ProcSymbolsGenerator =
         assertSuccess(DynamicLibrarySearchGenerator::GetForCurrentProcess(
             LLJ->getDataLayout().getGlobalPrefix()));
