@@ -726,8 +726,9 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
   //   output loops.
   // - On GPU, there's enough compute to hide the extra work, and inlining
   //   avoids synchronizing between kernels.
-  
-  // l.inlineIntermediateBufs(/*allow_duplicated_work=*/true);
+  // In case horizontal fusion fails, inline on CPU brings duplicated computation
+  bool allow_duplicated_work = device_ == at::kCPU ? false : true;
+  l.inlineIntermediateBufs(/*allow_duplicated_work=*/allow_duplicated_work);
   GRAPH_DEBUG("after inline", *l.root_stmt());
 
   // Optimizing conditionals needs to be performed after inlining because
