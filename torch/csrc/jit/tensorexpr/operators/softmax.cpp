@@ -9,17 +9,17 @@ namespace tensorexpr {
 using namespace torch::jit::tensorexpr;
 
 Tensor prepareVectorizationForReduceOps(
-  Tensor sum,
+  Tensor t,
   size_t softmax_dim,
   size_t rank
 ) {
-LoopNest nest({sum});
+LoopNest nest({t});
   constexpr int kChunkSize = 8;
   // TODO: only handle reduce_dim == -1 for now
     if (softmax_dim == rank - 1) {
       // TODO: only handle rank == 1 for now
         
-      auto loops = nest.getLoopStmtsFor(sum);
+      auto loops = nest.getLoopStmtsFor(t);
       GRAPH_DEBUG("Orig stmt", *nest.root_stmt());
 
       BufPtr rfac_buf;
@@ -34,7 +34,7 @@ LoopNest nest({sum});
       nest.reorderAxis(mo, mi);
       GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
 
-      auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
+      auto writes = WritesToBuf::find( nest.root_stmt(), t.buf());
       StmtPtr outerLoop = nullptr;
       if (writes.size() == 2) {
         if (StorePtr s = to<Store>(writes.back())) {
@@ -61,7 +61,7 @@ LoopNest nest({sum});
       }
       std::reverse(result.begin(), result.end());
 
-      auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
+      auto bt_body = nest.getAllWritesToBuf(t.buf())[1];
 
       nest.rfactor(bt_body, result.at(result.size()-2), &rfac_buf);
       GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
@@ -79,8 +79,8 @@ LoopNest nest({sum});
       // GRAPH_DEBUG("after vectorize", *nest.root_stmt());
     }
 
-auto vectorized_sum = Tensor(sum.buf(), nest.root_stmt());  
-return vectorized_sum;
+auto vectorized_t = Tensor(t.buf(), nest.root_stmt());  
+return vectorized_t;
 }
 
 Tensor computeSoftmax(
