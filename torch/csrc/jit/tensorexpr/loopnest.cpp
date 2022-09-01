@@ -2678,14 +2678,6 @@ StmtPtr LoopNest::getLoopBodyFor(BufPtr buf) const {
     }
   }
 
-  // if (writes.size() == 3) {
-  //   if (StorePtr s = to<Store>(writes[1])) {
-  //     if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
-  //       return (StmtPtr)s; // NOLINT
-  //     }
-  //   }
-  // }
-
   StmtPtr res = nullptr;
   for (auto s : writes) {
     if (!res) {
@@ -2693,15 +2685,7 @@ StmtPtr LoopNest::getLoopBodyFor(BufPtr buf) const {
       continue;
     }
 
-  printf("before getSharedParent\n");
-std::cout << "res\n" << *res << "\n";
-std::cout <<  "s\n" << *s << "\n";
     res = Block::getSharedParent(res, s);
-  printf("after getSharedParent\n");
-std::cout << "res\n" << *res << "\n";
-
-
-
   }
 
   return (StmtPtr)res; // NOLINT

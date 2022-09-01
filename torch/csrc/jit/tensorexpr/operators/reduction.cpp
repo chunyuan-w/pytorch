@@ -1,6 +1,6 @@
-#include <torch/csrc/jit/tensorexpr/operators/reduction.h>
-#include <torch/csrc/jit/tensorexpr/loopnest.h>
 #include <torch/csrc/jit/jit_log.h>
+#include <torch/csrc/jit/tensorexpr/loopnest.h>
+#include <torch/csrc/jit/tensorexpr/operators/reduction.h>
 
 using namespace torch::jit::tensorexpr;
 
@@ -27,7 +27,6 @@ Tensor computeSum(
     const std::vector<ExprHandle>& outputStrides,
     const c10::optional<ScalarType>& outputType,
     at::Device device) {
-printf("enter computeSum\n")      ;
   std::vector<size_t> axes;
   bool keepdim = false;
   // aten::sum takes the input tensor named self.
@@ -105,15 +104,15 @@ printf("enter computeSum\n")      ;
         }
       },
       reductionDims);
-   
+
   LoopNest nest({sum});
 
   constexpr int kChunkSize = 8;
   // TODO: only handle reduce_dim == -1 for now
-  if (axes.size() == 1){
+  if (axes.size() == 1) {
     if (axes[0] == rank - 1) {
       // TODO: only handle rank == 1 for now
-        
+
       auto loops = nest.getLoopStmtsFor(sum);
       GRAPH_DEBUG("orig", *nest.root_stmt());
 
@@ -129,9 +128,9 @@ printf("enter computeSum\n")      ;
       nest.reorderAxis(mo, mi);
       GRAPH_DEBUG("after 1st reorderAxis", *nest.root_stmt());
 
-      auto writes = WritesToBuf::find( nest.root_stmt(), sum.buf());
+      auto writes = WritesToBuf::find(nest.root_stmt(), sum.buf());
       StmtPtr outerLoop = nullptr;
-std::cout << "writes size: " << writes.size() << "\n";
+      std::cout << "writes size: " << writes.size() << "\n";
       if (writes.size() == 2) {
         if (StorePtr s = to<Store>(writes.back())) {
           if (ReduceOpPtr r = to<ReduceOp>(s->value())) {
@@ -159,30 +158,29 @@ std::cout << "writes size: " << writes.size() << "\n";
 
       auto bt_body = nest.getAllWritesToBuf(sum.buf())[1];
 
-std::cout << "bt_body\n" << *bt_body << "\n";
-std::cout << "result 0\n" << *result.at(0) << "\n";
-std::cout << "result size " << result.size() << "\n";
+      std::cout << "bt_body\n" << *bt_body << "\n";
+      std::cout << "result 0\n" << *result.at(0) << "\n";
+      std::cout << "result size " << result.size() << "\n";
 
-      nest.rfactor(bt_body, result.at(result.size()-2), &rfac_buf);
+      nest.rfactor(bt_body, result.at(result.size() - 2), &rfac_buf);
       GRAPH_DEBUG("after 1st rfactor", *nest.root_stmt());
 
-      nest.reorderAxis(result.at(result.size()-2), result.at(result.size()-1));
+      nest.reorderAxis(
+          result.at(result.size() - 2), result.at(result.size() - 1));
       GRAPH_DEBUG("after 2nd reorderAxis", *nest.root_stmt());
 
       loops = nest.getAllInnermostLoopsWritingToBuf(rfac_buf);
 
       TORCH_CHECK(loops.size() == 2);
-      
+
       // TODO: if we vectorize here, IR verifier will fail
-      // Modified the IR verifier to only check the scalar type but not the lanes
+      // Modified the IR verifier to only check the scalar type but not the
+      // lanes
       nest.vectorize(loops.at(1));
       GRAPH_DEBUG("after vectorize", *nest.root_stmt());
 
-
       // nest.prepareForCodegen();
       // GRAPH_DEBUG("after prepareForCodegen", *nest.root_stmt());
-
-
     }
   }
 
