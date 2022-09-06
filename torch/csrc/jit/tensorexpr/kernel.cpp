@@ -672,12 +672,9 @@ static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
     // }
 
     // The loop nest has loop carried dependences; give up.
-    // TODO: fix the seg fault here
-    // if (LoopNest::hasLoopCarriedDependence(loops[0])) {
-    //   printf("hasLoopCarriedDependence\n");
-
-    //   continue;
-    // }
+    if (LoopNest::hasLoopCarriedDependence(loops[0])) {
+      continue;
+    }
 
     // Try to flatten the outer loops and parallelize them if successful.
     ForPtr flattened = nullptr;
@@ -840,7 +837,6 @@ StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
   GRAPH_DEBUG("after prepareForCodegen", *l.root_stmt());
   l.simplify();
   GRAPH_DEBUG("after simplification", *l.root_stmt());
-
 
 
   StmtPtr stmt = l.root_stmt();
