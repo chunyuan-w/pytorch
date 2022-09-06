@@ -5,6 +5,10 @@
 namespace torch {
 namespace jit {
 namespace tensorexpr {
+Tensor prepareVectorizationForReduceOps(
+    Tensor t,
+    size_t softmax_dim,
+    size_t rank);
 
 Tensor computeSoftmax(
     const std::vector<ArgValue>& inputs,

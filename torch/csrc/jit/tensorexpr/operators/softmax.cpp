@@ -10,12 +10,12 @@ using namespace torch::jit::tensorexpr;
 
 Tensor prepareVectorizationForReduceOps(
     Tensor t,
-    size_t softmax_dim,
+    size_t reduce_dim,
     size_t rank) {
   LoopNest nest({t});
   constexpr int kChunkSize = 8;
   // TODO: only handle reduce_dim == -1 for now
-  if (softmax_dim == rank - 1) {
+  if (reduce_dim == rank - 1) {
     // TODO: only handle rank == 1 for now
 
     auto loops = nest.getLoopStmtsFor(t);
