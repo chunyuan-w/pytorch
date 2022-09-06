@@ -106,10 +106,10 @@ Tensor computeSum(
       },
       reductionDims);
 
-  // TODO: only handle axes.size() == 1 for now
-  if (axes.size() == 1) {
-    return prepareVectorizationForReduceOps(sum, axes[0], rank);
-  }
+  // // TODO: only handle axes.size() == 1 for now
+  // if (axes.size() == 1) {
+  //   return prepareVectorizationForReduceOps(sum, axes[0], rank);
+  // }
   return sum;
 }
 
