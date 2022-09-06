@@ -2366,6 +2366,7 @@ void LLVMCodeGenImpl::optimize(llvm::Module& M) {
   FPM.add(llvm::createTargetTransformInfoWrapperPass(TM.getTargetIRAnalysis()));
 
   llvm::PassManagerBuilder PMB;
+  // PMB.OptLevel = 2;
   PMB.OptLevel = 3;
   PMB.LoopVectorize = true;
   PMB.SLPVectorize = true;
