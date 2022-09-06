@@ -72,7 +72,6 @@ class TestMkldnnFusion(JitTestCase):
             # [2, 8, 32, 32],
             # [2, 8, 32, 35],
             ]:
-            print("size: ", size)
             x = torch.randn(size)
             # x = torch.randn(9)
             graph = self._check_model(m, [x])
@@ -100,7 +99,6 @@ class TestMkldnnFusion(JitTestCase):
             # [2, 8, 32, 32],
             # [2, 8, 32, 35],
             ]:
-            print("size: ", size)
             x = torch.randn(size)
             # x = torch.randn(9)
             graph = self._check_model(m, [x])

@@ -675,7 +675,6 @@ static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
     if (LoopNest::hasLoopCarriedDependence(loops[0])) {
       continue;
     }
-
     // Try to flatten the outer loops and parallelize them if successful.
     ForPtr flattened = nullptr;
     if (loops.size() == 1) {
