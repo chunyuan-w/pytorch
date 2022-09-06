@@ -1567,22 +1567,31 @@ void LoopNest::vectorizeInnerLoops() {
   for (ForPtr loop : innerLoops_before_rfator) {
     std::cout << "innerLoops_before_rfator\n" << *loop << "\n";
 
-    
+    // TODO: generalize bt_body
+    StmtPtr bt_body = loop->body()->front()    ;
+    std::cout << "bt_body\n" << *bt_body << "\n";
+
+    BlockPtr f = to<Block>(loop->get_parent());
+    std::cout << "BlockPtr f\n" << *f << "\n";
+
+    // Find the parent loop that the next loop is the current loop
+
 
 
   }
 
   // vectorize inner loops.
-  for (ForPtr loop : innerLoops) {
+  for (ForPtr loop : innerLoops_before_rfator) {
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     ForPtr split1;
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     ForPtr tail1;
 
     static const int kBodyVectorWidth = 8;
-    splitWithTail(loop, kBodyVectorWidth, &split1, &tail1);
-    vectorize(split1);
+    // splitWithTail(loop, kBodyVectorWidth, &split1, &tail1);
+    vectorize(loop);
 
+    // TODO: tail1 is missing
     if (tail1) {
       // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
       ForPtr split2;
