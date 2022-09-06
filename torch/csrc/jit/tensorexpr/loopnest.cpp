@@ -1426,6 +1426,52 @@ bool LoopNest::optimizeConditionals() {
   return true;
 }
 
+std::vector<ForPtr> findInnerLoops(StmtPtr root_stmt) {
+  std::vector<ForPtr> innerLoops;
+  std::vector<ForPtr> worklist;
+
+  // Find outer-most For loops
+  if (ForPtr rootF = to<For>(root_stmt)) {
+    worklist.push_back(rootF);
+  } else if (BlockPtr body = to<Block>(root_stmt)) {
+    std::vector<BlockPtr> blocks = {body};
+    while (blocks.size()) {
+      BlockPtr b = blocks.back();
+      blocks.pop_back();
+
+      for (StmtPtr s : *b) {
+        if (ForPtr f = to<For>(s)) {
+          worklist.push_back(f);
+        } else if (BlockPtr b2 = to<Block>(s)) {
+          blocks.push_back(b2);
+        }
+      }
+    }
+  }
+
+  // Traverse the For loop nest find inner-most loops, which are
+  // vectorization candidates.
+  while (worklist.size()) {
+    ForPtr f = worklist.back();
+    worklist.pop_back();
+
+    bool containsSubLoops = false;
+    if (BlockPtr body = to<Block>(f->body())) {
+      for (StmtPtr s2 : *body) {
+        if (ForPtr f2 = to<For>(s2)) {
+          containsSubLoops = true;
+          worklist.push_back(f2);
+        }
+      }
+    }
+
+    if (!containsSubLoops) {
+      innerLoops.push_back(f);
+    }
+  }
+  return innerLoops;
+}
+
 void LoopNest::vectorizeInnerLoops() {
   std::vector<ForPtr> innerLoops;
   std::vector<ForPtr> worklist;
@@ -1468,6 +1514,62 @@ void LoopNest::vectorizeInnerLoops() {
     if (!containsSubLoops) {
       innerLoops.push_back(f);
     }
+  }
+
+  // vectorzie preparation
+  for (ForPtr loop : innerLoops) {
+    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+    ForPtr split1;
+    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+    ForPtr tail1;
+
+    static const int kBodyVectorWidth = 8;
+
+    std::cout << "loop before splitWithTail\n" << *loop << "\n"    ;
+    bool rfactor = false;
+    auto reductions = NodeFinder<ReduceOp>::find(loop);
+    if (reductions.size() == 1) {
+      auto r = reductions[0];
+      if (r->reduce_args().size() == 1) {
+        auto arg = r->reduce_args()[0];
+        if (arg == loop->var()) {
+          // do rfactor here;
+          printf("ready for rfactor\n");
+          rfactor = true;
+          if (StorePtr s = to<Store>(loop->body()->front())) {
+            std::cout << "s: " << *s << "\n";
+          }
+        }
+      }
+    }
+
+    splitWithTail(loop, kBodyVectorWidth, &split1, &tail1);
+        
+    std::cout << "loop after splitWithTail, before vectorize\n" << *loop << "\n"    ;
+    std::cout << "split1 after splitWithTail, before vectorize\n" << *split1 << "\n"    ;
+        
+
+    if (rfactor) {
+      // rfactor
+      printf("running rfactor\n");
+      LoopNest::reorderAxis(split1, loop);
+
+    std::cout << "loop after reorderAxis, before vectorize\n" << *loop << "\n"    ;
+    std::cout << "split1 after reorderAxis, before vectorize\n" << *split1 << "\n"    ;
+    
+    std::cout << "root_stmt_ before rfactor\n" << *root_stmt_ << "\n"    ;
+
+    std::cout << "root_stmt_ after rfactor, before vectorize\n" << *root_stmt_ << "\n"    ;
+    }
+  }
+
+  auto innerLoops_before_rfator = findInnerLoops(root_stmt_);
+  for (ForPtr loop : innerLoops_before_rfator) {
+    std::cout << "innerLoops_before_rfator\n" << *loop << "\n";
+
+    
+
+
   }
 
   // vectorize inner loops.
