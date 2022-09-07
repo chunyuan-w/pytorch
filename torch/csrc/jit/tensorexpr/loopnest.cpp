@@ -1568,7 +1568,15 @@ void LoopNest::vectorizeInnerLoops() {
       std::cout << "root after 1st reorder: \n" << *root << "\n";
       
       // TODO: check that outer_reduction_for if a For Ptr
-      ForPtr outer_reduction_for = to<For>(root->back());
+      std::vector<ForPtr> result;
+      for (StmtPtr s : *root) {
+        if (ForPtr f = to<For>(s)) {
+          result.push_back(f);
+        }  
+      }
+      
+      TORCH_CHECK(result.size() > 0, "incorrect result size");
+      ForPtr outer_reduction_for = result[0];
       StmtPtr inner_s;
       if (outer_reduction_for) {
         printf("outer_reduction_for after 1st reorder\n");
