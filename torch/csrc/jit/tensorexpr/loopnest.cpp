@@ -1579,6 +1579,14 @@ void LoopNest::vectorizeInnerLoops() {
       printf("running rfactor\n");
       LoopNest::reorderAxis(split1, loop);
 
+    // split1 and loop has no body after reorder
+    if (BlockPtr body = to<Block>(loop->body())) {
+      StmtPtr par = body->get_parent();
+      std::cout << "body\n" << *body << "\n";
+      std::cout << "par of body\n" << *par << "\n";      
+    }
+
+
     std::cout << "loop after reorderAxis, before vectorize\n" << *loop << "\n"    ;
     std::cout << "split1 after reorderAxis, before vectorize\n" << *split1 << "\n"    ;
     
@@ -1592,15 +1600,30 @@ void LoopNest::vectorizeInnerLoops() {
   for (ForPtr loop : innerLoops_before_rfator) {
     std::cout << "innerLoops_before_rfator\n" << *loop << "\n";
 
-    // TODO: generalize bt_body
-    StmtPtr bt_body = loop->body()->front()    ;
-    std::cout << "bt_body\n" << *bt_body << "\n";
+    // // TODO: generalize bt_body
+    // StmtPtr bt_body = loop->body()->front()    ;
+    // std::cout << "bt_body\n" << *bt_body << "\n";
 
-    StmtPtr f = bt_body->get_parent();
-    std::cout << "get_parent of bt_body\n" << *f << "\n";
+    // StmtPtr f = bt_body->get_parent();
+    // std::cout << "get_parent of bt_body\n" << *f << "\n";
 
     // Find the parent loop that the next loop is the current loop
 
+    ForPtr par_loop = LoopNest::getParentLoop(loop);
+    std::cout << "getPar: \n" << *par_loop << "\n";
+
+    // if (BlockPtr body = to<Block>(loop->body())) {
+    //   StmtPtr par = body->get_parent();
+    //   std::cout << "body\n" << *body << "\n";
+    //   std::cout << "par of body\n" << *par << "\n";
+
+    //   if (BlockPtr cur = to<Block>(par)) {
+    //     printf("cast Block\n");
+    //     StmtPtr nxt_par = cur->get_parent();
+    //     std::cout << "nxt par of body\n" << *nxt_par << "\n";      
+    //   }
+
+    // }    
 
 
   }
@@ -2246,11 +2269,15 @@ void LoopNest::reorderAxis(ForPtr a, ForPtr b) {
   internal_axes.push_back(outer);
 
   BlockPtr root = to<Block>(outer->get_parent());
+  std::cout << "root in Reorder\n" << *root << "\n";
+
   CHECK(root);
 
   // Do a shallow copy of the inner blocks.
   BlockPtr body = alloc<Block>(std::vector<StmtPtr>({}));
   body->splice(body->end(), inner->body());
+
+  std::cout << "body in Reorder\n" << *body << "\n";
 
   ForPtr before{outer};
   ForPtr after{nullptr};
