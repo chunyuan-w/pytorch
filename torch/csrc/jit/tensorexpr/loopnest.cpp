@@ -1535,8 +1535,7 @@ void LoopNest::vectorizeInnerLoops() {
     ForPtr tail1;
 
     static const int kBodyVectorWidth = 8;
-
-    std::cout << "loop before splitWithTail\n" << *loop << "\n"    ;
+    GRAPH_DEBUG("Origin inner loop before vectorization:\n", std::to_string(loop));
     bool rfactor = false;
     auto reductions = NodeFinder<ReduceOp>::find(loop);
     if (reductions.size() == 1) {
@@ -3558,8 +3557,18 @@ bool LoopNest::rfactor(
   ExprPtr extra_dim = IRSimplifier::simplify(
       alloc<Sub>(outer_reduction_for->stop(), outer_reduction_for->start()));
   rfac_dims.push_back(extra_dim);
+  
+  // TODO: for arithmetic, use 0 as init value. Otherwise, use that of the reduce_op
+  ExprPtr initializer;
+  if (auto a = to<Add>(reduce_op->body())) {
+    printf("reduce op body is Add\n");
+    initializer = ExprHandle(0).node();
+  } else {
+    initializer = reduce_op->reducer().initializer();
+  }
+  
   ExprPtr rfac_init =
-      alloc<Cast>(reduce_op->dtype(), reduce_op->reducer().initializer());
+      alloc<Cast>(reduce_op->dtype(), initializer);
 
   *rfac_buf_ptr = alloc<Buf>(
       orig_buf->name_hint() + "_rfac",
