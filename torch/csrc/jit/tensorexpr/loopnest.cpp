@@ -1600,7 +1600,7 @@ void LoopNest::vectorizeInnerLoops() {
   for (ForPtr loop : innerLoops_before_rfator) {
     std::cout << "innerLoops_before_rfator\n" << *loop << "\n";
 
-    // // TODO: generalize bt_body
+    // TODO: generalize bt_body
     StmtPtr bt_body = loop->body()->front()    ;
     // std::cout << "bt_body\n" << *bt_body << "\n";
 
@@ -1615,21 +1615,29 @@ void LoopNest::vectorizeInnerLoops() {
     BufPtr rfac_buf;
     LoopNest::rfactor(bt_body, par_loop, &rfac_buf);
     std::cout << "root_stmt_ after rfactor\n" << *root_stmt_ << "\n"    ;
+    std::cout << "bt_body after rfactor\n" << *bt_body << "\n"    ;
+    std::cout << "par_loop after rfactor\n" << *par_loop << "\n"    ;
 
-    // if (BlockPtr body = to<Block>(loop->body())) {
-    //   StmtPtr par = body->get_parent();
-    //   std::cout << "body\n" << *body << "\n";
-    //   std::cout << "par of body\n" << *par << "\n";
-
-    //   if (BlockPtr cur = to<Block>(par)) {
-    //     printf("cast Block\n");
-    //     StmtPtr nxt_par = cur->get_parent();
-    //     std::cout << "nxt par of body\n" << *nxt_par << "\n";      
-    //   }
-
-    // }    
+    // TODO: use par_loop to find reorder fors
+    ForPtr f2;
+    bool reorder_back = false;
+    if (BlockPtr body = to<Block>(par_loop->body())) {
+      for (StmtPtr s2 : *body) {
+        if (f2 = to<For>(s2)) {
+          printf("reorder back\n");
+          reorder_back = true;
+          break;
 
 
+
+        }
+      }
+    }
+
+    if (reorder_back) {
+      LoopNest::reorderAxis(par_loop, f2);
+      std::cout << "root_stmt_ after reorder_back\n" << *root_stmt_ << "\n"    ;
+    }
   }
 
   // vectorize inner loops.
