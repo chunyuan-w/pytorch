@@ -1527,7 +1527,7 @@ void LoopNest::vectorizeInnerLoops() {
     }
   }
 
-  // vectorzie preparation
+  // vectorize preparation
   for (ForPtr loop : innerLoops) {
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     ForPtr split1;
@@ -1535,7 +1535,6 @@ void LoopNest::vectorizeInnerLoops() {
     ForPtr tail1;
 
     static const int kBodyVectorWidth = 8;
-    // int split_len = intValue(loop->stop() - loop->start()) / kBodyVectorWidth;
 
     std::cout << "loop before splitWithTail\n" << *loop << "\n"    ;
     bool rfactor = false;
@@ -1567,25 +1566,54 @@ void LoopNest::vectorizeInnerLoops() {
       std::cout << "par of body\n" << *par << "\n";      
     }
 
-    // This doesn't work to get parent!!!
-    // StmtPtr p = split1->get_parent();
-    // if (p) {
-    //     std::cout << "parent of split1\n" << *p << "\n";
-    // }
-
-
     if (rfactor) {
       // rfactor
+      // save the root here before reordering
+      BlockPtr root = to<Block>(loop->get_parent());
+      std::cout << "root before 1st reorder: \n" << *root << "\n";
+
       printf("running rfactor\n");
       LoopNest::reorderAxis(split1, loop);
+      std::cout << "root after 1st reorder: \n" << *root << "\n";
+      
+      // TODO: check that outer_reduction_for if a For Ptr
+      ForPtr outer_reduction_for = to<For>(root->back());
+      StmtPtr inner_s;
+      if (outer_reduction_for) {
+          printf("f2 after 1st reorder\n");
 
-    // split1 and loop has no body after reorder
-    if (BlockPtr body = to<Block>(loop->body())) {
-      StmtPtr par = body->get_parent();
-      std::cout << "body\n" << *body << "\n";
-      std::cout << "par of body\n" << *par << "\n";      
+          std::cout << *outer_reduction_for << "\n";
+
+        if (ForPtr f3 = to<For>(outer_reduction_for->body()->front())) {
+          printf("f3 after 1st reorder\n");
+          std::cout << *f3 << "\n";
+          inner_s = f3->body()->front();
+          std::cout << *inner_s << "\n";
+
+        }
+      }
+
+      // rfactor
+    BufPtr rfac_buf;
+    LoopNest::rfactor(inner_s, outer_reduction_for, &rfac_buf);     
+
+    // TODO: use par_loop to find reorder fors
+    ForPtr f2;
+    bool reorder_back = false;
+    if (BlockPtr body = to<Block>(outer_reduction_for->body())) {
+      for (StmtPtr s2 : *body) {
+        if (f2 = to<For>(s2)) {
+          printf("reorder back\n");
+          reorder_back = true;
+          break;
+        }
+      }
     }
 
+    if (reorder_back) {
+      LoopNest::reorderAxis(outer_reduction_for, f2);
+      std::cout << "root_stmt_ after reorder_back\n" << *root_stmt_ << "\n"    ;
+    }
 
     std::cout << "loop after reorderAxis, before vectorize\n" << *loop << "\n"    ;
     std::cout << "split1 after reorderAxis, before vectorize\n" << *split1 << "\n"    ;
@@ -1593,53 +1621,6 @@ void LoopNest::vectorizeInnerLoops() {
     std::cout << "root_stmt_ before rfactor\n" << *root_stmt_ << "\n"    ;
 
     std::cout << "root_stmt_ after rfactor, before vectorize\n" << *root_stmt_ << "\n"    ;
-    }
-  }
-
-  auto innerLoops_before_rfator = findInnerLoops(root_stmt_);
-  for (ForPtr loop : innerLoops_before_rfator) {
-    std::cout << "innerLoops_before_rfator\n" << *loop << "\n";
-
-    // TODO: only handle nstmts == 1 for now
-    if (loop->body()->nstmts() != 1) {
-      continue;
-    }
-    StmtPtr bt_body = loop->body()->front()    ;
-    // std::cout << "bt_body\n" << *bt_body << "\n";
-
-    // StmtPtr f = bt_body->get_parent();
-    // std::cout << "get_parent of bt_body\n" << *f << "\n";
-
-    // Find the parent loop that the next loop is the current loop
-
-    ForPtr par_loop = LoopNest::getParentLoop(loop);
-    std::cout << "getPar: \n" << *par_loop << "\n";
-    
-    BufPtr rfac_buf;
-    LoopNest::rfactor(bt_body, par_loop, &rfac_buf);
-    std::cout << "root_stmt_ after rfactor\n" << *root_stmt_ << "\n"    ;
-    std::cout << "bt_body after rfactor\n" << *bt_body << "\n"    ;
-    std::cout << "par_loop after rfactor\n" << *par_loop << "\n"    ;
-
-    // TODO: use par_loop to find reorder fors
-    ForPtr f2;
-    bool reorder_back = false;
-    if (BlockPtr body = to<Block>(par_loop->body())) {
-      for (StmtPtr s2 : *body) {
-        if (f2 = to<For>(s2)) {
-          printf("reorder back\n");
-          reorder_back = true;
-          break;
-
-
-
-        }
-      }
-    }
-
-    if (reorder_back) {
-      LoopNest::reorderAxis(par_loop, f2);
-      std::cout << "root_stmt_ after reorder_back\n" << *root_stmt_ << "\n"    ;
     }
   }
 
