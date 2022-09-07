@@ -1452,11 +1452,22 @@ std::vector<ForPtr> findInnerLoops(StmtPtr root_stmt) {
   // Traverse the For loop nest find inner-most loops, which are
   // vectorization candidates.
   while (worklist.size()) {
+
     ForPtr f = worklist.back();
     worklist.pop_back();
 
+
+printf("iterate worklist\n")    ;
+std::cout << *f << "\n";
+
     bool containsSubLoops = false;
     if (BlockPtr body = to<Block>(f->body())) {
+
+StmtPtr par = body->get_parent();
+std::cout << "body\n" << *body << "\n";
+std::cout << "par of body\n" << *par << "\n";
+
+
       for (StmtPtr s2 : *body) {
         if (ForPtr f2 = to<For>(s2)) {
           containsSubLoops = true;
@@ -1524,6 +1535,7 @@ void LoopNest::vectorizeInnerLoops() {
     ForPtr tail1;
 
     static const int kBodyVectorWidth = 8;
+    // int split_len = intValue(loop->stop() - loop->start()) / kBodyVectorWidth;
 
     std::cout << "loop before splitWithTail\n" << *loop << "\n"    ;
     bool rfactor = false;
@@ -1548,6 +1560,19 @@ void LoopNest::vectorizeInnerLoops() {
     std::cout << "loop after splitWithTail, before vectorize\n" << *loop << "\n"    ;
     std::cout << "split1 after splitWithTail, before vectorize\n" << *split1 << "\n"    ;
         
+    // Get the body of ForPtr and then convert to Block to then get the parent!!!
+    if (BlockPtr body = to<Block>(split1->body())) {
+      StmtPtr par = body->get_parent();
+      std::cout << "body\n" << *body << "\n";
+      std::cout << "par of body\n" << *par << "\n";      
+    }
+
+    // This doesn't work to get parent!!!
+    // StmtPtr p = split1->get_parent();
+    // if (p) {
+    //     std::cout << "parent of split1\n" << *p << "\n";
+    // }
+
 
     if (rfactor) {
       // rfactor
@@ -1571,8 +1596,8 @@ void LoopNest::vectorizeInnerLoops() {
     StmtPtr bt_body = loop->body()->front()    ;
     std::cout << "bt_body\n" << *bt_body << "\n";
 
-    BlockPtr f = to<Block>(loop->get_parent());
-    std::cout << "BlockPtr f\n" << *f << "\n";
+    StmtPtr f = bt_body->get_parent();
+    std::cout << "get_parent of bt_body\n" << *f << "\n";
 
     // Find the parent loop that the next loop is the current loop
 
@@ -1753,11 +1778,28 @@ void LoopNest::splitWithTail(
 
   *inner =
       alloc<For>(i_inner, immLike(factor_expr, 0), factor_expr, body_inner);
+
+std::cout << "body_inner in split: \n" << *body_inner << "\n";
+std::cout << "inner in split: \n" << **inner << "\n";
+
+
   // The input loop `f` will be the outer loop after split.
   f->set_var(i_outer);
+printf("1\n");
+
   f->set_start(immLike(split_count, 0));
+printf("2\n");
+
+
   f->set_stop(split_count);
+printf("3\n");
+
+
   f->set_body(*inner);
+
+
+std::cout << "f in split: \n" << *f << "\n";
+
 }
 
 void LoopNest::splitWithMask(ForPtr f, int factor) {
