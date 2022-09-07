@@ -1640,8 +1640,10 @@ void LoopNest::vectorizeInnerLoops() {
     }
   }
 
+  auto innerLoops_after_rfator = findInnerLoops(root_stmt_);
+
   // vectorize inner loops.
-  for (ForPtr loop : innerLoops_before_rfator) {
+  for (ForPtr loop : innerLoops_after_rfator) {
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     ForPtr split1;
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
