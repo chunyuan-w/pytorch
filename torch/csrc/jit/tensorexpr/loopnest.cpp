@@ -3558,13 +3558,22 @@ bool LoopNest::rfactor(
       alloc<Sub>(outer_reduction_for->stop(), outer_reduction_for->start()));
   rfac_dims.push_back(extra_dim);
   
-  // TODO: for arithmetic, use 0 as init value. Otherwise, use that of the reduce_op
   ExprPtr initializer;
-  if (auto a = to<Add>(reduce_op->body())) {
-    printf("reduce op body is Add\n");
-    initializer = ExprHandle(0).node();
-  } else {
-    initializer = reduce_op->reducer().initializer();
+  switch (reduce_op->body()->expr_type()) {
+    case IRNodeType::kAdd:
+    case IRNodeType::kSub:
+      initializer = ExprHandle(0).node();
+      break;
+    case IRNodeType::kMul:
+    case IRNodeType::kDiv:
+      initializer = ExprHandle(1).node();
+      break;
+    default:
+      initializer = reduce_op->reducer().initializer();
+      break;
+  }
+  if (reduce_op->body()->expr_type() == IRNodeType::kAdd) {
+    printf("ir type add\n");
   }
   
   ExprPtr rfac_init =
