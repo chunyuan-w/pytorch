@@ -1600,7 +1600,10 @@ void LoopNest::vectorizeInnerLoops() {
   for (ForPtr loop : innerLoops_before_rfator) {
     std::cout << "innerLoops_before_rfator\n" << *loop << "\n";
 
-    // TODO: generalize bt_body
+    // TODO: only handle nstmts == 1 for now
+    if (loop->body()->nstmts() != 1) {
+      continue;
+    }
     StmtPtr bt_body = loop->body()->front()    ;
     // std::cout << "bt_body\n" << *bt_body << "\n";
 
