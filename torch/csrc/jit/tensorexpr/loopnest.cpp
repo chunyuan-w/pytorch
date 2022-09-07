@@ -1558,21 +1558,12 @@ void LoopNest::vectorizeInnerLoops() {
         
     std::cout << "loop after splitWithTail, before vectorize\n" << *loop << "\n"    ;
     std::cout << "split1 after splitWithTail, before vectorize\n" << *split1 << "\n"    ;
-        
-    // Get the body of ForPtr and then convert to Block to then get the parent!!!
-    if (BlockPtr body = to<Block>(split1->body())) {
-      StmtPtr par = body->get_parent();
-      std::cout << "body\n" << *body << "\n";
-      std::cout << "par of body\n" << *par << "\n";      
-    }
 
     if (rfactor) {
-      // rfactor
       // save the root here before reordering
       BlockPtr root = to<Block>(loop->get_parent());
       std::cout << "root before 1st reorder: \n" << *root << "\n";
 
-      printf("running rfactor\n");
       LoopNest::reorderAxis(split1, loop);
       std::cout << "root after 1st reorder: \n" << *root << "\n";
       
@@ -1580,16 +1571,16 @@ void LoopNest::vectorizeInnerLoops() {
       ForPtr outer_reduction_for = to<For>(root->back());
       StmtPtr inner_s;
       if (outer_reduction_for) {
-          printf("f2 after 1st reorder\n");
-
-          std::cout << *outer_reduction_for << "\n";
+        printf("outer_reduction_for after 1st reorder\n");
+        std::cout << *outer_reduction_for << "\n";
 
         if (ForPtr f3 = to<For>(outer_reduction_for->body()->front())) {
           printf("f3 after 1st reorder\n");
           std::cout << *f3 << "\n";
+          
           inner_s = f3->body()->front();
+          
           std::cout << *inner_s << "\n";
-
         }
       }
 
@@ -1614,11 +1605,6 @@ void LoopNest::vectorizeInnerLoops() {
       LoopNest::reorderAxis(outer_reduction_for, f2);
       std::cout << "root_stmt_ after reorder_back\n" << *root_stmt_ << "\n"    ;
     }
-
-    std::cout << "loop after reorderAxis, before vectorize\n" << *loop << "\n"    ;
-    std::cout << "split1 after reorderAxis, before vectorize\n" << *split1 << "\n"    ;
-    
-    std::cout << "root_stmt_ before rfactor\n" << *root_stmt_ << "\n"    ;
 
     std::cout << "root_stmt_ after rfactor, before vectorize\n" << *root_stmt_ << "\n"    ;
     }
