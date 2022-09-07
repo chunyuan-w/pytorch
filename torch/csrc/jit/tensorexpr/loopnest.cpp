@@ -1585,28 +1585,37 @@ void LoopNest::vectorizeInnerLoops() {
       }
 
       // rfactor
-    BufPtr rfac_buf;
-    LoopNest::rfactor(inner_s, outer_reduction_for, &rfac_buf);     
+      BufPtr rfac_buf;
+      LoopNest::rfactor(inner_s, outer_reduction_for, &rfac_buf);     
 
-    // TODO: use par_loop to find reorder fors
-    ForPtr f2;
-    bool reorder_back = false;
-    if (BlockPtr body = to<Block>(outer_reduction_for->body())) {
-      for (StmtPtr s2 : *body) {
-        if (f2 = to<For>(s2)) {
-          printf("reorder back\n");
-          reorder_back = true;
-          break;
+      // TODO: use par_loop to find reorder fors
+      ForPtr f2;
+      bool reorder_back = false;
+      if (BlockPtr body = to<Block>(outer_reduction_for->body())) {
+        for (StmtPtr s2 : *body) {
+          if (f2 = to<For>(s2)) {
+            printf("reorder back\n");
+            reorder_back = true;
+            break;
+          }
         }
       }
+
+      if (reorder_back) {
+        LoopNest::reorderAxis(outer_reduction_for, f2);
+        std::cout << "root_stmt_ after reorder_back\n" << *root_stmt_ << "\n"    ;
+      }
+
+      std::cout << "root_stmt_ after rfactor, before vectorize\n" << *root_stmt_ << "\n"    ;
     }
 
-    if (reorder_back) {
-      LoopNest::reorderAxis(outer_reduction_for, f2);
-      std::cout << "root_stmt_ after reorder_back\n" << *root_stmt_ << "\n"    ;
-    }
-
-    std::cout << "root_stmt_ after rfactor, before vectorize\n" << *root_stmt_ << "\n"    ;
+    if (tail1) {
+      // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+      ForPtr split2;
+      // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+      ForPtr tail2;
+      static const int kTailVectorWidth = 4;
+      splitWithTail(tail1, kTailVectorWidth, &split2, &tail2);
     }
   }
 
@@ -1615,24 +1624,24 @@ void LoopNest::vectorizeInnerLoops() {
   // vectorize inner loops.
   for (ForPtr loop : innerLoops_after_rfator) {
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    ForPtr split1;
+    // ForPtr split1;
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    ForPtr tail1;
+    // ForPtr tail1;
 
-    static const int kBodyVectorWidth = 8;
+    // static const int kBodyVectorWidth = 8;
     // splitWithTail(loop, kBodyVectorWidth, &split1, &tail1);
     vectorize(loop);
 
-    // TODO: tail1 is missing
-    if (tail1) {
-      // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-      ForPtr split2;
-      // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-      ForPtr tail2;
-      static const int kTailVectorWidth = 4;
-      splitWithTail(tail1, kTailVectorWidth, &split2, &tail2);
-      vectorize(split2);
-    }
+    // TODO：check if the vectorization of split2 can be included here
+    // if (tail1) {
+    //   // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+    //   ForPtr split2;
+    //   // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+    //   ForPtr tail2;
+    //   static const int kTailVectorWidth = 4;
+    //   splitWithTail(tail1, kTailVectorWidth, &split2, &tail2);
+    //   vectorize(split2);
+    // }
   }
 }
 
