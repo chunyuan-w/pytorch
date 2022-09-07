@@ -1601,7 +1601,7 @@ void LoopNest::vectorizeInnerLoops() {
     std::cout << "innerLoops_before_rfator\n" << *loop << "\n";
 
     // // TODO: generalize bt_body
-    // StmtPtr bt_body = loop->body()->front()    ;
+    StmtPtr bt_body = loop->body()->front()    ;
     // std::cout << "bt_body\n" << *bt_body << "\n";
 
     // StmtPtr f = bt_body->get_parent();
@@ -1611,6 +1611,10 @@ void LoopNest::vectorizeInnerLoops() {
 
     ForPtr par_loop = LoopNest::getParentLoop(loop);
     std::cout << "getPar: \n" << *par_loop << "\n";
+    
+    BufPtr rfac_buf;
+    LoopNest::rfactor(bt_body, par_loop, &rfac_buf);
+    std::cout << "root_stmt_ after rfactor\n" << *root_stmt_ << "\n"    ;
 
     // if (BlockPtr body = to<Block>(loop->body())) {
     //   StmtPtr par = body->get_parent();
