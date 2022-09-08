@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <memory>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -16,8 +17,11 @@
 #include <torch/csrc/jit/tensorexpr/ir_printer.h>
 #include <torch/csrc/jit/tensorexpr/ir_simplifier.h>
 #include <torch/csrc/jit/tensorexpr/loopnest.h>
+#include <torch/csrc/jit/tensorexpr/stmt.h>
 #include <torch/csrc/jit/tensorexpr/tensor.h>
 #include <torch/csrc/jit/testing/file_check.h>
+#include <torch/torch.h>
+
 
 namespace torch {
 namespace jit {
@@ -1930,8 +1934,8 @@ TEST(Reductions, InitFunction) {
 }
 
 TEST(Reductions, ReduceCustomProductWithRfactor) {
-  const int M = 4;
-  const int N = 4;
+  const int M = 1;
+  const int N = 8;
 
   BufHandle b("b", {M, N}, kFloat);
   std::vector<float> in(M * N);
@@ -1947,9 +1951,26 @@ TEST(Reductions, ReduceCustomProductWithRfactor) {
       ExprHandle(2.f), [](ExprHandle a, ExprHandle b) { return a * b; });
 
   Tensor c = Reduce("product", {M}, product, b, {N});
-  LoopNest loop({c});
-  loop.prepareForCodegen();
-  StmtPtr s = loop.root_stmt();
+  LoopNest nest({c});
+
+  auto loops = nest.getLoopStmtsFor(c);
+  ForPtr mi, mo, tail;
+  BufPtr rf;  
+
+  constexpr int kChunkSize = 8;
+  nest.splitWithTail(loops[1], kChunkSize, &mi, &tail);
+
+  loops = nest.reorder({loops[1], mi}, {1, 0});
+
+  TORCH_CHECK(nest.rfactor(nest.getLoopBodyFor(c), loops[0], &rf));
+  // nest.reorderAxis(loops[0], loops[1]);
+
+
+  std::cout << *nest.root_stmt() << "\n";
+
+
+  nest.prepareForCodegen();
+  StmtPtr s = nest.root_stmt();
   s = IRSimplifier::simplify(s);
 
   SimpleIREvaluator cg(s, {b, c});
