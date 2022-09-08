@@ -1944,7 +1944,7 @@ TEST(Reductions, ReduceCustomProductWithRfactor) {
   std::vector<float> out(M, -1.f);
 
   Reducer product(
-      ExprHandle(1.f), [](ExprHandle a, ExprHandle b) { return a * b; });
+      ExprHandle(2.f), [](ExprHandle a, ExprHandle b) { return a * b; });
 
   Tensor c = Reduce("product", {M}, product, b, {N});
   LoopNest loop({c});
@@ -1956,7 +1956,7 @@ TEST(Reductions, ReduceCustomProductWithRfactor) {
 
   cg.call({in, out});
 
-  float expected = 1;
+  float expected = 2;
   for (const auto i : c10::irange(N)) {
     // NOLINTNEXTLINE(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
     expected *= 2 + i;
