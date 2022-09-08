@@ -1928,5 +1928,44 @@ TEST(Reductions, InitFunction) {
       )IR";
   torch::jit::testing::FileCheck().run(expected_ir, oss.str());
 }
+
+TEST(Reductions, ReduceCustomProductWithRfactor) {
+  const int M = 4;
+  const int N = 4;
+
+  BufHandle b("b", {M, N}, kFloat);
+  std::vector<float> in(M * N);
+  for (const auto i : c10::irange(M)) {
+    for (const auto j : c10::irange(N)) {
+      in[i * N + j] = 2 + j;
+    }
+  }
+
+  std::vector<float> out(M, -1.f);
+
+  Reducer product(
+      ExprHandle(1.f), [](ExprHandle a, ExprHandle b) { return a * b; });
+
+  Tensor c = Reduce("product", {M}, product, b, {N});
+  LoopNest loop({c});
+  loop.prepareForCodegen();
+  StmtPtr s = loop.root_stmt();
+  s = IRSimplifier::simplify(s);
+
+  SimpleIREvaluator cg(s, {b, c});
+
+  cg.call({in, out});
+
+  float expected = 1;
+  for (const auto i : c10::irange(N)) {
+    // NOLINTNEXTLINE(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
+    expected *= 2 + i;
+  }
+
+  for (const auto i : c10::irange(M)) {
+    ASSERT_EQ(out[i], expected);
+  }
+}
+
 } // namespace jit
 } // namespace torch
