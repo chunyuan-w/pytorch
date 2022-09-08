@@ -1928,5 +1928,56 @@ TEST(Reductions, InitFunction) {
       )IR";
   torch::jit::testing::FileCheck().run(expected_ir, oss.str());
 }
+
+TEST(Reductions, ReduceCustomProductWithRfactor) {
+  const int M = 2;
+  const int N = 8;
+
+  BufHandle b("b", {M, N}, kFloat);
+  std::vector<float> in(M * N);
+  for (const auto i : c10::irange(M)) {
+    for (const auto j : c10::irange(N)) {
+      in[i * N + j] = 1;
+    }
+  }
+
+  std::vector<float> out(M, -1.f);
+
+  Reducer product(
+      ExprHandle(2.f), [](ExprHandle a, ExprHandle b) { return a * b; });
+
+  Tensor c = Reduce("product", {M}, product, b, {N});
+  LoopNest nest({c});
+
+
+  // rfactor
+  auto loops = nest.getLoopStmtsFor(c);
+  ForPtr mi, mo, tail;
+  BufPtr rf;  
+  constexpr int kChunkSize = 8;
+  nest.splitWithTail(loops[1], kChunkSize, &mi, &tail);
+  TORCH_CHECK(nest.rfactor(nest.getLoopBodyFor(c), loops[1], &rf));
+
+
+  nest.prepareForCodegen();
+  StmtPtr s = nest.root_stmt();
+  s = IRSimplifier::simplify(s);
+  std::cout << "final stmt: \n" << *s << "\n";
+
+  SimpleIREvaluator cg(s, {b, c});
+
+  cg.call({in, out});
+
+  float expected = 2;
+  for (const auto i : c10::irange(N)) {
+    // NOLINTNEXTLINE(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
+    expected *= 1;
+  }
+
+  for (const auto i : c10::irange(M)) {
+    ASSERT_EQ(out[i], expected);
+  }
+}
+
 } // namespace jit
 } // namespace torch
