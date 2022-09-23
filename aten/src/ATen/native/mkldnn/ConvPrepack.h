@@ -40,6 +40,14 @@ Tensor run(ContextConv& context, const Tensor& input);
 
 void run(ContextConv& context, const Tensor& input, void* output);
 
+Tensor linear_eltwise_run(
+    const Tensor& input,
+    const Tensor& weight_t,
+    const c10::optional<Tensor>& bias_opt,
+    std::string attr,
+    std::vector<c10::optional<at::Scalar>> scalars,
+    c10::optional<std::string> algorithm);
+
 } // namespace convolution
 } // namespace internal
 } // namespace mkldnn
