@@ -280,6 +280,15 @@ Tensor conv_run(
   return op_context->run(input);
 }
 
+Tensor linear_relu_run(
+    const Tensor& input,
+    const Tensor& weight_t,
+    const c10::optional<Tensor>& bias_opt) {
+  printf("enter linear_relu kenel\n")      ;
+  auto y = at::linear(input, weight_t, bias_opt);
+  return y.relu();
+}
+
 } // namespace convolution
 } // namespace internal
 } // namespace mkldnn
