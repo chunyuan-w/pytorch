@@ -309,7 +309,8 @@ Tensor linear_relu_run(
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     std::string attr,
-    std::vector<c10::optional<at::Scalar>> scalars) {
+    std::vector<c10::optional<at::Scalar>> scalars,
+    c10::optional<std::string> algorithm) {
   auto input_size = input.sizes();
 
   const int64_t dim = input.dim();
@@ -343,7 +344,7 @@ Tensor linear_relu_run(
 
   auto it = fusion_attr_map().find(attr);
   TORCH_CHECK(it != fusion_attr_map().end(), "Fusion behavior undefined.");
-  ideep::attr_t op_attr = it->second({}, "");
+  ideep::attr_t op_attr = it->second(scalars, algorithm);
 
   if (mkldnn_bias.has_value()) {
     ideep::inner_product_forward::compute(

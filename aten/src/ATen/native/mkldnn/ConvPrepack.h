@@ -45,7 +45,8 @@ Tensor linear_relu_run(
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     std::string attr,
-    std::vector<c10::optional<at::Scalar>> scalars);
+    std::vector<c10::optional<at::Scalar>> scalars,
+    c10::optional<std::string> algorithm);
 
 } // namespace convolution
 } // namespace internal
