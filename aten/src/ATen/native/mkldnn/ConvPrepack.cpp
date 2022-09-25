@@ -308,7 +308,8 @@ Tensor linear_relu_run(
     const Tensor& input,
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
-    std::string attr) {
+    std::string attr,
+    std::vector<c10::optional<at::Scalar>> scalars) {
   auto input_size = input.sizes();
 
   const int64_t dim = input.dim();
