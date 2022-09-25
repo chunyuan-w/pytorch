@@ -44,7 +44,7 @@ TORCH_LIBRARY(mkldnn_prepacked, m) {
       "mkldnn_prepacked::conv2d_run(Tensor X, __torch__.torch.classes.mkldnn.ConvOpContext W_prepack) -> Tensor Y"));
   
   m.def(TORCH_SELECTIVE_SCHEMA(
-    "mkldnn_prepacked::linear_relu(Tensor X, Tensor W, Tensor? B) -> Tensor Y"));
+    "mkldnn_prepacked::linear_relu(Tensor X, Tensor W, Tensor? B=None) -> Tensor Y"));
 }
 
 TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
