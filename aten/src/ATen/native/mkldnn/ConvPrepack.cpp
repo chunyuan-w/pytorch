@@ -280,6 +280,29 @@ Tensor conv_run(
   return op_context->run(input);
 }
 
+using AttrFunction = std::function<ideep::attr_t(
+    std::vector<c10::optional<at::Scalar>>,
+    c10::optional<std::string>)>;
+
+#define ATTR_FUNC(NAME)                              \
+  [](std::vector<c10::optional<at::Scalar>> scalars, \
+     c10::optional<std::string> algorithm) {         \
+    return ideep::attr_t::fuse_##NAME();             \
+  }
+
+const std::map<std::string, AttrFunction>& fusion_attr_map() {
+  static const std::map<std::string, AttrFunction> fusion_attr_map{
+      {"relu", ATTR_FUNC(relu)},
+      // {"sigmoid", ATTR_FUNC(sigmoid)},
+      // {"tanh", ATTR_FUNC(tanh)},
+      // {"leaky_relu", attr_func_leaky_relu},
+      // {"hardtanh", attr_func_hardtanh},
+      // {"gelu", attr_func_gelu},
+      // {"clamp", attr_func_clamp},
+  };
+  return fusion_attr_map;
+};
+
 Tensor linear_relu_run(
     const Tensor& input,
     const Tensor& weight_t,
@@ -315,9 +338,11 @@ Tensor linear_relu_run(
     mkldnn_bias = itensor_from_tensor(bias);
   }
   const ideep::tensor w = itensor_from_tensor(weight_t);
-  std::cout << "attr: " << attr << "\n";
 
-  auto post_attr = ideep::attr_t::fuse_relu();
+  auto it = fusion_attr_map().find(attr);
+  TORCH_CHECK(it != fusion_attr_map().end(), "Fusion behavior undefined.");
+  ideep::attr_t op_attr = it->second({}, "");
+
   if (mkldnn_bias.has_value()) {
     ideep::inner_product_forward::compute(
         mkldnn_input,
@@ -327,10 +352,10 @@ Tensor linear_relu_run(
         ideep::scale_t(),
         ideep::scale_t(),
         ideep::scale_t(),
-        post_attr);
+        op_attr);
   } else {
     ideep::inner_product_forward::compute(
-        mkldnn_input, w, mkldnn_output, ideep::scale_t(), ideep::scale_t(), ideep::scale_t(), post_attr);
+        mkldnn_input, w, mkldnn_output, ideep::scale_t(), ideep::scale_t(), ideep::scale_t(), op_attr);
   } 
 
   if (dim != 2) {
