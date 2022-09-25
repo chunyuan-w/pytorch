@@ -43,7 +43,8 @@ void run(ContextConv& context, const Tensor& input, void* output);
 Tensor linear_relu_run(
     const Tensor& input,
     const Tensor& weight_t,
-    const c10::optional<Tensor>& bias_opt);
+    const c10::optional<Tensor>& bias_opt,
+    std::string attr);
 
 } // namespace convolution
 } // namespace internal

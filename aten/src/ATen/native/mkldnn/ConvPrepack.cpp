@@ -283,7 +283,8 @@ Tensor conv_run(
 Tensor linear_relu_run(
     const Tensor& input,
     const Tensor& weight_t,
-    const c10::optional<Tensor>& bias_opt) {
+    const c10::optional<Tensor>& bias_opt,
+    std::string attr) {
   auto input_size = input.sizes();
 
   const int64_t dim = input.dim();
@@ -314,8 +315,9 @@ Tensor linear_relu_run(
     mkldnn_bias = itensor_from_tensor(bias);
   }
   const ideep::tensor w = itensor_from_tensor(weight_t);
+  std::cout << "attr: " << attr << "\n";
 
-  auto attr = ideep::attr_t::fuse_relu();
+  auto post_attr = ideep::attr_t::fuse_relu();
   if (mkldnn_bias.has_value()) {
     ideep::inner_product_forward::compute(
         mkldnn_input,
@@ -325,10 +327,10 @@ Tensor linear_relu_run(
         ideep::scale_t(),
         ideep::scale_t(),
         ideep::scale_t(),
-        attr);
+        post_attr);
   } else {
     ideep::inner_product_forward::compute(
-        mkldnn_input, w, mkldnn_output, ideep::scale_t(), ideep::scale_t(), ideep::scale_t(), attr);
+        mkldnn_input, w, mkldnn_output, ideep::scale_t(), ideep::scale_t(), ideep::scale_t(), post_attr);
   } 
 
   if (dim != 2) {
