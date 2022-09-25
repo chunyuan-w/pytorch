@@ -293,7 +293,7 @@ using AttrFunction = std::function<ideep::attr_t(
 const std::map<std::string, AttrFunction>& fusion_attr_map() {
   static const std::map<std::string, AttrFunction> fusion_attr_map{
       {"relu", ATTR_FUNC(relu)},
-      // {"sigmoid", ATTR_FUNC(sigmoid)},
+      {"sigmoid", ATTR_FUNC(sigmoid)},
       // {"tanh", ATTR_FUNC(tanh)},
       // {"leaky_relu", attr_func_leaky_relu},
       // {"hardtanh", attr_func_hardtanh},
