@@ -44,7 +44,7 @@ TORCH_LIBRARY(mkldnn_prepacked, m) {
       "mkldnn_prepacked::conv2d_run(Tensor X, __torch__.torch.classes.mkldnn.ConvOpContext W_prepack) -> Tensor Y"));
   
   m.def(TORCH_SELECTIVE_SCHEMA(
-    "mkldnn_prepacked::linear_relu(Tensor X, Tensor W, Tensor? B, str attr, Scalar?[] scalars, str? algorithm) -> Tensor Y"));
+    "mkldnn_prepacked::linear_eltwise(Tensor X, Tensor W, Tensor? B, str attr, Scalar?[] scalars, str? algorithm) -> Tensor Y"));
 }
 
 TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
@@ -56,7 +56,7 @@ TORCH_LIBRARY_IMPL(mkldnn_prepacked, CPU, m) {
       TORCH_SELECTIVE_NAME("mkldnn_prepacked::conv2d_run"), TORCH_FN(conv_run));
 
   m.impl(
-      TORCH_SELECTIVE_NAME("mkldnn_prepacked::linear_relu"), TORCH_FN(linear_relu_run));
+      TORCH_SELECTIVE_NAME("mkldnn_prepacked::linear_eltwise"), TORCH_FN(linear_eltwise_run));
 }
 
 } // namespace mkldnn

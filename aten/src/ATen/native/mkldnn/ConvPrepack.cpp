@@ -348,7 +348,7 @@ const std::map<std::string, AttrFunction>& fusion_attr_map() {
   return fusion_attr_map;
 };
 
-Tensor linear_relu_run(
+Tensor linear_eltwise_run(
     const Tensor& input,
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
