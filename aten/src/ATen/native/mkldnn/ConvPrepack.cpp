@@ -290,13 +290,21 @@ using AttrFunction = std::function<ideep::attr_t(
     return ideep::attr_t::fuse_##NAME();             \
   }
 
+AttrFunction attr_func_leaky_relu =
+    [](std::vector<c10::optional<at::Scalar>> scalars,
+       c10::optional<std::string> algorithm) {
+      TORCH_CHECK(scalars.size() == 1 && scalars[0].has_value(), "leaky_relu is expected to have one scalar input: negative_slope");
+      auto alpha_value = scalars[0].value().to<float>();
+      return ideep::attr_t::fuse_relu(1.0, alpha_value);
+    };
+
 const std::map<std::string, AttrFunction>& fusion_attr_map() {
   static const std::map<std::string, AttrFunction> fusion_attr_map{
       {"relu", ATTR_FUNC(relu)},
       {"sigmoid", ATTR_FUNC(sigmoid)},
       {"tanh", ATTR_FUNC(tanh)},
       {"hardswish", ATTR_FUNC(hardswish)},
-      // {"leaky_relu", attr_func_leaky_relu},
+      {"leaky_relu", attr_func_leaky_relu},
       // {"hardtanh", attr_func_hardtanh},
       // {"gelu", attr_func_gelu},
       // {"clamp", attr_func_clamp},
