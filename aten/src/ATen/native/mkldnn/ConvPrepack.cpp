@@ -280,74 +280,6 @@ Tensor conv_run(
   return op_context->run(input);
 }
 
-using AttrFunction = std::function<ideep::attr_t(
-    std::vector<c10::optional<at::Scalar>>,
-    c10::optional<std::string>)>;
-
-#define ATTR_FUNC(NAME)                              \
-  [](std::vector<c10::optional<at::Scalar>> scalars, \
-     c10::optional<std::string> algorithm) {         \
-    return ideep::attr_t::fuse_##NAME();             \
-  }
-
-AttrFunction attr_func_leaky_relu =
-    [](std::vector<c10::optional<at::Scalar>> scalars,
-       c10::optional<std::string> algorithm) {
-      TORCH_CHECK(scalars.size() == 1 && scalars[0].has_value(), "leaky_relu is expected to have one scalar input: negative_slope");
-      auto alpha_value = scalars[0].value().to<float>();
-      return ideep::attr_t::fuse_relu(1.0, alpha_value);
-    };
-
-AttrFunction attr_func_hardtanh =
-    [](std::vector<c10::optional<at::Scalar>> scalars,
-       c10::optional<std::string> algorithm) {
-      TORCH_CHECK(
-          scalars.size() == 2 &&
-              std::all_of(
-                  scalars.begin(),
-                  scalars.end(),
-                  [](c10::optional<at::Scalar> item) {
-                    return item.has_value();
-                  }),
-          "hardtanh is expected to have two scalar input: min_val and max_val");
-
-      auto lower_bound_value = scalars[0].value().to<float>();
-      auto upper_bound_value = scalars[1].value().to<float>();
-      return ideep::attr_t::fuse_clamp(lower_bound_value, upper_bound_value);
-    };
-
-AttrFunction attr_func_gelu = [](std::vector<c10::optional<at::Scalar>> scalars,
-                                 c10::optional<std::string> algorithm) {
-  TORCH_CHECK(
-      algorithm.has_value(),
-      "gelu is expected to have one str input: algorithm");
-  dnnl::algorithm gelu_type;
-  if (algorithm.value() == "none") {
-    gelu_type = dnnl::algorithm::eltwise_gelu_erf;
-  } else if (algorithm.value() == "tanh") {
-    gelu_type = dnnl::algorithm::eltwise_gelu_tanh;
-  } else {
-    TORCH_CHECK(
-        false, "ipex::linear_gelu_run only support tanh approximate now");
-  }
-
-  return ideep::attr_t::fuse_gelu(1.0, 0.f, 0.f, gelu_type);
-};
-
-const std::map<std::string, AttrFunction>& fusion_attr_map() {
-  static const std::map<std::string, AttrFunction> fusion_attr_map{
-      {"relu", ATTR_FUNC(relu)},
-      {"sigmoid", ATTR_FUNC(sigmoid)},
-      {"tanh", ATTR_FUNC(tanh)},
-      {"hardswish", ATTR_FUNC(hardswish)},
-      {"leaky_relu", attr_func_leaky_relu},
-      {"hardtanh", attr_func_hardtanh},
-      {"gelu", attr_func_gelu},
-      // {"clamp", attr_func_clamp},
-  };
-  return fusion_attr_map;
-};
-
 Tensor linear_eltwise_run(
     const Tensor& input,
     const Tensor& weight_t,
@@ -386,8 +318,8 @@ Tensor linear_eltwise_run(
   }
   const ideep::tensor w = itensor_from_tensor(weight_t);
 
-  auto it = fusion_attr_map().find(attr);
-  TORCH_CHECK(it != fusion_attr_map().end(), "Fusion behavior undefined.");
+  auto it = fx_fusion_attr_map().find(attr);
+  TORCH_CHECK(it != fx_fusion_attr_map().end(), "Fusion behavior undefined.");
   ideep::attr_t op_attr = it->second(scalars, algorithm);
 
   if (mkldnn_bias.has_value()) {
