@@ -66,7 +66,6 @@ const std::map<std::string, AttrFunction>& fx_fusion_attr_map() {
       {"leaky_relu", attr_func_leaky_relu},
       {"hardtanh", attr_func_hardtanh},
       {"gelu", attr_func_gelu},
-      // {"clamp", attr_func_clamp},
   };
   return fusion_attr_map;
 };
