@@ -1,5 +1,6 @@
 #include <ATen/Tensor.h>
 #include <ATen/native/mkldnn/ConvPrepack.h>
+#include <ATen/native/mkldnn/LinearPrepack.h>
 #include <ATen/native/mkldnn/OpContext.h>
 #include <torch/custom_class.h>
 #include <torch/library.h>
@@ -11,6 +12,7 @@ namespace native {
 namespace mkldnn {
 
 using namespace internal::convolution;
+using namespace internal::linear;
 
 TORCH_LIBRARY(mkldnn, m) {
   m.class_<ConvOpContext>(TORCH_SELECTIVE_CLASS("ConvOpContext"))
