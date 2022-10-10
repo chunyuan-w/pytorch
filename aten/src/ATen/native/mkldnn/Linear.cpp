@@ -251,9 +251,6 @@ Tensor linear_binary_run(
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     std::string attr) {
-  TORCH_CHECK(
-      input.sizes() == other_t.sizes(),
-      "linear_binary_run expects the size of input and other tensor to be the same");
 
   auto it_binary = fusion_binary_alg_map().find(attr);
   TORCH_CHECK(
@@ -277,6 +274,10 @@ Tensor linear_binary_run(
     output = output.reshape(output_size_reshaped);
     other_reshaped = other_reshaped.reshape(output_size_reshaped);
   }
+
+  TORCH_CHECK(
+      output.sizes() == other_reshaped.sizes(),
+      "linear_binary_run expects the size of output and other tensor to be the same");
 
   c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
   ideep::tensor mkldnn_output = itensor_from_tensor(output);
