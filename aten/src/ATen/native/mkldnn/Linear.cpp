@@ -251,75 +251,79 @@ Tensor linear_binary_run(
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     std::string attr) {
-  auto output = at::linear(input, weight_t, bias_opt);
-  if (attr == "add") {
-    output.add_(other_t);
-  } else {
-    output.sub_(other_t);
+  // TODO: check if fusion is supported
+  // auto output = at::linear(input, weight_t, bias_opt);
+  // if (attr == "add") {
+  //   output.add_(other_t);
+  // } else {
+  //   output.sub_(other_t);
+  // }
+  // return output;
+
+  auto it_binary = fusion_binary_alg_map().find(attr);
+  TORCH_CHECK(
+      it_binary != fusion_binary_alg_map().end(), "Fusion behavior undefined.");
+
+  // TODO: remove duplicated code
+  auto input_size = input.sizes();
+
+  const int64_t dim = input.dim();
+  auto input_reshaped =
+      dim == 2 ? input : input.reshape({-1, input.size(input.dim() - 1)});
+
+  std::vector<int64_t> output_size(input_size.begin(), input_size.end() - 1);
+  output_size.push_back(weight_t.size(0));
+  auto output = at::empty(output_size, input.options());
+  auto other_reshaped = other_t;
+
+  if (dim != 2) {
+    std::vector<int64_t> output_size_reshaped = {input_reshaped.size(0),
+                                                 weight_t.size(0)};
+    output = output.reshape(output_size_reshaped);
+    other_reshaped = other_reshaped.reshape(output_size_reshaped);
   }
-  return output;
 
-  // auto input_size = input.sizes();
+  c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  ideep::tensor mkldnn_output = itensor_from_tensor(output);
+  const ideep::tensor mkldnn_other = itensor_from_tensor(other_reshaped);
 
-  // const int64_t dim = input.dim();
-  // auto input_reshaped =
-  //     dim == 2 ? input : input.reshape({-1, input.size(input.dim() - 1)});
+  c10::MaybeOwned<Tensor> bias_maybe_owned =
+      at::borrow_from_optional_tensor(bias_opt);
+  const Tensor& bias = *bias_maybe_owned;
 
-  // std::vector<int64_t> output_size(input_size.begin(), input_size.end() - 1);
-  // output_size.push_back(weight_t.size(0));
-  // auto output = at::empty(output_size, input.options());
+  const ideep::tensor mkldnn_input = itensor_view_from_dense(input_reshaped);
 
-  // if (dim != 2) {
-  //   std::vector<int64_t> output_size_reshaped = {input_reshaped.size(0),
-  //                                                weight_t.size(0)};
-  //   output = output.reshape(output_size_reshaped);
-  // }
-
-  // c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
-  // ideep::tensor mkldnn_output = itensor_from_tensor(output);
-
-  // c10::MaybeOwned<Tensor> bias_maybe_owned =
-  //     at::borrow_from_optional_tensor(bias_opt);
-  // const Tensor& bias = *bias_maybe_owned;
-
-  // const ideep::tensor mkldnn_input = itensor_view_from_dense(input_reshaped);
-
-  // c10::optional<ideep::tensor> mkldnn_bias{c10::nullopt};
-  // if (bias.defined()) {
-  //   mkldnn_bias = itensor_from_tensor(bias);
-  // }
-  // const ideep::tensor w = itensor_from_tensor(weight_t);
+  c10::optional<ideep::tensor> mkldnn_bias{c10::nullopt};
+  if (bias.defined()) {
+    mkldnn_bias = itensor_from_tensor(bias);
+  }
+  const ideep::tensor w = itensor_from_tensor(weight_t);
 
   // auto it = fx_fusion_attr_map().find(attr);
   // TORCH_CHECK(it != fx_fusion_attr_map().end(), "Fusion behavior
   // undefined."); ideep::attr_t op_attr = it->second(scalars, algorithm);
 
-  // if (mkldnn_bias.has_value()) {
-  //   ideep::inner_product_forward::compute(
-  //       mkldnn_input,
-  //       w,
-  //       mkldnn_bias.value(),
-  //       mkldnn_output,
-  //       ideep::scale_t(),
-  //       ideep::scale_t(),
-  //       ideep::scale_t(),
-  //       op_attr);
-  // } else {
-  //   ideep::inner_product_forward::compute(
-  //       mkldnn_input,
-  //       w,
-  //       mkldnn_output,
-  //       ideep::scale_t(),
-  //       ideep::scale_t(),
-  //       ideep::scale_t(),
-  //       op_attr);
-  // }
+  auto other_desc = mkldnn_other.get_desc();
+  auto op_attr = ideep::attr_t::fuse_binary(it_binary->second, other_desc);
 
-  // if (dim != 2) {
-  //   output = output.reshape(output_size);
-  // }
+  if (mkldnn_bias.has_value()) {
+    ideep::inner_product_forward::compute_binary(
+        mkldnn_input,
+        mkldnn_other,
+        w,
+        mkldnn_bias.value(),
+        mkldnn_output,
+        op_attr);
+  } else {
+    ideep::inner_product_forward::compute_binary(
+        mkldnn_input, mkldnn_other, w, mkldnn_output, op_attr);
+  }
 
-  // return output;
+  if (dim != 2) {
+    output = output.reshape(output_size);
+  }
+
+  return output;
 }
 
 TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
