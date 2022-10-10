@@ -176,12 +176,13 @@ std::tuple<Tensor, Tensor, Tensor> mkldnn_linear_backward(
 }
 
 Tensor linear_pointwise_run(
-    const Tensor& input,
+    const Tensor& input_t,
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     std::string attr,
     std::vector<c10::optional<at::Scalar>> scalars,
     c10::optional<std::string> algorithm) {
+  auto input = input_t.is_contiguous() ? input_t : input_t.contiguous();
   auto input_size = input.sizes();
 
   const int64_t dim = input.dim();
@@ -246,11 +247,12 @@ Tensor linear_pointwise_run(
 }
 
 Tensor linear_binary_run(
-    const Tensor& input,
+    const Tensor& input_t,
     const Tensor& other_t,
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     std::string attr) {
+ auto input = input_t.is_contiguous() ? input_t : input_t.contiguous();    
 
   auto it_binary = fusion_binary_alg_map().find(attr);
   TORCH_CHECK(
