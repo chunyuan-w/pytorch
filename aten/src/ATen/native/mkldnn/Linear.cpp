@@ -251,14 +251,9 @@ Tensor linear_binary_run(
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     std::string attr) {
-  // TODO: check if fusion is supported
-  // auto output = at::linear(input, weight_t, bias_opt);
-  // if (attr == "add") {
-  //   output.add_(other_t);
-  // } else {
-  //   output.sub_(other_t);
-  // }
-  // return output;
+  TORCH_CHECK(
+      input.sizes() == other_t.sizes(),
+      "linear_binary_run expects the size of input and other tensor to be the same");
 
   auto it_binary = fusion_binary_alg_map().find(attr);
   TORCH_CHECK(
@@ -298,10 +293,6 @@ Tensor linear_binary_run(
     mkldnn_bias = itensor_from_tensor(bias);
   }
   const ideep::tensor w = itensor_from_tensor(weight_t);
-
-  // auto it = fx_fusion_attr_map().find(attr);
-  // TORCH_CHECK(it != fx_fusion_attr_map().end(), "Fusion behavior
-  // undefined."); ideep::attr_t op_attr = it->second(scalars, algorithm);
 
   auto other_desc = mkldnn_other.get_desc();
   auto op_attr = ideep::attr_t::fuse_binary(it_binary->second, other_desc);
