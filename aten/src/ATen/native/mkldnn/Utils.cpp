@@ -100,5 +100,13 @@ const std::map<std::string, AttrFunction>& fx_fusion_attr_map() {
   return fusion_attr_map;
 };
 
+const std::map<std::string, ideep::algorithm>& fusion_binary_alg_map() {
+  static const std::map<std::string, ideep::algorithm> fusion_attr_map{
+      {"add", {ideep::algorithm::binary_add}},
+      {"sub", {ideep::algorithm::binary_sub}},
+  };
+  return fusion_attr_map;
+};
+
 #endif // AT_MKLDNN_ENABLED()
 }}
