@@ -1620,19 +1620,7 @@ void LLVMCodeGenImpl::emitMaskedStore(
 }
 
 void LLVMCodeGenImpl::visit(StorePtr v) {
-printf("visit StorePtr\n");
-// TODO: bfloat16（broadcast) -> need to check dtype lanes of broadcast 
-// not that of bfloat16
-
-  Dtype value_dtype = v->value()->dtype();;
-  if (CastPtr cast = to<Cast>(v->value())) {
-    if (BroadcastPtr bc = to<Broadcast>(cast->src_value())) {
-      printf("hit");
-      value_dtype = bc->dtype();
-    }
-  }
-
-  if (value_dtype.lanes() == 1) {
+  if ( v->value()->dtype().lanes() == 1) {
     printf("lane 1\n");
     v->base_handle()->accept(this);
     auto base = this->value_;

@@ -84,7 +84,11 @@ class HalfRewriter : public IRMutator {
     }
 
     if (isHalf(v->buf()->dtype().scalar_type()) && !isHalf(newType.scalar_type())) {
-      new_val = alloc<Cast>(v->buf()->dtype(), new_val);
+
+printf("lane of buf: %d\n", v->buf()->dtype().lanes()); // 1
+printf("lane of newType: %d\n", newType.lanes()); // 4
+// Need to keep the lane as 4 (same as the oirginal newType after the cast)
+      new_val = alloc<Cast>(newType.cloneWithScalarType(v->buf()->dtype().scalar_type()), new_val);
       inserted_half_casts_.insert(new_val);
     }
 
