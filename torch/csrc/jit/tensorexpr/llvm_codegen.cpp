@@ -1018,6 +1018,7 @@ llvm::Type* llvmTypeToVec(llvm::Type* type, int lanes) {
 }
 
 void LLVMCodeGenImpl::visit(CastPtr v) {
+printf("enter CastPtr\n");  
   v->src_value()->accept(this);
 
   auto dst_type = v->dtype().scalar_type();
@@ -1104,6 +1105,8 @@ void LLVMCodeGenImpl::visit(CastPtr v) {
     value_ = irb_.CreateBitOrPointerCast(value_, llvmTypeToVec(ShortTy_, lans));
     // If the the value is NaN, return BF16 NaN.
     value_ = irb_.CreateSelect(mask, value_, toVec(bf16_nan, lans));
+    value_->dump();
+    printf("cast value type: %d\n", value_->getType()->getTypeID());
     return;
   }
 
@@ -1617,7 +1620,20 @@ void LLVMCodeGenImpl::emitMaskedStore(
 }
 
 void LLVMCodeGenImpl::visit(StorePtr v) {
-  if (v->value()->dtype().lanes() == 1) {
+printf("visit StorePtr\n");
+// TODO: bfloat16（broadcast) -> need to check dtype lanes of broadcast 
+// not that of bfloat16
+
+  Dtype value_dtype = v->value()->dtype();;
+  if (CastPtr cast = to<Cast>(v->value())) {
+    if (BroadcastPtr bc = to<Broadcast>(cast->src_value())) {
+      printf("hit");
+      value_dtype = bc->dtype();
+    }
+  }
+
+  if (value_dtype.lanes() == 1) {
+    printf("lane 1\n");
     v->base_handle()->accept(this);
     auto base = this->value_;
     v->flat_index()->accept(this);
@@ -1631,14 +1647,32 @@ void LLVMCodeGenImpl::visit(StorePtr v) {
     return;
   }
 
+    printf("not lane 1\n");
+
+
+
+    // printf("store before handle value type: %d\n", this->value_->getType()->getTypeID());
+
+
+
   v->base_handle()->accept(this);
   auto base = this->value_;
+
+    // printf("store before accept value type: %d\n", this->value_->getType()->getTypeID());
+
+
   v->value()->accept(this);
   auto val = this->value_;
+
+
+    printf("store after accept value type: %d\n", this->value_->getType()->getTypeID());
+
 
   // Handle the case where the store is contiguous and unmasked efficiently
   auto idx_ramp = to<Ramp>(v->flat_index());
   if (idx_ramp) {
+    printf("idx_ramp\n");
+
     auto stride_imm = intValue(idx_ramp->stride());
     if (stride_imm && *stride_imm == 1) {
       idx_ramp->base()->accept(this);
@@ -1650,12 +1684,18 @@ void LLVMCodeGenImpl::visit(StorePtr v) {
           first_idx);
       auto vaddr = irb_.CreateBitOrPointerCast(
           addr, llvm::PointerType::get(val->getType(), 0));
+    printf("before CreateAlignedStore: %d\n", val->getType()->getTypeID());
 
 #if LLVM_VERSION_MAJOR >= 13
       irb_.CreateAlignedStore(val, vaddr, llvm::MaybeAlign(4));
 #else
       irb_.CreateAlignedStore(val, vaddr, 4);
 #endif
+    printf("final return\n");
+
+    printf("after CreateAlignedStore: %d\n", val->getType()->getTypeID());
+
+
       value_ = llvm::ConstantInt::get(IntTy_, 0);
       return;
     }
@@ -1678,6 +1718,8 @@ void LLVMCodeGenImpl::visit(BroadcastPtr v) {
   v->value()->accept(this);
   int lanes = v->lanes();
   value_ = irb_.CreateVectorSplat(lanes, value_);
+    printf("broadcast value type: %d\n", value_->getType()->getTypeID());
+
 }
 
 void LLVMCodeGenImpl::visit(IfThenElsePtr v) {
