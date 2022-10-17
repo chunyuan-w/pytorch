@@ -1429,7 +1429,7 @@ class CommonTemplate:
     def test_linear_unary(self):
         options = itertools.product(unary_list, [[2, 3, 10], [2, 10]], [True, False])
         dtype = torch.bfloat16
-        if has_bf16_support():
+        if has_mkldnn_bf16_support():
             for eltwise_fn, input_shape, bias in options:
                 mod = torch.nn.Sequential(
                     torch.nn.Linear(input_shape[-1], 30, bias=bias), eltwise_fn
