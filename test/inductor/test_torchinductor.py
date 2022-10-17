@@ -19,6 +19,7 @@ from torch._dynamo.testing import rand_strided, same
 from torch.fx.experimental.proxy_tensor import make_fx
 from torch.nn import functional as F
 from torch.testing._internal.common_utils import (
+    has_mkldnn_bf16_support,
     TEST_WITH_ASAN,
     TEST_WITH_ROCM,
     TestCase as TorchTestCase,
@@ -74,21 +75,6 @@ HAS_CUDA = has_triton()
 requires_cuda = functools.partial(unittest.skipIf, not HAS_CUDA, "requires cuda")
 
 torch._inductor.config.triton.autotune = False  # too slow
-
-
-# Ported from pytorch/test/test_mkldnn.py
-# For OneDNN bf16 path, OneDNN requires the cpu has intel avx512 with avx512bw,
-# avx512vl, and avx512dq at least. So we will skip the test case if one processor
-# is not meet the requirement.
-@functools.lru_cache(maxsize=None)
-def has_bf16_support():
-    import sys
-
-    if sys.platform != "linux":
-        return False
-    with open("/proc/cpuinfo", encoding="ascii") as f:
-        lines = f.read()
-    return all(word in lines for word in ["avx512bw", "avx512vl", "avx512dq"])
 
 
 unary_list = [

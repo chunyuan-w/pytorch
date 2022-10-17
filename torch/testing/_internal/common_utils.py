@@ -3610,3 +3610,15 @@ def custom_op(opname, symbolic_fn, opset_version):
         yield
     finally:
         unregister_custom_op_symbolic(opname, opset_version)
+
+# For OneDNN bf16 path, OneDNN requires the cpu has intel avx512 with avx512bw,
+# avx512vl, and avx512dq at least. So we will skip the test case if one processor
+# is not meet the requirement.
+@functools.lru_cache(maxsize=None)
+def has_mkldnn_bf16_support():
+    import sys
+    if sys.platform != 'linux':
+        return False
+    with open("/proc/cpuinfo", encoding="ascii") as f:
+        lines = f.read()
+    return all(word in lines for word in ["avx512bw", "avx512vl", "avx512dq"])
