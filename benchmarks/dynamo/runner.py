@@ -121,6 +121,15 @@ def parse_args():
     parser.add_argument("--dtypes", action="append", help="float16/float32/amp")
     parser.add_argument("--suites", action="append", help="huggingface/torchbench/timm")
     parser.add_argument(
+        "--batch_size", type=int, default=None, help="batch size for benchmarking"
+    )
+    parser.add_argument(
+        "--channels-last",
+        action="store_true",
+        default=False,
+        help="use channels last format",
+    )
+    parser.add_argument(
         "--compilers",
         action="append",
         help=f"For --inference, options are {INFERENCE_COMPILERS}. For --training, options are {TRAINING_COMPILERS}",
@@ -228,10 +237,20 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
         lines.append(f"rm -rf {output_dir}")
         lines.append(f"mkdir {output_dir}")
         lines.append("")
+        if "cpu" in devices:
+            lines.append("CORES=`lscpu | grep Core | awk '{print $4}'`")
+            lines.append("start_core=0")
+            if args.batch_size is None:
+                lines.append("end_core=`expr $CORES - 1`")
+            else:
+                lines.append("end_core=1")
 
         for testing in ["performance", "accuracy"]:
             for iter in itertools.product(suites, devices, dtypes):
                 suite, device, dtype = iter
+                numactl = ""
+                if device == "cpu":
+                    numactl = "numactl -C $start_core-$end_core --membind=0"
                 lines.append(
                     f"# Commands for {suite} for device={device}, dtype={dtype} for {mode} and for {testing} testing"
                 )
@@ -239,7 +258,7 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
                 for compiler in compilers:
                     base_cmd = info[compiler]
                     output_filename = f"{output_dir}/{compiler}_{suite}_{dtype}_{mode}_{device}_{testing}.csv"
-                    cmd = f"python benchmarks/{suite}.py --{testing} --{dtype} -d{device} --output={output_filename}"
+                    cmd = f"{numactl} python benchmarks/{suite}.py --{testing} --{dtype} -d{device} --output={output_filename}"
                     cmd = f"{cmd} {base_cmd} --no-skip --dashboard"
 
                     skip_tests_str = get_skip_tests(suite)
@@ -251,6 +270,13 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
                     if args.quick:
                         filters = DEFAULTS["quick"][suite]
                         cmd = f"{cmd} {filters}"
+
+                    if args.batch_size is not None:
+                        cmd = f"{cmd} --batch_size {args.batch_size}"
+                        if args.batch_size == 1:
+                            cmd = f"{cmd} --threads 1"
+                    if args.channels_last:
+                        cmd = f"{cmd} --channels-last"
                     lines.append(cmd)
                 lines.append("")
         runfile.writelines([line + "\n" for line in lines])
@@ -267,7 +293,7 @@ def generate_dropdown_comment(title, body):
     return str_io.getvalue()
 
 
-def build_summary():
+def build_summary(devices):
     import git
 
     out_io = io.StringIO()
@@ -302,18 +328,19 @@ def build_summary():
 
     out_io.write("\n")
     out_io.write("## Environment variables ##\n")
-    env_var("TORCH_CUDA_ARCH_LIST")
-    env_var("CUDA_HOME")
-    env_var("USE_LLVM")
+    if "cuda" in devices:
+        env_var("TORCH_CUDA_ARCH_LIST")
+        env_var("CUDA_HOME")
 
     out_io.write("\n")
-    out_io.write("## GPU details ##\n")
-    out_io.write(f"CUDNN VERSION: {torch.backends.cudnn.version()}\n")
-    out_io.write(f"Number CUDA Devices: {torch.cuda.device_count()}\n")
-    out_io.write(f"Device Name: {torch.cuda.get_device_name(0)}\n")
-    out_io.write(
-        f"Device Memory [GB]: {torch.cuda.get_device_properties(0).total_memory/1e9}\n"
-    )
+    if "cuda" in devices:
+        out_io.write("## GPU details ##\n")
+        out_io.write(f"CUDNN VERSION: {torch.backends.cudnn.version()}\n")
+        out_io.write(f"Number CUDA Devices: {torch.cuda.device_count()}\n")
+        out_io.write(f"Device Name: {torch.cuda.get_device_name(0)}\n")
+        out_io.write(
+            f"Device Memory [GB]: {torch.cuda.get_device_properties(0).total_memory/1e9}\n"
+        )
 
     title = "## Build Summary"
     comment = generate_dropdown_comment(title, out_io.getvalue())
@@ -521,20 +548,40 @@ class ParsePerformanceLogs(Parser):
         return str_io.getvalue()
 
     def generate_executive_summary(self):
-        description = (
-            "We evaluate different backends "
-            "across three benchmark suites - torchbench, huggingface and timm. We run "
-            "these experiments on A100 GPUs. Each experiment runs one iteration of forward "
-            "and backward pass. For accuracy, we check the numerical correctness of forward "
-            "pass outputs and gradients by comparing with native pytorch. We measure speedup "
-            "by normalizing against the performance of native pytorch. We report mean "
-            "compilation latency numbers and peak memory footprint reduction ratio. \n\n"
-            "Caveats\n"
-            "1) Batch size has been reduced to workaround OOM errors. Work is in progress to "
-            "reduce peak memory footprint.\n"
-            "2) Experiments do not cover dynamic shapes.\n"
-            "3) Experimental setup does not have optimizer.\n\n"
-        )
+        if "cuda" in self.devices:
+            description = (
+                "We evaluate different backends "
+                "across three benchmark suites - torchbench, huggingface and timm. We run "
+                "these experiments on A100 GPUs. Each experiment runs one iteration of forward "
+                "and backward pass. For accuracy, we check the numerical correctness of forward "
+                "pass outputs and gradients by comparing with native pytorch. We measure speedup "
+                "by normalizing against the performance of native pytorch. We report mean "
+                "compilation latency numbers and peak memory footprint reduction ratio. \n\n"
+                "Caveats\n"
+                "1) Batch size has been reduced to workaround OOM errors. Work is in progress to "
+                "reduce peak memory footprint.\n"
+                "2) Experiments do not cover dynamic shapes.\n"
+                "3) Experimental setup does not have optimizer.\n\n"
+            )
+        else:
+            get_machine_cmd = "lscpu| grep 'Model name' | awk -F':' '{print $2}'"
+            machine = subprocess.getstatusoutput(get_machine_cmd)[1].strip()
+            description = (
+                "We evaluate different backends "
+                "across three benchmark suites - torchbench, huggingface and timm. We run "
+                "these experiments on "
+                + machine
+                + ". Each experiment runs one iteration of forward "
+                "pass. For accuracy, we check the numerical correctness of forward "
+                "pass outputs by comparing with native pytorch. We measure speedup "
+                "by normalizing against the performance of native pytorch. We report mean "
+                "compilation latency numbers and peak memory footprint reduction ratio. \n\n"
+                "Caveats\n"
+                "1) Batch size has been reduced to workaround OOM errors. Work is in progress to "
+                "reduce peak memory footprint.\n"
+                "2) Experiments do not cover dynamic shapes.\n"
+                "3) Experimental setup does not have optimizer.\n\n"
+            )
 
         comment = generate_dropdown_comment("", description)
         str_io = io.StringIO()
@@ -628,7 +675,7 @@ class ParsePerformanceLogs(Parser):
 
 def parse_logs(args, dtypes, suites, devices, compilers, output_dir):
     mode = get_mode(args)
-    build_summary()
+    build_summary(devices)
 
     parser_class = ParsePerformanceLogs
     parser = parser_class(suites, devices, dtypes, compilers, mode, output_dir)
@@ -745,7 +792,8 @@ class RegressionTracker:
 class DashboardUpdater:
     """
     Aggregates the information and makes a comment to Performance Dashboard.
-    https://github.com/pytorch/torchdynamo/issues/681
+    TorchDynamo Performance DashBoard: https://github.com/pytorch/torchdynamo/issues/681
+    TorchInductor CPU Performance Dashboard: https://github.com/pytorch/torchdynamo/issues/1617
     """
 
     def __init__(self, args):
@@ -806,16 +854,28 @@ class DashboardUpdater:
         """
         Send a commment to dashboard
         """
-        subprocess.check_call(
-            [
-                self.args.dashboard_gh_cli_path,
-                "issue",
-                "comment",
-                "681",
-                "-b",
-                comment,
-            ]
-        )
+        if "cuda" in self.args.devices:
+            subprocess.check_call(
+                [
+                    self.args.dashboard_gh_cli_path,
+                    "issue",
+                    "comment",
+                    "681",
+                    "-b",
+                    comment,
+                ]
+            )
+        else:
+            subprocess.check_call(
+                [
+                    self.args.dashboard_gh_cli_path,
+                    "issue",
+                    "comment",
+                    "1617",
+                    "-b",
+                    comment,
+                ]
+            )
 
     def update(self):
         self.upload_graphs()
