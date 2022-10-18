@@ -7,7 +7,7 @@ from torchinductor.codecache import CppCodeCache, TritonCodeCache
 aten = torch.ops.aten
 
 
-source = (
+source0 = (
 '''
 #include "/home/chunyuan/torch-inductor/pytorch/test/jiong_generated.h"
 extern "C" void kernel(const float* __restrict__ in_ptr0,
@@ -79,6 +79,12 @@ extern "C" void kernel(const float* __restrict__ in_ptr0,
         }
     }
 }
+
+'''
+)
+
+source1 = (
+'''
 at::Tensor call(at::Tensor arg0_1) {
     auto s0 = arg0_1.size(1);
     auto s1 = arg0_1.size(2);
@@ -89,12 +95,12 @@ at::Tensor call(at::Tensor arg0_1) {
     kernel((const float*)arg0_1.data_ptr(), (float*)buf2.data_ptr(), (float*)buf3.data_ptr(), s0, s1);
     return buf3;
 }
-'''
+'''    
 )
 
 from torch.utils.cpp_extension import load_inline
 module = load_inline(
-    name='inline_extension', cpp_sources=[source], functions=['call'],
+    name='inline_extension', cpp_sources=[source0, source1], functions=['call'],
     extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])
 call = module.call
 
