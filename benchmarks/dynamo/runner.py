@@ -125,6 +125,16 @@ def parse_args():
         action="append",
         help=f"For --inference, options are {INFERENCE_COMPILERS}. For --training, options are {TRAINING_COMPILERS}",
     )
+    parser.add_argument("--batch_size", type=int, default=None, help="batch size for benchmarking")
+    parser.add_argument(
+        "--channels-last",
+        action="store_true",
+        default=False,
+        help="use channels last format",
+    )
+    parser.add_argument(
+        "--threads", "-t", type=int, default=None, help="number of threads to use for eager"
+    )
     parser.add_argument(
         "--quick", action="store_true", help="Just runs one model. Helps in debugging"
     )
@@ -267,6 +277,14 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
                         filters = DEFAULTS["quick"][suite]
                         cmd = f"{cmd} {filters}"
 
+                    if args.batch_size is not None:
+                        cmd = f"{cmd} --batch_size {args.batch_size}"
+
+                    if args.threads is not None:
+                        cmd = f"{cmd} --threads {args.threads}"
+
+                    if args.channels_last:
+                        cmd = f"{cmd} --channels-last"
                     lines.append(cmd)
                 lines.append("")
         runfile.writelines([line + "\n" for line in lines])
