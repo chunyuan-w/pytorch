@@ -1320,174 +1320,6 @@ class CommonTemplate:
             check_lowp=False,
         )
 
-    def test_conv2d_unary(self):
-        test_memory_format = [torch.contiguous_format]
-        # TODO: GPU path doesn't support channels_last now.
-        if not HAS_CUDA:
-            test_memory_format.append(torch.channels_last)
-        options = itertools.product(
-            unary_list,
-            [True, False],
-            [1, 3],
-            [1, 2],
-            [1, 4],
-            test_memory_format,
-        )
-
-        for (
-            unary_fn,
-            bias,
-            kernel_size,
-            dilation,
-            groups,
-            memory_format,
-        ) in options:
-            oC = 32 * groups
-            iC = 3 * groups
-            x_shape = (1, iC, 112, 112)
-            mod = torch.nn.Sequential(
-                torch.nn.Conv2d(
-                    iC,
-                    oC,
-                    kernel_size=kernel_size,
-                    dilation=dilation,
-                    groups=groups,
-                    bias=bias,
-                ),
-                unary_fn,
-            ).eval()
-
-            # TODO: add bf16 test for cpu path?
-            v = torch.randn(x_shape, dtype=torch.float32).to(
-                memory_format=memory_format
-            )
-            self.common(
-                mod,
-                (v,),
-            )
-
-    def test_conv2d_binary(self):
-        class M(torch.nn.Module):
-            def __init__(
-                self,
-                binary_fn,
-                in_channels,
-                out_channels,
-                dilation,
-                groups,
-                bias,
-                **kwargs,
-            ):
-                super(M, self).__init__()
-                self.conv1 = torch.nn.Conv2d(
-                    in_channels,
-                    out_channels,
-                    dilation=dilation,
-                    groups=groups,
-                    bias=bias,
-                    **kwargs,
-                )
-                self.conv2 = torch.nn.Conv2d(
-                    in_channels,
-                    out_channels,
-                    dilation=dilation,
-                    groups=groups,
-                    bias=bias,
-                    **kwargs,
-                )
-                self.binary_fn = binary_fn
-
-            def forward(self, x):
-                x1 = self.conv1(x)
-                x2 = self.conv2(x)
-                return self.binary_fn(x1, x2)
-
-        test_memory_format = [torch.contiguous_format]
-        # TODO: GPU path doesn't support channels_last now.
-        if not HAS_CUDA:
-            test_memory_format.append(torch.channels_last)
-        options = itertools.product(
-            binary_list,
-            [True, False],
-            [1, 3],
-            [1, 2],
-            [1, 4],
-            test_memory_format,
-        )
-
-        for (
-            binary_fn,
-            bias,
-            kernel_size,
-            dilation,
-            groups,
-            memory_format,
-        ) in options:
-            oC = 32 * groups
-            iC = 3 * groups
-            x_shape = (1, iC, 112, 112)
-            mod = M(
-                binary_fn, iC, oC, dilation, groups, bias, kernel_size=kernel_size
-            ).eval()
-            mod = mod.to(memory_format=memory_format)
-            # TODO: add bf16 test
-            v = torch.randn(x_shape, dtype=torch.float32).to(
-                memory_format=memory_format
-            )
-            self.common(
-                mod,
-                (v,),
-            )
-
-    def test_linear_unary(self):
-        options = itertools.product(unary_list, [[2, 3, 10], [2, 10]], [True, False])
-        dtype = torch.bfloat16
-        if has_bf16_support():
-            for eltwise_fn, input_shape, bias in options:
-                mod = torch.nn.Sequential(
-                    torch.nn.Linear(input_shape[-1], 30, bias=bias), eltwise_fn
-                ).eval()
-
-                # only fuse for linear when the dtype is bf16
-                mod = mod.to(dtype)
-                v = torch.randn(input_shape).to(dtype)
-
-                self.common(
-                    mod,
-                    (v,),
-                )
-
-    def test_linear_binary(self):
-        class M(torch.nn.Module):
-            def __init__(self, eltwise_fn, in_channels, out_channels, bias, **kwargs):
-                super(M, self).__init__()
-                self.linear = torch.nn.Linear(
-                    in_channels, out_channels, bias=bias, **kwargs
-                )
-                self.eltwise = eltwise_fn
-
-            def forward(self, x, y):
-                x = self.linear(x)
-                x = self.eltwise(x, y)
-                return x
-
-        options = itertools.product(binary_list, [[2, 3, 10], [2, 10]], [True, False])
-        dtype = torch.bfloat16
-        out_feature = 30
-        if has_bf16_support():
-            for binary_ops, input_shape, bias in options:
-                mod = M(binary_ops, input_shape[-1], out_feature, bias).eval()
-
-                # only fuse for linear when the dtype is bf16
-                mod = mod.to(dtype)
-                v = torch.randn(input_shape).to(dtype)
-                other = torch.randn(input_shape[:-1] + [out_feature]).to(dtype)
-
-                self.common(
-                    mod,
-                    (v, other),
-                )
-
     def test_gather1(self):
         def fn(a, b):
             return (
@@ -4062,6 +3894,174 @@ if HAS_CPU:
     class CpuTests(TestCase):
         common = check_model
         device = "cpu"
+
+        def test_conv2d_unary(self):
+            test_memory_format = [torch.contiguous_format]
+            # TODO: GPU path doesn't support channels_last now.
+            if not HAS_CUDA:
+                test_memory_format.append(torch.channels_last)
+            options = itertools.product(
+                unary_list,
+                [True, False],
+                [1, 3],
+                [1, 2],
+                [1, 4],
+                test_memory_format,
+            )
+
+            for (
+                unary_fn,
+                bias,
+                kernel_size,
+                dilation,
+                groups,
+                memory_format,
+            ) in options:
+                oC = 32 * groups
+                iC = 3 * groups
+                x_shape = (1, iC, 112, 112)
+                mod = torch.nn.Sequential(
+                    torch.nn.Conv2d(
+                        iC,
+                        oC,
+                        kernel_size=kernel_size,
+                        dilation=dilation,
+                        groups=groups,
+                        bias=bias,
+                    ),
+                    unary_fn,
+                ).eval()
+
+                # TODO: add bf16 test for cpu path?
+                v = torch.randn(x_shape, dtype=torch.float32).to(
+                    memory_format=memory_format
+                )
+                self.common(
+                    mod,
+                    (v,),
+                )
+
+        def test_conv2d_binary(self):
+            class M(torch.nn.Module):
+                def __init__(
+                    self,
+                    binary_fn,
+                    in_channels,
+                    out_channels,
+                    dilation,
+                    groups,
+                    bias,
+                    **kwargs,
+                ):
+                    super(M, self).__init__()
+                    self.conv1 = torch.nn.Conv2d(
+                        in_channels,
+                        out_channels,
+                        dilation=dilation,
+                        groups=groups,
+                        bias=bias,
+                        **kwargs,
+                    )
+                    self.conv2 = torch.nn.Conv2d(
+                        in_channels,
+                        out_channels,
+                        dilation=dilation,
+                        groups=groups,
+                        bias=bias,
+                        **kwargs,
+                    )
+                    self.binary_fn = binary_fn
+
+                def forward(self, x):
+                    x1 = self.conv1(x)
+                    x2 = self.conv2(x)
+                    return self.binary_fn(x1, x2)
+
+            test_memory_format = [torch.contiguous_format]
+            # TODO: GPU path doesn't support channels_last now.
+            if not HAS_CUDA:
+                test_memory_format.append(torch.channels_last)
+            options = itertools.product(
+                binary_list,
+                [True, False],
+                [1, 3],
+                [1, 2],
+                [1, 4],
+                test_memory_format,
+            )
+
+            for (
+                binary_fn,
+                bias,
+                kernel_size,
+                dilation,
+                groups,
+                memory_format,
+            ) in options:
+                oC = 32 * groups
+                iC = 3 * groups
+                x_shape = (1, iC, 112, 112)
+                mod = M(
+                    binary_fn, iC, oC, dilation, groups, bias, kernel_size=kernel_size
+                ).eval()
+                mod = mod.to(memory_format=memory_format)
+                # TODO: add bf16 test
+                v = torch.randn(x_shape, dtype=torch.float32).to(
+                    memory_format=memory_format
+                )
+                self.common(
+                    mod,
+                    (v,),
+                )
+
+        def test_linear_unary(self):
+            options = itertools.product(unary_list, [[2, 3, 10], [2, 10]], [True, False])
+            dtype = torch.bfloat16
+            if has_bf16_support():
+                for eltwise_fn, input_shape, bias in options:
+                    mod = torch.nn.Sequential(
+                        torch.nn.Linear(input_shape[-1], 30, bias=bias), eltwise_fn
+                    ).eval()
+
+                    # only fuse for linear when the dtype is bf16
+                    mod = mod.to(dtype)
+                    v = torch.randn(input_shape).to(dtype)
+
+                    self.common(
+                        mod,
+                        (v,),
+                    )
+
+        def test_linear_binary(self):
+            class M(torch.nn.Module):
+                def __init__(self, eltwise_fn, in_channels, out_channels, bias, **kwargs):
+                    super(M, self).__init__()
+                    self.linear = torch.nn.Linear(
+                        in_channels, out_channels, bias=bias, **kwargs
+                    )
+                    self.eltwise = eltwise_fn
+
+                def forward(self, x, y):
+                    x = self.linear(x)
+                    x = self.eltwise(x, y)
+                    return x
+
+            options = itertools.product(binary_list, [[2, 3, 10], [2, 10]], [True, False])
+            dtype = torch.bfloat16
+            out_feature = 30
+            if has_bf16_support():
+                for binary_ops, input_shape, bias in options:
+                    mod = M(binary_ops, input_shape[-1], out_feature, bias).eval()
+
+                    # only fuse for linear when the dtype is bf16
+                    mod = mod.to(dtype)
+                    v = torch.randn(input_shape).to(dtype)
+                    other = torch.randn(input_shape[:-1] + [out_feature]).to(dtype)
+
+                    self.common(
+                        mod,
+                        (v, other),
+                    )
 
     CommonTemplate.install(CpuTests, "cpu")
 
