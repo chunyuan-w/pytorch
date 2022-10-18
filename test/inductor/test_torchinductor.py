@@ -1474,18 +1474,19 @@ class CommonTemplate:
         options = itertools.product(binary_list, [[2, 3, 10], [2, 10]], [True, False])
         dtype = torch.bfloat16
         out_feature = 30
-        for binary_ops, input_shape, bias in options:
-            mod = M(binary_ops, input_shape[-1], out_feature, bias).eval()
+        if has_bf16_support():
+            for binary_ops, input_shape, bias in options:
+                mod = M(binary_ops, input_shape[-1], out_feature, bias).eval()
 
-            # only fuse for linear when the dtype is bf16
-            mod = mod.to(dtype)
-            v = torch.randn(input_shape).to(dtype)
-            other = torch.randn(input_shape[:-1] + [out_feature]).to(dtype)
+                # only fuse for linear when the dtype is bf16
+                mod = mod.to(dtype)
+                v = torch.randn(input_shape).to(dtype)
+                other = torch.randn(input_shape[:-1] + [out_feature]).to(dtype)
 
-            self.common(
-                mod,
-                (v, other),
-            )
+                self.common(
+                    mod,
+                    (v, other),
+                )
 
     def test_gather1(self):
         def fn(a, b):
