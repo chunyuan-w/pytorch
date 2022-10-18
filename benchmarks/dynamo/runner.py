@@ -121,15 +121,6 @@ def parse_args():
     parser.add_argument("--dtypes", action="append", help="float16/float32/amp")
     parser.add_argument("--suites", action="append", help="huggingface/torchbench/timm")
     parser.add_argument(
-        "--batch_size", type=int, default=None, help="batch size for benchmarking"
-    )
-    parser.add_argument(
-        "--channels-last",
-        action="store_true",
-        default=False,
-        help="use channels last format",
-    )
-    parser.add_argument(
         "--compilers",
         action="append",
         help=f"For --inference, options are {INFERENCE_COMPILERS}. For --training, options are {TRAINING_COMPILERS}",
@@ -167,6 +158,10 @@ def parse_args():
         action="store_true",
         default=False,
         help="Log operator inputs",
+    )
+
+    parser.add_argument(
+        "--extra-args", default="", help="Append commandline with these args"
     )
 
     # Choose either inference or training
@@ -258,8 +253,9 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
                 for compiler in compilers:
                     base_cmd = info[compiler]
                     output_filename = f"{output_dir}/{compiler}_{suite}_{dtype}_{mode}_{device}_{testing}.csv"
-                    cmd = f"{numactl} python benchmarks/{suite}.py --{testing} --{dtype} -d{device} --output={output_filename}"
-                    cmd = f"{cmd} {base_cmd} --no-skip --dashboard"
+
+                    cmd = f"{numactl} python benchmarks/dynamo/{suite}.py --{testing} --{dtype} -d{device} --output={output_filename}"
+                    cmd = f"{cmd} {base_cmd} {args.extra_args} --no-skip --dashboard"
 
                     skip_tests_str = get_skip_tests(suite)
                     cmd = f"{cmd} {skip_tests_str}"
@@ -271,12 +267,6 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
                         filters = DEFAULTS["quick"][suite]
                         cmd = f"{cmd} {filters}"
 
-                    if args.batch_size is not None:
-                        cmd = f"{cmd} --batch_size {args.batch_size}"
-                        if args.batch_size == 1:
-                            cmd = f"{cmd} --threads 1"
-                    if args.channels_last:
-                        cmd = f"{cmd} --channels-last"
                     lines.append(cmd)
                 lines.append("")
         runfile.writelines([line + "\n" for line in lines])
