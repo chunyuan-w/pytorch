@@ -285,6 +285,8 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
 
                     if args.channels_last:
                         cmd = f"{cmd} --channels-last"
+                    if testing == "performance" and compiler == "inductor":
+                        cmd = f"{cmd} --cold_start_latency"
                     lines.append(cmd)
                 lines.append("")
         runfile.writelines([line + "\n" for line in lines])
