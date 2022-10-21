@@ -3,6 +3,7 @@ import contextlib
 import functools
 import operator
 import os
+import sys
 import tempfile
 import time
 from importlib import import_module
@@ -51,6 +52,17 @@ def has_torchvision_roi_align():
         )
     except ImportError:
         return False
+
+
+# For OneDNN bf16 path, OneDNN requires the cpu has intel avx512 with avx512bw,
+# avx512vl, and avx512dq at least.
+@functools.lru_cache(None)
+def has_mkldnn_bf16_support():
+    if sys.platform != "linux":
+        return False
+    with open("/proc/cpuinfo", encoding="ascii") as f:
+        lines = f.read()
+    return all(word in lines for word in ["avx512bw", "avx512vl", "avx512dq"])
 
 
 def conditional_product(*args):

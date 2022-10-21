@@ -39,7 +39,12 @@ try:
     from torch._inductor.compile_fx import compile_fx, complex_memory_overlap
     from torch._inductor.ir import IndexingDiv, ModularIndexing
     from torch._inductor.sizevars import SizeVarAllocator
-    from torch._inductor.utils import has_torchvision_roi_align, has_triton, timed
+    from torch._inductor.utils import (
+        has_mkldnn_bf16_support,
+        has_torchvision_roi_align,
+        has_triton,
+        timed,
+    )
 
     # This will only pass on pytorch builds newer than roughly 5/15/2022
     assert get_decompositions([torch.ops.aten.trace])
@@ -74,20 +79,6 @@ HAS_CUDA = has_triton()
 requires_cuda = functools.partial(unittest.skipIf, not HAS_CUDA, "requires cuda")
 
 torch._inductor.config.triton.autotune = False  # too slow
-
-
-# For OneDNN bf16 path, OneDNN requires the cpu has intel avx512 with avx512bw,
-# avx512vl, and avx512dq at least. So we will skip the test case if one processor
-# is not meet the requirement.
-@functools.lru_cache(maxsize=None)
-def has_bf16_support():
-    import sys
-
-    if sys.platform != "linux":
-        return False
-    with open("/proc/cpuinfo", encoding="ascii") as f:
-        lines = f.read()
-    return all(word in lines for word in ["avx512bw", "avx512vl", "avx512dq"])
 
 
 unary_list = [
@@ -1442,7 +1433,7 @@ class CommonTemplate:
     def test_linear_unary(self):
         options = itertools.product(unary_list, [[2, 3, 10], [2, 10]], [True, False])
         dtype = torch.bfloat16
-        if has_bf16_support():
+        if has_mkldnn_bf16_support():
             for eltwise_fn, input_shape, bias in options:
                 mod = torch.nn.Sequential(
                     torch.nn.Linear(input_shape[-1], 30, bias=bias), eltwise_fn
@@ -1474,7 +1465,7 @@ class CommonTemplate:
         options = itertools.product(binary_list, [[2, 3, 10], [2, 10]], [True, False])
         dtype = torch.bfloat16
         out_feature = 30
-        if has_bf16_support():
+        if has_mkldnn_bf16_support():
             for binary_ops, input_shape, bias in options:
                 mod = M(binary_ops, input_shape[-1], out_feature, bias).eval()
 
@@ -1483,12 +1474,7 @@ class CommonTemplate:
                 v = torch.randn(input_shape).to(dtype)
                 other = torch.randn(input_shape[:-1] + [out_feature]).to(dtype)
 
-                self.common(
-                    mod,
-                    (v, other),
-                    atol=2e-3,
-                    rtol=0.016
-                )
+                self.common(mod, (v, other), atol=2e-3, rtol=0.016)
 
     def test_gather1(self):
         def fn(a, b):

@@ -18,6 +18,8 @@ from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 from torch.overrides import TorchFunctionMode
 
+from .utils import has_mkldnn_bf16_support
+
 log = logging.getLogger(__name__)
 
 
@@ -343,8 +345,9 @@ def fuse_unary(gm: torch.fx.GraphModule):
                     continue
 
                 # only fuse for linear when the dtype is bf16
-                if bf16_only_node(computation_node) and not is_bfloat16_module(
-                    computation_node
+                if bf16_only_node(computation_node) and (
+                    not is_bfloat16_module(computation_node)
+                    or not has_mkldnn_bf16_support()
                 ):
                     continue
                 fused_module = fuse_func(computation_node, unary_node)
