@@ -10,7 +10,7 @@ from torch._inductor import config
 from torch.testing._internal.common_utils import run_tests, TestCase
 
 config.cpp.simdlen = 8
-config.dynamic_shapes = True
+# config.dynamic_shapes = True
 
 
 class TestCppWrapper(TestCase):
@@ -21,6 +21,21 @@ class TestCppWrapper(TestCase):
             ref_result = m(*inputs)
             self.assertEqual(dynamo_result, ref_result)
 
+    # TODO: this duplicates with UT in test_torchinductor.py
+    def test_adaptive_avg_pool2d1(self):
+        def fn(x):
+            return torch.ops.aten._adaptive_avg_pool2d(x, (6, 6))        
+
+        self._common(
+            fn,
+            [torch.randn(2, 4, 4, 4),],
+        )
+
+        self._common(
+            fn,
+            [torch.randn(2, 4, 3, 3),],
+        )        
+
     def test_single_kernel(self):
         def func_softmax(a):
             return torch.nn.functional.softmax(a)
@@ -29,6 +44,7 @@ class TestCppWrapper(TestCase):
         a = torch.rand(shape)
 
         self._common(func_softmax, [a])
+        self._common(func_softmax, [torch.rand(1, 215)])
 
     def test_two_kernels(self):
         class MHAScoresCalculation(nn.Module):

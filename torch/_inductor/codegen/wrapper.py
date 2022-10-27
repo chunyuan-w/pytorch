@@ -456,10 +456,11 @@ class CppWrapperCodeGen(WrapperCodeGen):
     """
     The outer wrapper that calls the kernels.
     """
-
+    call_func_id = count()
     def __init__(self):
         super().__init__()
         self._names_iter = count()
+        self._call_func_id = next(CppWrapperCodeGen.call_func_id)
         self.header = IndentedBuffer()
         self.prefix = IndentedBuffer()
         self.kernels = {}
@@ -489,6 +490,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
         )
         with self.prefix.indent():
             inp_len = len(V.graph.graph_inputs.keys())
+            # TODO: what if inp_len == 0
             if inp_len != 0:
                 inputs_args = [
                     "at::Tensor " + input_key
@@ -508,7 +510,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 else:
                     output_types = "void"
 
-                self.prefix.writeline(f"{output_types} call({inputs_args}) {{")
+                self.prefix.writeline(f"{output_types} call_{self._call_func_id}({inputs_args}) {{")
             for name in V.graph.randomness_seeds:
                 self.prefix.writeline(
                     f"torch.randint(2**31, size=(), dtype=torch.int64, out={name})"
@@ -565,15 +567,15 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 result.writeline("return; }''' )")
 
         result.writeline(
-            """
+            f"""
 module = load_inline(
     name='inline_extension',
     cpp_sources=[wrapper],
-    functions=['call'],
+    functions=['call_{self._call_func_id}'],
     extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])
             """
         )
-        result.writeline("call = module.call")
+        result.writeline(f"call = module.call_{self._call_func_id}")
         self.add_benchmark_harness(result)
 
         return result.getvalue()
