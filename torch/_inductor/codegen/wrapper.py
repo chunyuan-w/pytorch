@@ -10,6 +10,7 @@ from ..utils import dynamo_utils, has_triton, sympy_dot, sympy_product
 from ..virtualized import V
 from .common import CodeGen, DeferredLine, IndentedBuffer, Kernel
 from .triton import texpr
+from .cpp import DTYPE_TO_ATEN
 
 pexpr = texpr
 
@@ -67,6 +68,7 @@ def make_buffer_allocation(buffer):
 
 
 def make_cpp_buffer_allocation(buffer):
+    # TODO: map device to ATen here
     device = buffer.get_device()
     dtype = buffer.get_dtype()
     shape = tuple(buffer.get_size())
@@ -74,7 +76,8 @@ def make_cpp_buffer_allocation(buffer):
     return (
         f"auto {buffer.get_name()} = at::empty_strided("
         f"{V.graph.sizevars.codegen_shape_tuple(shape)}, "
-        f"{V.graph.sizevars.codegen_shape_tuple(stride)}); "
+        f"{V.graph.sizevars.codegen_shape_tuple(stride)}, "
+        f"{DTYPE_TO_ATEN[dtype]}); "
     )
 
 

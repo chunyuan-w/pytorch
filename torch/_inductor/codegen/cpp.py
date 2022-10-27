@@ -36,6 +36,20 @@ DTYPE_TO_CPP = {
     torch.bool: "bool",
     torch.bfloat16: "bfloat16",
 }
+
+DTYPE_TO_ATEN = {
+    torch.float32: "at::ScalarType::Float",
+    torch.float64: "at::ScalarType::Double",
+    torch.float16: "at::ScalarType::Half",
+    torch.int64: "at::ScalarType::Long",
+    torch.int32: "at::ScalarType::Int",
+    torch.int16: "at::ScalarType::Short",
+    torch.int8: "at::ScalarType::Char",
+    torch.uint8: "at::ScalarType::Byte",
+    torch.bool: "at::ScalarType::Bool",
+    torch.bfloat16: "at::ScalarType::BFloat16",    
+}
+
 INDEX_TYPE = "long"
 
 RTYPE_TO_CPP = {
