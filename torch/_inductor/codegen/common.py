@@ -332,8 +332,6 @@ class KernelArgs:
         call_args = []
         arg_defs = []
         arg_types = []
-        # TODO: what if not float?
-        ptr_type = "(float*)" if config.cpp_wrapper else "c_void_p"
         for inplaced in unique(self.inplace_buffers.values()):
             outer = inplaced.other_names[0]
             inner = inplaced.inner_name
@@ -341,21 +339,21 @@ class KernelArgs:
             arg_types.append(f"{DTYPE_TO_CPP[dtype]}*")
             arg_defs.append(f"{DTYPE_TO_CPP[dtype]}* __restrict__ {inner}")
             name = inplaced.other_names[-1]
-            call_args.append(f"{ptr_type}({name}.data_ptr())")
+            call_args.append(f"({DTYPE_TO_CPP[dtype]}*)({name}.data_ptr())")
         for outer, inner in self.input_buffers.items():
             if outer in self.inplace_buffers:
                 continue
             dtype = buffer_types[outer]
             arg_types.append(f"const {DTYPE_TO_CPP[dtype]}*")
             arg_defs.append(f"const {DTYPE_TO_CPP[dtype]}* __restrict__ {inner}")
-            call_args.append(f"{ptr_type}({outer}.data_ptr())")
+            call_args.append(f"({DTYPE_TO_CPP[dtype]}*)({outer}.data_ptr())")
         for outer, inner in self.output_buffers.items():
             if outer in self.inplace_buffers or inner == "REMOVED":
                 continue
             dtype = buffer_types[outer]
             arg_types.append(f"{DTYPE_TO_CPP[dtype]}*")
             arg_defs.append(f"{DTYPE_TO_CPP[dtype]}* __restrict__ {inner}")
-            call_args.append(f"{ptr_type}({outer}.data_ptr())")
+            call_args.append(f"({DTYPE_TO_CPP[dtype]}*)({outer}.data_ptr())")
         for outer, inner in self.sizevars.items():
             arg_types.append(f"const {INDEX_TYPE}")
             arg_defs.append(f"const {INDEX_TYPE} {inner}")
