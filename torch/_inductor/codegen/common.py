@@ -13,7 +13,7 @@ from itertools import chain
 import sympy
 from sympy.printing.printer import Printer
 
-from .. import metrics
+from .. import config, metrics
 from ..utils import free_symbol_startswith, sympy_dot, sympy_subs, sympy_symbol, unique
 from ..virtualized import ops, V
 
@@ -331,28 +331,37 @@ class KernelArgs:
 
         call_args = []
         arg_defs = []
+        arg_types = []
+        # TODO: what if not float?
+        ptr_type = "(float*)" if config.cpp_wrapper else "c_void_p"
         for inplaced in unique(self.inplace_buffers.values()):
-            outer = inplaced.other_names[-1]
+            outer = inplaced.other_names[0]
             inner = inplaced.inner_name
             dtype = buffer_types[outer]
+            arg_types.append(f"{DTYPE_TO_CPP[dtype]}*")
             arg_defs.append(f"{DTYPE_TO_CPP[dtype]}* __restrict__ {inner}")
-            call_args.append(f"c_void_p({outer}.data_ptr())")
+            name = inplaced.other_names[-1]
+            call_args.append(f"{ptr_type}({name}.data_ptr())")
         for outer, inner in self.input_buffers.items():
             if outer in self.inplace_buffers:
                 continue
             dtype = buffer_types[outer]
+            arg_types.append(f"const {DTYPE_TO_CPP[dtype]}*")
             arg_defs.append(f"const {DTYPE_TO_CPP[dtype]}* __restrict__ {inner}")
-            call_args.append(f"c_void_p({outer}.data_ptr())")
+            call_args.append(f"{ptr_type}({outer}.data_ptr())")
         for outer, inner in self.output_buffers.items():
             if outer in self.inplace_buffers or inner == "REMOVED":
                 continue
             dtype = buffer_types[outer]
+            arg_types.append(f"{DTYPE_TO_CPP[dtype]}*")
             arg_defs.append(f"{DTYPE_TO_CPP[dtype]}* __restrict__ {inner}")
-            call_args.append(f"c_void_p({outer}.data_ptr())")
+            call_args.append(f"{ptr_type}({outer}.data_ptr())")
         for outer, inner in self.sizevars.items():
+            arg_types.append(f"const {INDEX_TYPE}")
             arg_defs.append(f"const {INDEX_TYPE} {inner}")
-            call_args.append(f"c_long({outer})")
-        return arg_defs, call_args
+            # TODO: what is c_long corresponds to?
+            call_args.append(f"{outer}" if config.cpp_wrapper else f"c_long({outer})")
+        return arg_defs, arg_types, call_args
 
     def python_argdefs(self):
         arg_defs = []

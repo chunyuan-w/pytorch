@@ -1,6 +1,7 @@
 import contextlib
 import dataclasses
 import functools
+import os
 from pathlib import Path
 from typing import Dict, List
 
@@ -10,6 +11,7 @@ import torch
 from torch._prims_common import is_float_dtype
 
 from .. import codecache, config
+from ..codecache import cache_dir, code_hash, cpp_compile_command
 from ..utils import sympy_product, sympy_symbol
 from ..virtualized import ops, V
 from .common import (
@@ -566,7 +568,12 @@ class CppScheduling:
         kernel_group.finalize_kernel(kernel, scheduler)
 
     def flush(self):
-        self.kernel_group.codegen_define_and_call(V.graph.wrapper_code)
+        codegen_func = (
+            self.kernel_group.cpp_codegen_define_and_call
+            if config.cpp_wrapper
+            else self.kernel_group.codegen_define_and_call
+        )
+        codegen_func(V.graph.wrapper_code)
         self.kernel_group = KernelGroup()
 
 
@@ -594,7 +601,7 @@ class KernelGroup:
         if self.count == 0:
             return
 
-        arg_defs, call_args = self.args.cpp_argdefs()
+        arg_defs, _, call_args = self.args.cpp_argdefs()
         arg_defs = ",\n".ljust(25).join(arg_defs)
         code = BracesBuffer()
         code.writelines([cpp_prefix(), "" f'extern "C" void kernel({arg_defs})'])
@@ -618,6 +625,57 @@ class KernelGroup:
         # generate the code to call this
         wrapper.writeline(
             "{}({})".format(kernel_name, ", ".join(call_args)),
+        )
+
+    def cpp_codegen_define_and_call(self, wrapper):
+        self.stack.close()
+        if self.count == 0:
+            return
+
+        arg_defs, arg_types, call_args = self.args.cpp_argdefs()
+        arg_defs = ",\n".ljust(25).join(arg_defs)
+        arg_types = ",".join(arg_types)
+        code = BracesBuffer()
+        code.writelines([cpp_prefix(), "" f'extern "C" void kernel({arg_defs})'])
+        with code.indent():
+            for old, new in self.args.aliases():
+                code.writeline(f"auto {old} = {new};")
+            code.splice(self.loops_code)
+
+        codecache_def = IndentedBuffer()
+        codecache_def.writeline("async_compile.cpp('''")
+        codecache_def.splice(code)
+        codecache_def.writeline("''')")
+
+        kernel_name = wrapper.next_kernel_name()
+        codecache_str = codecache_def.getvalue()
+        # TODO(voz): Ostensibly, we should not need this. But there are cases where C++ codegen does
+        # not use BracesBuffer, so we have no good indicator of a C++ buffer atm.
+        codecache_str = codecache_str.replace("#pragma CMT", "//")
+        wrapper.define_kernel(kernel_name, codecache_str)
+
+        # TODO: this duplicates with CodeCache logic
+        ext = "so"
+        extra = cpp_compile_command("i", "o")
+        # TODO: \n is required to match with the CodeCache behavior
+        source_code = "\n" + code.getvalue()
+        basename = code_hash(source_code + extra)
+        subdir = os.path.join(cache_dir(), basename[1:3])
+        # TODO: use a func to load it during runtime
+        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
+
+        wrapper.writeline(
+            f'auto {kernel_name}_lib = dlopen("{kernel_path}", RTLD_NOW);'
+        )
+        wrapper.writeline(f"assert({kernel_name}_lib != nullptr);")
+        wrapper.writeline(f"void (*{kernel_name})({arg_types});")
+        wrapper.writeline(
+            f'*(void **) (&{kernel_name}) = dlsym({kernel_name}_lib, "kernel");'
+        )
+
+        # generate the code to call this
+        wrapper.writeline(
+            "{}({});".format(kernel_name, ", ".join(call_args)),
         )
 
 

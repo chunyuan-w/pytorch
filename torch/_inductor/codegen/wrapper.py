@@ -42,6 +42,17 @@ def make_buffer_reuse(old, new):
     )
 
 
+def make_cpp_buffer_reuse(old, new):
+    assert old.get_dtype() == new.get_dtype()
+    if old.get_size() == new.get_size() and old.get_stride() == new.get_stride():
+        return f"auto {new.get_name()} = {old.get_name()};"
+    return (
+        f"auto {new.get_name()} = at::as_strided({old.get_name()}, "
+        f"{V.graph.sizevars.codegen_shape_tuple(new.get_size())}, "
+        f"{V.graph.sizevars.codegen_shape_tuple(new.get_stride())});"
+    )
+
+
 def make_buffer_allocation(buffer):
     device = buffer.get_device()
     dtype = buffer.get_dtype()
@@ -52,6 +63,18 @@ def make_buffer_allocation(buffer):
         f"{V.graph.sizevars.codegen_shape_tuple(shape)}, "
         f"{V.graph.sizevars.codegen_shape_tuple(stride)}, "
         f"device='{device.type}', dtype={dtype})"
+    )
+
+
+def make_cpp_buffer_allocation(buffer):
+    device = buffer.get_device()
+    dtype = buffer.get_dtype()
+    shape = tuple(buffer.get_size())
+    stride = tuple(buffer.get_stride())
+    return (
+        f"auto {buffer.get_name()} = at::empty_strided("
+        f"{V.graph.sizevars.codegen_shape_tuple(shape)}, "
+        f"{V.graph.sizevars.codegen_shape_tuple(stride)}); "
     )
 
 
@@ -104,7 +127,11 @@ class AllocateLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        code.writeline(make_buffer_allocation(self.node))
+        code.writeline(
+            make_cpp_buffer_allocation(self.node)
+            if config.cpp_wrapper
+            else make_buffer_allocation(self.node)
+        )
 
 
 @dataclasses.dataclass
@@ -121,7 +148,7 @@ class FreeIfNotReusedLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        if not self.is_reused:
+        if not self.is_reused and not config.cpp_wrapper:
             code.writeline(f"del {self.node.get_name()}")
 
 
@@ -138,7 +165,12 @@ class ReuseLine(MemoryPlanningLine):
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
         assert self.reused_as.get_name() not in V.graph.removed_buffers
-        code.writeline(make_buffer_reuse(self.node, self.reused_as) + "  # reuse")
+        if config.cpp_wrapper:
+            code.writeline(
+                make_cpp_buffer_reuse(self.node, self.reused_as) + "  // reuse"
+            )
+        else:
+            code.writeline(make_buffer_reuse(self.node, self.reused_as) + "  # reuse")
 
 
 @dataclasses.dataclass
@@ -152,7 +184,8 @@ class FreeLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        code.writeline(f"del {self.node.get_name()}")
+        if not config.cpp_wrapper:
+            code.writeline(f"del {self.node.get_name()}")
 
 
 class NullLine(MemoryPlanningLine):
@@ -291,7 +324,8 @@ class WrapperCodeGen(CodeGen):
 
         # can be freed but not reused
         if isinstance(buffer, ir.InputBuffer):
-            self.writeline(f"del {name}")
+            if not config.cpp_wrapper:
+                self.writeline(f"del {name}")
             return
 
         if not self.can_reuse(buffer):
@@ -300,7 +334,8 @@ class WrapperCodeGen(CodeGen):
 
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
-            self.writeline(f"del {name}")
+            if not config.cpp_wrapper:
+                self.writeline(f"del {name}")
             return
 
         self.writeline(FreeIfNotReusedLine(buffer))
@@ -415,3 +450,124 @@ class WrapperCodeGen(CodeGen):
 
     def writeline(self, line):
         self.lines.append(line)
+
+
+class CppWrapperCodeGen(WrapperCodeGen):
+    """
+    The outer wrapper that calls the kernels.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._names_iter = count()
+        self.header = IndentedBuffer()
+        self.prefix = IndentedBuffer()
+        self.kernels = {}
+        self.lines = []
+        self.header.splice(
+            f"""
+                from ctypes import c_void_p, c_long
+                import torch
+                import random
+                from torch import empty_strided, as_strided, device
+                from {codecache.__name__} import AsyncCompile
+                aten = torch.ops.aten
+                async_compile = AsyncCompile()
+            """
+        )
+
+        self.prefix.splice(
+            """
+            async_compile.wait(globals())
+            del async_compile
+            from torch.utils.cpp_extension import load_inline
+            wrapper = (
+            '''
+            #include <dlfcn.h>
+            #include <assert.h>
+            """
+        )
+        with self.prefix.indent():
+            inp_len = len(V.graph.graph_inputs.keys())
+            if inp_len != 0:
+                inputs_args = [
+                    "at::Tensor " + input_key
+                    for input_key in V.graph.graph_inputs.keys()
+                ]
+                inputs_args = ", ".join(inputs_args) if inp_len != 1 else inputs_args[0]
+                # TODO: what if input or output is not tensor
+                output_refs = [x.codegen_reference() for x in V.graph.graph_outputs]
+                if output_refs:
+                    if len(output_refs) == 1:
+                        output_types = "at::Tensor"
+                    else:
+                        output_return_type = "at::Tensor"
+                        output_return_types = [output_return_type] * len(output_refs)
+                        output_return_types = ", ".join(output_return_types)
+                        output_types = f"std::tuple<{output_return_types}>"
+                else:
+                    output_types = "void"
+
+                self.prefix.writeline(f"{output_types} call({inputs_args}) {{")
+            for name in V.graph.randomness_seeds:
+                self.prefix.writeline(
+                    f"torch.randint(2**31, size=(), dtype=torch.int64, out={name})"
+                )
+            V.graph.sizevars.codegen(self.prefix, V.graph.graph_inputs)
+
+        for name, value in V.graph.constants.items():
+            # include a hash so our code cache gives different constants different files
+            hashed = hashlib.sha256(repr(value).encode("utf-8")).hexdigest()
+            self.header.writeline(f"{name} = None  # {hashed}")
+
+        self.allocated = set()
+        self.freed = set()
+        self.write_get_cuda_stream = functools.lru_cache(None)(
+            self.write_get_cuda_stream
+        )
+
+    @dynamo_utils.dynamo_timed
+    def generate(self):
+        result = IndentedBuffer()
+        result.splice(self.header)
+        result.splice(self.prefix)
+
+        out_names = V.graph.get_output_names()
+        with result.indent():
+            while (
+                self.lines
+                and isinstance(self.lines[-1], MemoryPlanningLine)
+                and self.lines[-1].node.name not in out_names
+            ):
+                # these lines will be pointless
+                self.lines.pop()
+
+            # codegen allocations in two passes
+            planning_state = MemoryPlanningState()
+            for i in range(len(self.lines)):
+                if isinstance(self.lines[i], MemoryPlanningLine):
+                    self.lines[i] = self.lines[i].plan(planning_state)
+
+            for line in self.lines:
+                if isinstance(line, MemoryPlanningLine):
+                    line.codegen(result)
+                else:
+                    result.writeline(line)
+            output_refs = [x.codegen_reference() for x in V.graph.graph_outputs]
+            if output_refs:
+                if len(output_refs) == 1:
+                    result.writeline("return " + output_refs[0] + "; }''' )")
+                else:
+                    result.writeline(
+                        "return std::make_tuple(" + ", ".join(output_refs) + "); }''' )"
+                    )
+            else:
+                result.writeline("return; }''' )")
+
+        result.writeline(
+            "module = load_inline(name='inline_extension', cpp_sources=[wrapper], functions=['call'], extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])"
+        )
+        result.writeline("call = module.call")
+        self.add_benchmark_harness(result)
+
+        return result.getvalue()

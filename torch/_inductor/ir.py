@@ -2428,8 +2428,16 @@ class ExternKernelOut(ExternKernel):
         if self.output_view:
             args.append(f"out={self.output_view.codegen_reference()}")
         else:
-            args.append(f"out={self.codegen_reference()}")
-        wrapper.writeline(f"{self.kernel}({', '.join(args)})")
+            if config.cpp_wrapper:
+                # TODO: is it true that out is always at position 0?
+                args.insert(0, self.codegen_reference())
+            else:
+                args.append(f"out={self.codegen_reference()}")
+        wrapper.writeline(
+            f"{self.kernel}({', '.join(args)});"
+            if config.cpp_wrapper
+            else f"{self.kernel}({', '.join(args)})"
+        )
 
     def __init__(self, layout, inputs, constant_args=(), kwargs=None, output_view=None):
         super().__init__(
@@ -2667,7 +2675,8 @@ class MatrixMultiplyAdd(ExternKernelOut):
 
 
 class BatchMatrixMultiply(ExternKernelOut):
-    kernel = "aten.bmm.out"
+    # TODO: make it general to all ExternKernel
+    kernel = "at::bmm_out" if config.cpp_wrapper else "aten.bmm.out"
 
     def __init__(self, layout, inputs, constant_args=(), output_view=None):
         super().__init__(layout, inputs, constant_args, output_view)
