@@ -2675,8 +2675,7 @@ class MatrixMultiplyAdd(ExternKernelOut):
 
 
 class BatchMatrixMultiply(ExternKernelOut):
-    # TODO: make it general to all ExternKernel
-    kernel = "at::bmm_out" if config.cpp_wrapper else "aten.bmm.out"
+    kernel = "aten.bmm.out"
 
     def __init__(self, layout, inputs, constant_args=(), output_view=None):
         super().__init__(layout, inputs, constant_args, output_view)

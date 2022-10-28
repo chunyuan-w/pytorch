@@ -84,6 +84,7 @@ class GraphLowering(torch.fx.Interpreter):
         self.randomness_seeds = []
         self.name_to_buffer = {}
         self.creation_time = time.time()
+        self.use_cpp_wrapper = config.cpp_wrapper
 
     def get_dtype(self, buffer_name):
         if buffer_name in self.constants:
@@ -131,6 +132,8 @@ class GraphLowering(torch.fx.Interpreter):
         return super().run(*args)
 
     def register_buffer(self, buffer: ir.ComputedBuffer):
+        if isinstance(buffer, ir.ExternKernel):
+            self.use_cpp_wrapper = False
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)
         self.name_to_buffer[name] = buffer
@@ -321,7 +324,9 @@ class GraphLowering(torch.fx.Interpreter):
 
     def codegen(self):
         from .scheduler import Scheduler
-
+        if config.cpp_wrapper:
+            if not self.use_cpp_wrapper:
+                config.cpp_wrapper = False
         self.wrapper_code = (
             CppWrapperCodeGen() if config.cpp_wrapper else WrapperCodeGen()
         )
