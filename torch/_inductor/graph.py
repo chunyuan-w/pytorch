@@ -134,6 +134,8 @@ class GraphLowering(torch.fx.Interpreter):
     def register_buffer(self, buffer: ir.ComputedBuffer):
         if isinstance(buffer, ir.ExternKernel):
             self.use_cpp_wrapper = False
+            if config.debug:
+                print("set use_cpp_wrapper to False due to ExternKernel")
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)
         self.name_to_buffer[name] = buffer
@@ -324,6 +326,13 @@ class GraphLowering(torch.fx.Interpreter):
 
     def codegen(self):
         from .scheduler import Scheduler
+        
+        for _, value in self.graph_inputs.items():
+            if value.get_dtype() != torch.float32:
+                self.use_cpp_wrapper = False
+                if config.debug:
+                    print("set use_cpp_wrapper to False since non-fp32 input exists")
+        
         if config.cpp_wrapper:
             if not self.use_cpp_wrapper:
                 config.cpp_wrapper = False
