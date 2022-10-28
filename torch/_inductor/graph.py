@@ -18,7 +18,7 @@ from .exc import (
     MissingOperatorWithDecomp,
     MissingOperatorWithoutDecomp,
 )
-from .ir import ComputedBuffer, Constant, FixedLayout, InputBuffer, TensorBox
+from .ir import ComputedBuffer, Constant, FixedLayout, InputBuffer, NoneAsConstantBuffer, TensorBox
 from .lowering import lowerings, make_fallback, needs_realized_inputs
 from .sizevars import SizeVarAllocator
 from .utils import dynamo_utils
@@ -283,6 +283,10 @@ class GraphLowering(torch.fx.Interpreter):
             for x in result
         ), result
         self.graph_outputs = [ir.ExternKernel.realize_input(x) for x in result]
+        for item in self.graph_outputs:
+            if isinstance(item, NoneAsConstantBuffer):
+                self.use_cpp_wrapper = False
+        
         for name, value in self.graph_inputs.items():
             value.realize()
             assert isinstance(value, TensorBox)
