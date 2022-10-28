@@ -18,7 +18,7 @@ from .exc import (
     MissingOperatorWithDecomp,
     MissingOperatorWithoutDecomp,
 )
-from .ir import Constant, FixedLayout, InputBuffer, TensorBox
+from .ir import ComputedBuffer, Constant, FixedLayout, InputBuffer, TensorBox
 from .lowering import lowerings, make_fallback, needs_realized_inputs
 from .sizevars import SizeVarAllocator
 from .utils import dynamo_utils
@@ -136,6 +136,11 @@ class GraphLowering(torch.fx.Interpreter):
             self.use_cpp_wrapper = False
             if config.debug:
                 print("set use_cpp_wrapper to False due to ExternKernel")
+        if isinstance(buffer, ComputedBuffer):
+            if buffer.data.get_reduction_type():
+                self.use_cpp_wrapper = False
+                if config.debug:
+                    print("set use_cpp_wrapper to False due to Reduction")                
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)
         self.name_to_buffer[name] = buffer
