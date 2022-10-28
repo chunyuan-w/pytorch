@@ -74,6 +74,7 @@ TABLE = {
         "inductor": "--inductor-settings --float32 -n50 --inductor",
         "ofi": "--backend=ofi",
         "ipex": "--backend=ipex --float32",
+        "onnxrt_cpu": "--backend=onnxrt_cpu",
     },
 }
 
