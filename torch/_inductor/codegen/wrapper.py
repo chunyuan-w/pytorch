@@ -498,29 +498,34 @@ class CppWrapperCodeGen(WrapperCodeGen):
         )
         with self.prefix.indent():
             inp_len = len(V.graph.graph_inputs.keys())
-            # TODO: what if inp_len == 0
+            # TODO: what if input or output is not tensor
+            output_refs = [x.codegen_reference() for x in V.graph.graph_outputs]
+            if output_refs:
+                if len(output_refs) == 1:
+                    output_types = "at::Tensor"
+                else:
+                    output_return_type = "at::Tensor"
+                    output_return_types = [output_return_type] * len(output_refs)
+                    output_return_types = ", ".join(output_return_types)
+                    output_types = f"std::tuple<{output_return_types}>"
+            else:
+                output_types = "void"            
+            
             if inp_len != 0:
                 inputs_args = [
                     "at::Tensor " + input_key
                     for input_key in V.graph.graph_inputs.keys()
                 ]
                 inputs_args = ", ".join(inputs_args) if inp_len != 1 else inputs_args[0]
-                # TODO: what if input or output is not tensor
-                output_refs = [x.codegen_reference() for x in V.graph.graph_outputs]
-                if output_refs:
-                    if len(output_refs) == 1:
-                        output_types = "at::Tensor"
-                    else:
-                        output_return_type = "at::Tensor"
-                        output_return_types = [output_return_type] * len(output_refs)
-                        output_return_types = ", ".join(output_return_types)
-                        output_types = f"std::tuple<{output_return_types}>"
-                else:
-                    output_types = "void"
+
 
                 self.prefix.writeline(
                     f"{output_types} call_{self._call_func_id}({inputs_args}) {{"
                 )
+            else:
+                self.prefix.writeline(
+                    f"{output_types} call_{self._call_func_id}() {{"
+                )                
             for name in V.graph.randomness_seeds:
                 self.prefix.writeline(
                     f"torch.randint(2**31, size=(), dtype=torch.int64, out={name})"
