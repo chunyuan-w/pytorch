@@ -544,7 +544,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
             else:
                 self.prefix.writeline(
-                    f"{output_types} call_{self._call_func_id}() {{"
+                    f"{output_types} call_{self._call_func_id}(std::tuple<> args) {{"
                 )                
             for name in V.graph.randomness_seeds:
                 self.prefix.writeline(
