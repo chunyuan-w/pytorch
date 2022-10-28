@@ -337,6 +337,8 @@ class GraphLowering(torch.fx.Interpreter):
                 self.use_cpp_wrapper = False
                 if config.debug:
                     print("set use_cpp_wrapper to False since non-fp32 input exists")
+        if self.constants:
+            self.use_cpp_wrapper = False
         config.cpp_wrapper_valid = False
         if config.cpp_wrapper and self.use_cpp_wrapper:
             config.cpp_wrapper_valid = True
