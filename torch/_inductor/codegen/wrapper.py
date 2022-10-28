@@ -9,8 +9,8 @@ from .. import codecache, config, ir
 from ..utils import dynamo_utils, has_triton, sympy_dot, sympy_product
 from ..virtualized import V
 from .common import CodeGen, DeferredLine, IndentedBuffer, Kernel
-from .triton import texpr
 from .cpp import DTYPE_TO_ATEN
+from .triton import texpr
 
 pexpr = texpr
 
@@ -315,7 +315,10 @@ class WrapperCodeGen(CodeGen):
                 V.graph.unaligned_buffers.add(name)
             self.codegen_allocation(layout.view.data)
             allocation = DeferredLine(
-                name, f"{name} = {layout.view.codegen_reference()}  # alias"
+                name,
+                f"auto {name} = {layout.view.codegen_reference()};  // alias"
+                if config.cpp_wrapper
+                else f"{name} = {layout.view.codegen_reference()}  # alias",
             )
             self.writeline(allocation)
             return
@@ -459,7 +462,9 @@ class CppWrapperCodeGen(WrapperCodeGen):
     """
     The outer wrapper that calls the kernels.
     """
+
     call_func_id = count()
+
     def __init__(self):
         super().__init__()
         self._names_iter = count()
@@ -513,7 +518,9 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 else:
                     output_types = "void"
 
-                self.prefix.writeline(f"{output_types} call_{self._call_func_id}({inputs_args}) {{")
+                self.prefix.writeline(
+                    f"{output_types} call_{self._call_func_id}({inputs_args}) {{"
+                )
             for name in V.graph.randomness_seeds:
                 self.prefix.writeline(
                     f"torch.randint(2**31, size=(), dtype=torch.int64, out={name})"
@@ -568,7 +575,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     )
             else:
                 result.writeline("return; }''' )")
-
+        # TODO: add id to name as well?
         result.writeline(
             f"""
 module = load_inline(
