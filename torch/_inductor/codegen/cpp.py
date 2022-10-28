@@ -47,7 +47,7 @@ DTYPE_TO_ATEN = {
     torch.int8: "at::ScalarType::Char",
     torch.uint8: "at::ScalarType::Byte",
     torch.bool: "at::ScalarType::Bool",
-    torch.bfloat16: "at::ScalarType::BFloat16",    
+    torch.bfloat16: "at::ScalarType::BFloat16",
 }
 
 INDEX_TYPE = "long"

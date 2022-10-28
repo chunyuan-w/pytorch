@@ -528,7 +528,10 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 )                
             for name in V.graph.randomness_seeds:
                 self.prefix.writeline(
-                    f"torch.randint(2**31, size=(), dtype=torch.int64, out={name})"
+                    f"at::Tensor {name};"
+                )
+                self.prefix.writeline(
+                    f"{name} = at::randint(std::pow(2, 31), {{}}, at::ScalarType::Long);"
                 )
             V.graph.sizevars.codegen(self.prefix, V.graph.graph_inputs)
 
