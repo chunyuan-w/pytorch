@@ -512,16 +512,45 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 output_types = "void"            
             
             if inp_len != 0:
-                inputs_args = [
-                    "at::Tensor " + input_key
-                    for input_key in V.graph.graph_inputs.keys()
-                ]
-                inputs_args = ", ".join(inputs_args) if inp_len != 1 else inputs_args[0]
+                # inputs_args = [
+                #     "at::Tensor " + input_key
+                #     for input_key in V.graph.graph_inputs.keys()
+                # ]
+                # inputs_args = ", ".join(inputs_args) if inp_len != 1 else inputs_args[0]
 
 
-                self.prefix.writeline(
-                    f"{output_types} call_{self._call_func_id}({inputs_args}) {{"
-                )
+                # self.prefix.writeline(
+                #     f"{output_types} call_{self._call_func_id}({inputs_args}) {{"
+                # )
+
+
+
+
+                if inp_len == 1:
+                    input_keys = [input_key for input_key in V.graph.graph_inputs.keys()]
+                    inputs_args = "at::Tensor " + input_keys[0]
+                    self.prefix.writeline(
+                        f"{output_types} call_{self._call_func_id}({inputs_args}) {{"
+                    )
+                else:
+                    inputs_args = ["at::Tensor"] * len(V.graph.graph_inputs.keys())
+                    inputs_args = ", ".join(inputs_args) 
+                    inputs_args = f"std::tuple<{inputs_args}>"
+
+                    self.prefix.writeline(
+                        f"{output_types} call_{self._call_func_id}({inputs_args} args) {{"
+                    )
+                    inputs_keys_str = ", ".join(V.graph.graph_inputs.keys())
+                    self.prefix.writeline(
+                        f"at::Tensor {inputs_keys_str};"
+                    )
+                    self.prefix.writeline(
+                        f"std::tie({inputs_keys_str}) = args;"
+                    )
+
+
+
+
             else:
                 self.prefix.writeline(
                     f"{output_types} call_{self._call_func_id}() {{"
