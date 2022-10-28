@@ -448,7 +448,7 @@ class SizeVarAllocator(object):
         def sizeof(name):
             code.writeline(
                 f"auto {name}_size = {name}.sizes();"
-                if config.cpp_wrapper
+                if config.cpp_wrapper_valid
                 else f"{name}_size = {name}.size()"
             )
             return f"{name}_size"
@@ -457,7 +457,7 @@ class SizeVarAllocator(object):
         def strideof(name):
             code.writeline(
                 f"auto {name}_stride = {name}.strides();"
-                if config.cpp_wrapper
+                if config.cpp_wrapper_valid
                 else f"{name}_stride = {name}.stride()"
             )
             return f"{name}_stride"
@@ -475,7 +475,7 @@ class SizeVarAllocator(object):
                     added.add(shape)
                     code.writeline(
                         f"auto {shape} = {sizeof(name)}[{dim}];"
-                        if config.cpp_wrapper
+                        if config.cpp_wrapper_valid
                         else f"{shape} = {sizeof(name)}[{dim}]"
                     )
                 elif isinstance(shape, sympy.Symbol):
@@ -489,7 +489,7 @@ class SizeVarAllocator(object):
                     needed.remove(shape)
                     code.writeline(
                         f"auto {shape} = {strideof(name)}[{dim}];"
-                        if config.cpp_wrapper
+                        if config.cpp_wrapper_valid
                         else f"{shape} = {strideof(name)}[{dim}]"
                     )
                 elif isinstance(shape, sympy.Symbol):
@@ -504,11 +504,11 @@ class SizeVarAllocator(object):
     def codegen_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
         parts = list(map(self.codegen_sizevar, shape))
         if len(parts) == 0:
-            return "{}" if config.cpp_wrapper else "()"
+            return "{}" if config.cpp_wrapper_valid else "()"
         if len(parts) == 1:
-            return f"{{{parts[0]}, }}" if config.cpp_wrapper else f"({parts[0]}, )"
+            return f"{{{parts[0]}, }}" if config.cpp_wrapper_valid else f"({parts[0]}, )"
         return (
-            f"{{{', '.join(parts)}}}" if config.cpp_wrapper else f"({', '.join(parts)})"
+            f"{{{', '.join(parts)}}}" if config.cpp_wrapper_valid else f"({', '.join(parts)})"
         )
 
 

@@ -337,13 +337,12 @@ class GraphLowering(torch.fx.Interpreter):
                 self.use_cpp_wrapper = False
                 if config.debug:
                     print("set use_cpp_wrapper to False since non-fp32 input exists")
-        
-        if config.cpp_wrapper:
-            if not self.use_cpp_wrapper:
-                config.cpp_wrapper = False
-        self.wrapper_code = (
-            CppWrapperCodeGen() if config.cpp_wrapper else WrapperCodeGen()
-        )
+        config.cpp_wrapper_valid = False
+        if config.cpp_wrapper and self.use_cpp_wrapper:
+            config.cpp_wrapper_valid = True
+            self.wrapper_code = CppWrapperCodeGen()
+        else:
+            self.wrapper_code = WrapperCodeGen()
         self.scheduler = Scheduler(self.buffers)
         self.scheduler.codegen()
         return self.wrapper_code.generate()

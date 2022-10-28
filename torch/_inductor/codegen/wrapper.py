@@ -132,7 +132,7 @@ class AllocateLine(MemoryPlanningLine):
         assert self.node.get_name() not in V.graph.removed_buffers
         code.writeline(
             make_cpp_buffer_allocation(self.node)
-            if config.cpp_wrapper
+            if config.cpp_wrapper_valid
             else make_buffer_allocation(self.node)
         )
 
@@ -151,7 +151,7 @@ class FreeIfNotReusedLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        if not self.is_reused and not config.cpp_wrapper:
+        if not self.is_reused and not config.cpp_wrapper_valid:
             code.writeline(f"del {self.node.get_name()}")
 
 
@@ -168,7 +168,7 @@ class ReuseLine(MemoryPlanningLine):
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
         assert self.reused_as.get_name() not in V.graph.removed_buffers
-        if config.cpp_wrapper:
+        if config.cpp_wrapper_valid:
             code.writeline(
                 make_cpp_buffer_reuse(self.node, self.reused_as) + "  // reuse"
             )
@@ -187,7 +187,7 @@ class FreeLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        if not config.cpp_wrapper:
+        if not config.cpp_wrapper_valid:
             code.writeline(f"del {self.node.get_name()}")
 
 
@@ -317,7 +317,7 @@ class WrapperCodeGen(CodeGen):
             allocation = DeferredLine(
                 name,
                 f"auto {name} = {layout.view.codegen_reference()};  // alias"
-                if config.cpp_wrapper
+                if config.cpp_wrapper_valid
                 else f"{name} = {layout.view.codegen_reference()}  # alias",
             )
             self.writeline(allocation)
@@ -330,7 +330,7 @@ class WrapperCodeGen(CodeGen):
 
         # can be freed but not reused
         if isinstance(buffer, ir.InputBuffer):
-            if not config.cpp_wrapper:
+            if not config.cpp_wrapper_valid:
                 self.writeline(f"del {name}")
             return
 
@@ -340,7 +340,7 @@ class WrapperCodeGen(CodeGen):
 
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
-            if not config.cpp_wrapper:
+            if not config.cpp_wrapper_valid:
                 self.writeline(f"del {name}")
             return
 

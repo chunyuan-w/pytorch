@@ -2428,14 +2428,14 @@ class ExternKernelOut(ExternKernel):
         if self.output_view:
             args.append(f"out={self.output_view.codegen_reference()}")
         else:
-            if config.cpp_wrapper:
+            if config.cpp_wrapper_valid:
                 # TODO: is it true that out is always at position 0?
                 args.insert(0, self.codegen_reference())
             else:
                 args.append(f"out={self.codegen_reference()}")
         wrapper.writeline(
             f"{self.kernel}({', '.join(args)});"
-            if config.cpp_wrapper
+            if config.cpp_wrapper_valid
             else f"{self.kernel}({', '.join(args)})"
         )
 
