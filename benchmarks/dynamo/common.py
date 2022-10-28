@@ -401,6 +401,8 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
     pvalue = ttest_ind(timings[:, 0], timings[:, 1]).pvalue
     median = np.median(timings, axis=0)
     speedup = median[0] / median[1]
+    print(current_name, "Time cost")
+    print("eager: {}, {}: {}".format(median[0], args.backend if args.backend is not None else "inductor", median[1]))
     if args.dump_raw_metrics:
         np.save(
             f"{output_filename[:-4]}-raw_timings-{current_name}-{current_device}.npy",
@@ -1689,7 +1691,13 @@ def main(runner, original_dir=None):
     elif args.nothing:
         pass
     elif args.backend:
-        optimize_ctx = torch._dynamo.optimize(args.backend, nopython=args.nopython)
+        if args.backend == "ipex":
+            if args.float32:
+                optimize_ctx = torch._dynamo.optimize(backends.ipex_fp32)
+            elif args.amp:
+                optimize_ctx = torch._dynamo.optimize(backends.ipex_bf16)
+        else:
+            optimize_ctx = torch._dynamo.optimize(args.backend, nopython=args.nopython)
         experiment = speedup_experiment
         if args.accuracy:
             output_filename = f"accuracy_{args.backend}.csv"
