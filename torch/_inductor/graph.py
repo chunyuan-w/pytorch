@@ -18,7 +18,7 @@ from .exc import (
     MissingOperatorWithDecomp,
     MissingOperatorWithoutDecomp,
 )
-from .ir import ComputedBuffer, Constant, FixedLayout, InputBuffer, NoneAsConstantBuffer, TensorBox
+from .ir import Constant, FixedLayout, InputBuffer, TensorBox
 from .lowering import lowerings, make_fallback, needs_realized_inputs
 from .sizevars import CppSizeVarAllocator, SizeVarAllocator
 from .utils import dynamo_utils
@@ -131,16 +131,20 @@ class GraphLowering(torch.fx.Interpreter):
     def run(self, *args):
         return super().run(*args)
 
-    def register_buffer(self, buffer: ir.ComputedBuffer):
+    def validate_buffer_for_cpp_wrapper(self, buffer: ir.ComputedBuffer):
         if isinstance(buffer, ir.ExternKernel):
             self.use_cpp_wrapper = False
             if config.debug:
                 print("set use_cpp_wrapper to False due to ExternKernel")
-        if isinstance(buffer, ComputedBuffer):
+        if isinstance(buffer, ir.ComputedBuffer):
             if buffer.data.get_reduction_type():
                 self.use_cpp_wrapper = False
                 if config.debug:
-                    print("set use_cpp_wrapper to False due to Reduction")                
+                    print("set use_cpp_wrapper to False due to Reduction")
+
+    def register_buffer(self, buffer: ir.ComputedBuffer):
+        self.validate_buffer_for_cpp_wrapper(buffer)
+               
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)
         self.name_to_buffer[name] = buffer
@@ -273,6 +277,13 @@ class GraphLowering(torch.fx.Interpreter):
     def call_method(self, target, args, kwargs):
         raise AssertionError()
 
+    def validate_output_for_cpp_buffer(self):
+        for item in self.graph_outputs:
+            if isinstance(item, ir.NoneAsConstantBuffer):
+                self.use_cpp_wrapper = False
+                if config.debug:
+                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")        
+
     def output(self, target, args, kwargs):
         result = super().output(target, args, kwargs)
         assert isinstance(result, (tuple, list)), type(result)
@@ -283,13 +294,7 @@ class GraphLowering(torch.fx.Interpreter):
             for x in result
         ), result
         self.graph_outputs = [ir.ExternKernel.realize_input(x) for x in result]
-        for item in self.graph_outputs:
-            if isinstance(item, NoneAsConstantBuffer):
-                self.use_cpp_wrapper = False
-                if config.debug:
-                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")
-
-        
+        self.validate_output_for_cpp_buffer()
         for name, value in self.graph_inputs.items():
             value.realize()
             assert isinstance(value, TensorBox)
@@ -336,18 +341,24 @@ class GraphLowering(torch.fx.Interpreter):
                 result.realize_hint()
         return result
 
-    def codegen(self):
-        from .scheduler import Scheduler
-        
+    def validate_input_for_cpp_buffer(self):
         for _, value in self.graph_inputs.items():
             if value.get_dtype() != torch.float32:
                 self.use_cpp_wrapper = False
                 if config.debug:
                     print("set use_cpp_wrapper to False since non-fp32 input exists")
+
+    def validate_constant_for_cpp_buffer(self):
         if self.constants:
             self.use_cpp_wrapper = False
             if config.debug:
-                print("set use_cpp_wrapper to False due to constants")
+                print("set use_cpp_wrapper to False due to constants")        
+
+    def codegen(self):
+        from .scheduler import Scheduler
+        
+        self.validate_input_for_cpp_buffer()
+        self.validate_constant_for_cpp_buffer()
 
         config.cpp_wrapper_valid = False
         if config.cpp_wrapper and self.use_cpp_wrapper:
