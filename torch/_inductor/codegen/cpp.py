@@ -582,11 +582,11 @@ class CppScheduling:
         kernel_group.finalize_kernel(kernel, scheduler)
 
     def flush(self):
-        codegen_func = (
-            self.kernel_group.cpp_codegen_define_and_call
-            if config.cpp_wrapper_valid
-            else self.kernel_group.codegen_define_and_call
-        )
+        from .wrapper import CppWrapperCodeGen
+        if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
+            codegen_func = self.kernel_group.cpp_codegen_define_and_call
+        else:
+            codegen_func = self.kernel_group.codegen_define_and_call
         codegen_func(V.graph.wrapper_code)
         self.kernel_group = KernelGroup()
 
