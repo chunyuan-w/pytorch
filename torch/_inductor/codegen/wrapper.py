@@ -171,13 +171,18 @@ class ReuseLine(MemoryPlanningLine):
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
         assert self.reused_as.get_name() not in V.graph.removed_buffers
-        if config.cpp_wrapper_valid:
-            code.writeline(
-                make_cpp_buffer_reuse(self.node, self.reused_as) + "  // reuse"
-            )
-        else:
-            code.writeline(make_buffer_reuse(self.node, self.reused_as) + "  # reuse")
+        code.writeline(make_buffer_reuse(self.node, self.reused_as) + "  # reuse")
 
+
+@dataclasses.dataclass
+class CppReuseLine(ReuseLine):
+    node: ir.Buffer
+    reused_as: ir.Buffer
+
+    def codegen(self, code: IndentedBuffer):
+        assert self.node.get_name() not in V.graph.removed_buffers
+        assert self.reused_as.get_name() not in V.graph.removed_buffers
+        code.writeline(make_cpp_buffer_reuse(self.node, self.reused_as) + "  // reuse")
 
 @dataclasses.dataclass
 class FreeLine(MemoryPlanningLine):
@@ -612,6 +617,13 @@ class CppWrapperCodeGen(WrapperCodeGen):
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
             return
+
+    def codegen_inplace_reuse(self, input_buffer, output_buffer):
+        assert buffer_reuse_key(input_buffer) == buffer_reuse_key(output_buffer)
+        self.codegen_allocation(input_buffer)
+        self.freed.add(input_buffer.get_name())
+        self.allocated.add(output_buffer.get_name())
+        self.writeline(CppReuseLine(input_buffer, output_buffer))
 
     @dynamo_utils.dynamo_timed
     def generate(self):
