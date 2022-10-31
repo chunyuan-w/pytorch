@@ -154,7 +154,7 @@ class FreeIfNotReusedLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        if not self.is_reused and not config.cpp_wrapper_valid:
+        if not self.is_reused:
             code.writeline(f"del {self.node.get_name()}")
 
 
@@ -612,8 +612,6 @@ class CppWrapperCodeGen(WrapperCodeGen):
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
             return
-
-        self.writeline(FreeIfNotReusedLine(buffer))
 
     @dynamo_utils.dynamo_timed
     def generate(self):
