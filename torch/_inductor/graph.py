@@ -354,12 +354,7 @@ class GraphLowering(torch.fx.Interpreter):
             if config.debug:
                 print("set use_cpp_wrapper to False due to constants")        
 
-    def codegen(self):
-        from .scheduler import Scheduler
-        
-        self.validate_input_for_cpp_buffer()
-        self.validate_constant_for_cpp_buffer()
-
+    def get_wrapper(self):
         config.cpp_wrapper_valid = False
         if config.cpp_wrapper and self.use_cpp_wrapper:
             config.cpp_wrapper_valid = True
@@ -367,6 +362,14 @@ class GraphLowering(torch.fx.Interpreter):
             self.sizevars = CppSizeVarAllocator(self._shape_env)
         else:
             self.wrapper_code = WrapperCodeGen()
+
+    def codegen(self):
+        from .scheduler import Scheduler
+        
+        self.validate_input_for_cpp_buffer()
+        self.validate_constant_for_cpp_buffer()
+        self.get_wrapper()
+
         self.scheduler = Scheduler(self.buffers)
         self.scheduler.codegen()
         return self.wrapper_code.generate()
