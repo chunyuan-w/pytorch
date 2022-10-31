@@ -330,8 +330,7 @@ class WrapperCodeGen(CodeGen):
 
         # can be freed but not reused
         if isinstance(buffer, ir.InputBuffer):
-            if not config.cpp_wrapper_valid:
-                self.writeline(f"del {name}")
+            self.writeline(f"del {name}")
             return
 
         if not self.can_reuse(buffer):
@@ -340,8 +339,7 @@ class WrapperCodeGen(CodeGen):
 
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
-            if not config.cpp_wrapper_valid:
-                self.writeline(f"del {name}")
+            self.writeline(f"del {name}")
             return
 
         self.writeline(FreeIfNotReusedLine(buffer))
@@ -565,6 +563,23 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.write_get_cuda_stream = functools.lru_cache(None)(
             self.write_get_cuda_stream
         )
+
+    def codegen_free(self, buffer):
+        name = buffer.get_name()
+
+        # can be freed but not reused
+        if isinstance(buffer, ir.InputBuffer):
+            return
+
+        if not self.can_reuse(buffer):
+            return
+        self.freed.add(name)
+
+        layout = buffer.get_layout()
+        if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
+            return
+
+        self.writeline(FreeIfNotReusedLine(buffer))
 
     @dynamo_utils.dynamo_timed
     def generate(self):
