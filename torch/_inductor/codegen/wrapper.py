@@ -195,8 +195,7 @@ class FreeLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        if not config.cpp_wrapper_valid:
-            code.writeline(f"del {self.node.get_name()}")
+        code.writeline(f"del {self.node.get_name()}")
 
 
 class NullLine(MemoryPlanningLine):
@@ -323,10 +322,7 @@ class WrapperCodeGen(CodeGen):
                 V.graph.unaligned_buffers.add(name)
             self.codegen_allocation(layout.view.data)
             allocation = DeferredLine(
-                name,
-                f"auto {name} = {layout.view.codegen_reference()};  // alias"
-                if config.cpp_wrapper_valid
-                else f"{name} = {layout.view.codegen_reference()}  # alias",
+                name, f"{name} = {layout.view.codegen_reference()}  # alias"
             )
             self.writeline(allocation)
             return
@@ -593,10 +589,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 V.graph.unaligned_buffers.add(name)
             self.codegen_allocation(layout.view.data)
             allocation = DeferredLine(
-                name,
-                f"auto {name} = {layout.view.codegen_reference()};  // alias"
-                if config.cpp_wrapper_valid
-                else f"{name} = {layout.view.codegen_reference()}  # alias",
+                name, f"auto {name} = {layout.view.codegen_reference()};  // alias"
             )
             self.writeline(allocation)
             return
