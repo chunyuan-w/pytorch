@@ -639,13 +639,13 @@ class CppWrapperCodeGen(WrapperCodeGen):
             else:
                 result.writeline("return; }''' )")
         # TODO: add id to name as well?
-        result.writeline(
+        result.splice(
             f"""
-module = load_inline(
-    name='inline_extension',
-    cpp_sources=[wrapper],
-    functions=['call_{self._call_func_id}'],
-    extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])
+            module = load_inline(
+                name='inline_extension',
+                cpp_sources=[wrapper],
+                functions=['call_{self._call_func_id}'],
+                extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])
             """
         )
         # Wrap the func to support result._boxed_call = True
