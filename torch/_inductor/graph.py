@@ -20,7 +20,7 @@ from .exc import (
 )
 from .ir import ComputedBuffer, Constant, FixedLayout, InputBuffer, NoneAsConstantBuffer, TensorBox
 from .lowering import lowerings, make_fallback, needs_realized_inputs
-from .sizevars import SizeVarAllocator
+from .sizevars import CppSizeVarAllocator, SizeVarAllocator
 from .utils import dynamo_utils
 from .virtualized import V
 
@@ -353,6 +353,7 @@ class GraphLowering(torch.fx.Interpreter):
         if config.cpp_wrapper and self.use_cpp_wrapper:
             config.cpp_wrapper_valid = True
             self.wrapper_code = CppWrapperCodeGen()
+            self.sizevars = CppSizeVarAllocator(self._shape_env)
         else:
             self.wrapper_code = WrapperCodeGen()
         self.scheduler = Scheduler(self.buffers)
