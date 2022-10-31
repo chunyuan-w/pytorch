@@ -641,6 +641,17 @@ class KernelGroup:
             "{}({})".format(kernel_name, ", ".join(call_args)),
         )
 
+    def get_kernel_path(self, code):
+        # TODO: this duplicates with CodeCache logic
+        ext = "so"
+        extra = cpp_compile_command("i", "o")
+        # \n is required to match with the CodeCache behavior
+        source_code = "\n" + code.getvalue()
+        basename = code_hash(source_code + extra)
+        subdir = os.path.join(cache_dir(), basename[1:3])
+        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
+        return kernel_path
+
     def cpp_codegen_define_and_call(self, wrapper):
         self.stack.close()
         if self.count == 0:
@@ -668,15 +679,7 @@ class KernelGroup:
         codecache_str = codecache_str.replace("#pragma CMT", "//")
         wrapper.define_kernel(kernel_name, codecache_str)
 
-        # TODO: this duplicates with CodeCache logic
-        ext = "so"
-        extra = cpp_compile_command("i", "o")
-        # TODO: \n is required to match with the CodeCache behavior
-        source_code = "\n" + code.getvalue()
-        basename = code_hash(source_code + extra)
-        subdir = os.path.join(cache_dir(), basename[1:3])
-        # TODO: use a func to load it during runtime
-        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
+        kernel_path = self.get_kernel_path(code)
 
         wrapper.writeline(
             f'auto {kernel_name}_lib = dlopen("{kernel_path}", RTLD_NOW);'
