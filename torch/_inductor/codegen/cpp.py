@@ -615,7 +615,7 @@ class KernelGroup:
         if self.count == 0:
             return
 
-        arg_defs, _, call_args = self.args.cpp_argdefs()
+        arg_defs, call_args = self.args.cpp_argdefs()
         arg_defs = ",\n".ljust(25).join(arg_defs)
         code = BracesBuffer()
         code.writelines([cpp_prefix(), "" f'extern "C" void kernel({arg_defs})'])
@@ -646,7 +646,7 @@ class KernelGroup:
         if self.count == 0:
             return
 
-        arg_defs, arg_types, call_args = self.args.cpp_argdefs()
+        arg_defs, arg_types, call_args = self.args.cpp_argdefs_for_cpp_wrapper()
         arg_defs = ",\n".ljust(25).join(arg_defs)
         arg_types = ",".join(arg_types)
         code = BracesBuffer()
