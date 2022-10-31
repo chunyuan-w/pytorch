@@ -494,6 +494,9 @@ class SizeVarAllocator(object):
         return f"({', '.join(parts)})"
 
 
+    def codegen_python_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
+        return self.codegen_shape_tuple(shape)
+
 def join_dimensions(expr: Expr) -> Expr:
     from .ir import ModularIndexing
 
@@ -629,6 +632,9 @@ class CppSizeVarAllocator(SizeVarAllocator):
             f"{{{', '.join(parts)}}}" if config.cpp_wrapper_valid else f"({', '.join(parts)})"
         )
 
+
+    def codegen_python_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
+        return super().codegen_shape_tuple(shape)
 
 class SimplifyIndexing(V.WrapperHandler):  # type: ignore[name-defined]
     """
