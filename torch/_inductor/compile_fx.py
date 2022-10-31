@@ -84,14 +84,6 @@ def _step_logger():
     return dynamo_logging.get_step_logger(log)
 
 
-def _set_boxed_func(f):
-    def g(args):
-        return f(args)
-
-    g._boxed_call = True
-    return g
-
-
 @DebugContext.wrap
 @no_dispatch()
 def compile_fx_inner(
@@ -164,10 +156,7 @@ def compile_fx_inner(
     )
 
     # aot autograd needs to know to pass in inputs as a list
-    if not config.cpp_wrapper_valid:
-        result._boxed_call = True
-    else:
-        result = _set_boxed_func(result)
+    result._boxed_call = True
     return result
 
 

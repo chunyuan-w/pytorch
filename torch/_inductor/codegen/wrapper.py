@@ -648,7 +648,18 @@ module = load_inline(
     extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])
             """
         )
-        result.writeline(f"call = module.call_{self._call_func_id}")
+        # Wrap the func to support result._boxed_call = True
+        result.splice(
+            f"""
+            def _wrap_func(f):
+                def g(args):
+                    return f(args)
+                return g
+            call = _wrap_func(module.call_{self._call_func_id})
+            """
+        )
+
+
         self.add_benchmark_harness(result)
 
         return result.getvalue()
