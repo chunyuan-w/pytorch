@@ -141,6 +141,15 @@ def parse_args():
         "--threads", "-t", type=int, default=None, help="number of threads to use for eager"
     )
     parser.add_argument(
+        "--start_core", "-s", type=int, default=None, help="start core idx"
+    )
+    parser.add_argument(
+        "--end_core", "-e", type=int, default=None, help="end core idx"
+    )
+    parser.add_argument(
+        "--membind", "-m", type=int, default=0, help="membind"
+    )
+    parser.add_argument(
         "--quick", action="store_true", help="Just runs one model. Helps in debugging"
     )
     parser.add_argument(
@@ -240,7 +249,7 @@ def get_skip_tests(suite):
 
 def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
     mode = get_mode(args)
-    with open("run.sh", "w") as runfile:
+    with open("run_{}.sh".format(suites[0]+"_"+compilers[0]), "w") as runfile:
         lines = []
 
         lines.append("# Setup the output directory")
@@ -253,14 +262,15 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
             if args.batch_size is None:
                 lines.append("end_core=`expr $CORES - 1`")
             else:
-                lines.append("end_core=1")
+                lines.append("start_core={}".format(args.start_core))
+                lines.append("end_core={}".format(args.end_core))
 
         for testing in ["performance", "accuracy"]:
             for iter in itertools.product(suites, devices, dtypes):
                 suite, device, dtype = iter
                 numactl = ""
                 if device == "cpu":
-                    numactl = "numactl -C $start_core-$end_core --membind=0"
+                    numactl = "numactl -C $start_core-$end_core --membind={}".format(args.membind)
                 lines.append(
                     f"# Commands for {suite} for device={device}, dtype={dtype} for {mode} and for {testing} testing"
                 )
@@ -932,7 +942,7 @@ if __name__ == "__main__":
         generate_commands(args, dtypes, suites, devices, compilers, output_dir)
         # TODO - Do we need to worry about segfaults
         try:
-            os.system("bash run.sh")
+            os.system("bash run_{}.sh".format(suites[0]+"_"+compilers[0]))
         except Exception as e:
             print(
                 "Running commands failed. Please run manually (bash run.sh) and inspect the errors."
