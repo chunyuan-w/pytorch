@@ -258,7 +258,7 @@ def fresh_inductor_cache(cache_entries=None):
                 yield
                 if isinstance(cache_entries, dict):
                     assert len(cache_entries) == 0, "expected empty cache_entries dict"
-                    try:
+                    if os.path.exists(triton_cache_dir):
                         files = os.listdir(triton_cache_dir)
                         cache_entries.update(
                             {
@@ -267,6 +267,3 @@ def fresh_inductor_cache(cache_entries=None):
                                 if ".lock" not in f
                             }
                         )
-                    except FileNotFoundError as e:
-                        print("Warning: No such file {}".format(triton_cache_dir))
-                        pass
