@@ -9,7 +9,7 @@ from sympy import Expr
 
 from torch.fx.experimental.symbolic_shapes import ShapeEnv
 
-from . import config, ir
+from . import ir
 from .codegen.common import IndentedBuffer
 from .utils import sympy_subs, sympy_symbol, VarRanges
 from .virtualized import V
@@ -572,20 +572,12 @@ class CppSizeVarAllocator(SizeVarAllocator):
 
         @functools.lru_cache(None)
         def sizeof(name):
-            code.writeline(
-                f"auto {name}_size = {name}.sizes();"
-                if config.cpp_wrapper_valid
-                else f"{name}_size = {name}.size()"
-            )
+            code.writeline(f"auto {name}_size = {name}.sizes();")
             return f"{name}_size"
 
         @functools.lru_cache(None)
         def strideof(name):
-            code.writeline(
-                f"auto {name}_stride = {name}.strides();"
-                if config.cpp_wrapper_valid
-                else f"{name}_stride = {name}.stride()"
-            )
+            code.writeline(f"auto {name}_stride = {name}.strides();")
             return f"{name}_stride"
 
         # Assign all symbolic shapes needed to local variables
@@ -599,11 +591,7 @@ class CppSizeVarAllocator(SizeVarAllocator):
                 if shape in needed:
                     needed.remove(shape)
                     added.add(shape)
-                    code.writeline(
-                        f"auto {shape} = {sizeof(name)}[{dim}];"
-                        if config.cpp_wrapper_valid
-                        else f"{shape} = {sizeof(name)}[{dim}]"
-                    )
+                    code.writeline(f"auto {shape} = {sizeof(name)}[{dim}];")
                 elif isinstance(shape, sympy.Symbol):
                     assert shape in added, f"{shape} is needed but not added"
 
@@ -613,11 +601,7 @@ class CppSizeVarAllocator(SizeVarAllocator):
                 shape = self.simplify(shape)
                 if shape in needed:
                     needed.remove(shape)
-                    code.writeline(
-                        f"auto {shape} = {strideof(name)}[{dim}];"
-                        if config.cpp_wrapper_valid
-                        else f"{shape} = {strideof(name)}[{dim}]"
-                    )
+                    code.writeline(f"auto {shape} = {strideof(name)}[{dim}];")
                 elif isinstance(shape, sympy.Symbol):
                     assert shape in added, f"{shape} is needed but not added"
         assert not needed
@@ -625,12 +609,10 @@ class CppSizeVarAllocator(SizeVarAllocator):
     def codegen_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
         parts = list(map(self.codegen_sizevar, shape))
         if len(parts) == 0:
-            return "{}" if config.cpp_wrapper_valid else "()"
+            return "{}"
         if len(parts) == 1:
-            return f"{{{parts[0]}, }}" if config.cpp_wrapper_valid else f"({parts[0]}, )"
-        return (
-            f"{{{', '.join(parts)}}}" if config.cpp_wrapper_valid else f"({', '.join(parts)})"
-        )
+            return f"{{{parts[0]}, }}"
+        return (f"{{{', '.join(parts)}}}")
 
 
     def codegen_python_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
