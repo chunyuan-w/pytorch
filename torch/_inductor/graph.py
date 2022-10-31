@@ -286,6 +286,9 @@ class GraphLowering(torch.fx.Interpreter):
         for item in self.graph_outputs:
             if isinstance(item, NoneAsConstantBuffer):
                 self.use_cpp_wrapper = False
+                if config.debug:
+                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")
+
         
         for name, value in self.graph_inputs.items():
             value.realize()
@@ -343,6 +346,9 @@ class GraphLowering(torch.fx.Interpreter):
                     print("set use_cpp_wrapper to False since non-fp32 input exists")
         if self.constants:
             self.use_cpp_wrapper = False
+            if config.debug:
+                print("set use_cpp_wrapper to False due to constants")
+
         config.cpp_wrapper_valid = False
         if config.cpp_wrapper and self.use_cpp_wrapper:
             config.cpp_wrapper_valid = True
