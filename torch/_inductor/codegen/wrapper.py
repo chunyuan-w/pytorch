@@ -130,11 +130,14 @@ class AllocateLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        code.writeline(
-            make_cpp_buffer_allocation(self.node)
-            if config.cpp_wrapper_valid
-            else make_buffer_allocation(self.node)
-        )
+        code.writeline(make_buffer_allocation(self.node))
+
+
+@dataclasses.dataclass
+class CppAllocateLine(AllocateLine):
+    def codegen(self, code: IndentedBuffer):
+        assert self.node.get_name() not in V.graph.removed_buffers
+        code.writeline(make_cpp_buffer_allocation(self.node))
 
 
 @dataclasses.dataclass
@@ -563,6 +566,37 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.write_get_cuda_stream = functools.lru_cache(None)(
             self.write_get_cuda_stream
         )
+
+    def codegen_allocation(self, buffer):
+        name = buffer.get_name()
+        if name in V.graph.removed_buffers or name in self.allocated:
+            return
+        self.allocated.add(name)
+
+        if isinstance(
+            buffer,
+            (ir.ExternKernelAlloc, ir.MultiOutput),
+        ):
+            return
+
+        layout = buffer.get_layout()
+        if isinstance(layout, ir.MutationLayout):
+            return
+        if isinstance(layout, ir.AliasedLayout):
+            assert isinstance(layout.view, ir.ReinterpretView)
+            if not layout.maybe_guard_aligned():
+                V.graph.unaligned_buffers.add(name)
+            self.codegen_allocation(layout.view.data)
+            allocation = DeferredLine(
+                name,
+                f"auto {name} = {layout.view.codegen_reference()};  // alias"
+                if config.cpp_wrapper_valid
+                else f"{name} = {layout.view.codegen_reference()}  # alias",
+            )
+            self.writeline(allocation)
+            return
+
+        self.writeline(CppAllocateLine(buffer))
 
     def codegen_free(self, buffer):
         name = buffer.get_name()
