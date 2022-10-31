@@ -8,8 +8,6 @@ debug = True
 # TODO: turn it off for triton
 cpp_wrapper = True
 
-cpp_wrapper_valid = False
-
 # dead code elimination
 dce = False
 

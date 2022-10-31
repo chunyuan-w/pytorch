@@ -355,9 +355,7 @@ class GraphLowering(torch.fx.Interpreter):
                 print("set use_cpp_wrapper to False due to constants")        
 
     def get_wrapper(self):
-        config.cpp_wrapper_valid = False
         if config.cpp_wrapper and self.use_cpp_wrapper:
-            config.cpp_wrapper_valid = True
             self.wrapper_code = CppWrapperCodeGen()
             self.sizevars = CppSizeVarAllocator(self._shape_env)
         else:
