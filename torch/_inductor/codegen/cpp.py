@@ -659,12 +659,6 @@ class CppWrapperKernelGroup(KernelGroup):
         super().__init__()
         self.args = CppWrapperKernelArgs()
 
-        self.loops_code = BracesBuffer()
-        self.ws = WorkSharing(self.loops_code)
-        self.stack = contextlib.ExitStack()
-        self.stack.enter_context(self.ws)
-        self.count = 0
-
     def get_kernel_path(self, code):
         # TODO: this duplicates with CodeCache logic
         ext = "so"
