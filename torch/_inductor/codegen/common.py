@@ -412,6 +412,7 @@ class KernelArgs:
 class CppWrapperKernelArgs(KernelArgs):
     def get_ptr_type(self, dtype):
         from .cpp import DTYPE_TO_CPP
+
         return f"({DTYPE_TO_CPP[dtype]}*)"
 
     def get_idx_type(self):

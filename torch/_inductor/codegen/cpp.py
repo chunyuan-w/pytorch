@@ -613,6 +613,11 @@ class KernelGroup:
         ws = self.ws
         new_kernel.codegen_loops(code, ws)
 
+    def generate_kernel_calling_code(self, wrapper, kernel_name, call_args):
+        wrapper.writeline(
+            "{}({})".format(kernel_name, ", ".join(call_args)),
+        )
+
     def codegen_define_and_call(self, wrapper):
         self.stack.close()
         if self.count == 0:
@@ -640,9 +645,7 @@ class KernelGroup:
         wrapper.define_kernel(kernel_name, codecache_str)
 
         # generate the code to call this
-        wrapper.writeline(
-            "{}({})".format(kernel_name, ", ".join(call_args)),
-        )
+        self.generate_kernel_calling_code(wrapper, kernel_name, call_args)
 
     def get_kernel_path(self, code):
         # TODO: this duplicates with CodeCache logic
@@ -654,6 +657,25 @@ class KernelGroup:
         subdir = os.path.join(cache_dir(), basename[1:3])
         kernel_path = os.path.join(subdir, f"{basename}.{ext}")
         return kernel_path
+
+    def generate_cpp_wrapper_kernel_calling_code(
+        self, wrapper, kernel_name, call_args, code, arg_types
+    ):
+        kernel_path = self.get_kernel_path(code)
+
+        wrapper.writeline(
+            f'auto {kernel_name}_lib = dlopen("{kernel_path}", RTLD_NOW);'
+        )
+        wrapper.writeline(f"assert({kernel_name}_lib != nullptr);")
+        wrapper.writeline(f"void (*{kernel_name})({arg_types});")
+        wrapper.writeline(
+            f'*(void **) (&{kernel_name}) = dlsym({kernel_name}_lib, "kernel");'
+        )
+
+        # generate the code to call this
+        wrapper.writeline(
+            "{}({});".format(kernel_name, ", ".join(call_args)),
+        )
 
     def cpp_codegen_define_and_call(self, wrapper):
         self.stack.close()
@@ -682,20 +704,8 @@ class KernelGroup:
         codecache_str = codecache_str.replace("#pragma CMT", "//")
         wrapper.define_kernel(kernel_name, codecache_str)
 
-        kernel_path = self.get_kernel_path(code)
-
-        wrapper.writeline(
-            f'auto {kernel_name}_lib = dlopen("{kernel_path}", RTLD_NOW);'
-        )
-        wrapper.writeline(f"assert({kernel_name}_lib != nullptr);")
-        wrapper.writeline(f"void (*{kernel_name})({arg_types});")
-        wrapper.writeline(
-            f'*(void **) (&{kernel_name}) = dlsym({kernel_name}_lib, "kernel");'
-        )
-
-        # generate the code to call this
-        wrapper.writeline(
-            "{}({});".format(kernel_name, ", ".join(call_args)),
+        self.generate_cpp_wrapper_kernel_calling_code(
+            wrapper, kernel_name, call_args, code, arg_types
         )
 
 
