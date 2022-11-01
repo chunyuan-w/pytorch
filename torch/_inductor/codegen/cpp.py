@@ -528,16 +528,19 @@ class CppKernel(Kernel):
 
 class CppScheduling:
     def __init__(self, scheduler):
+        self.scheduler = scheduler
+        self.get_kernel_group()
+
+    def group_fn(self, sizes):
+        return tuple(tuple(map(V.graph.sizevars.simplify, s)) for s in sizes)
+
+    def get_kernel_group(self):
         from .wrapper import CppWrapperCodeGen
 
-        self.scheduler = scheduler
         if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
             self.kernel_group = CppWrapperKernelGroup()
         else:
             self.kernel_group = KernelGroup()
-
-    def group_fn(self, sizes):
-        return tuple(tuple(map(V.graph.sizevars.simplify, s)) for s in sizes)
 
     @staticmethod
     def can_fuse_horizontal(node1, node2):
@@ -589,12 +592,8 @@ class CppScheduling:
 
     def flush(self):
         self.kernel_group.codegen_define_and_call(V.graph.wrapper_code)
-        from .wrapper import CppWrapperCodeGen
-        if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
-            self.kernel_group = CppWrapperKernelGroup()
-        else:
-            self.kernel_group = KernelGroup()        
-        
+        self.get_kernel_group()
+
 
 class KernelGroup:
     def __init__(self):
@@ -615,7 +614,9 @@ class KernelGroup:
         ws = self.ws
         new_kernel.codegen_loops(code, ws)
 
-    def generate_kernel_calling_code(self, wrapper, kernel_name, call_args, code=None, arg_types=None):
+    def generate_kernel_calling_code(
+        self, wrapper, kernel_name, call_args, code=None, arg_types=None
+    ):
         wrapper.writeline(
             "{}({})".format(kernel_name, ", ".join(call_args)),
         )
@@ -648,18 +649,10 @@ class KernelGroup:
         wrapper.define_kernel(kernel_name, codecache_str)
 
         # generate the code to call this
-        self.generate_kernel_calling_code(wrapper, kernel_name, call_args, code, arg_types)
+        self.generate_kernel_calling_code(
+            wrapper, kernel_name, call_args, code, arg_types
+        )
 
-    def get_kernel_path(self, code):
-        # TODO: this duplicates with CodeCache logic
-        ext = "so"
-        extra = cpp_compile_command("i", "o")
-        # \n is required to match with the CodeCache behavior
-        source_code = "\n" + code.getvalue()
-        basename = code_hash(source_code + extra)
-        subdir = os.path.join(cache_dir(), basename[1:3])
-        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
-        return kernel_path
 
 class CppWrapperKernelGroup(KernelGroup):
     def __init__(self):
@@ -672,7 +665,20 @@ class CppWrapperKernelGroup(KernelGroup):
         self.stack.enter_context(self.ws)
         self.count = 0
 
-    def generate_kernel_calling_code(self, wrapper, kernel_name, call_args, code, arg_types):
+    def get_kernel_path(self, code):
+        # TODO: this duplicates with CodeCache logic
+        ext = "so"
+        extra = cpp_compile_command("i", "o")
+        # \n is required to match with the CodeCache behavior
+        source_code = "\n" + code.getvalue()
+        basename = code_hash(source_code + extra)
+        subdir = os.path.join(cache_dir(), basename[1:3])
+        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
+        return kernel_path
+
+    def generate_kernel_calling_code(
+        self, wrapper, kernel_name, call_args, code, arg_types
+    ):
         kernel_path = self.get_kernel_path(code)
 
         wrapper.writeline(
@@ -687,7 +693,8 @@ class CppWrapperKernelGroup(KernelGroup):
         # generate the code to call this
         wrapper.writeline(
             "{}({});".format(kernel_name, ", ".join(call_args)),
-        )          
+        )
+
 
 class WorkSharing:
     def __init__(self, code):
