@@ -131,7 +131,7 @@ class GraphLowering(torch.fx.Interpreter):
     def run(self, *args):
         return super().run(*args)
 
-    def validate_buffer_for_cpp_wrapper(self, buffer: ir.ComputedBuffer):
+    def check_buffer_for_cpp_wrapper(self, buffer: ir.ComputedBuffer):
         if isinstance(buffer, ir.ExternKernel):
             self.use_cpp_wrapper = False
             if config.debug:
@@ -143,7 +143,8 @@ class GraphLowering(torch.fx.Interpreter):
                     print("set use_cpp_wrapper to False due to Reduction")
 
     def register_buffer(self, buffer: ir.ComputedBuffer):
-        self.validate_buffer_for_cpp_wrapper(buffer)
+        if config.cpp_wrapper:
+            self.check_buffer_for_cpp_wrapper(buffer)
                
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)
@@ -333,35 +334,37 @@ class GraphLowering(torch.fx.Interpreter):
                 result.realize_hint()
         return result
 
-    def validate_input_for_cpp_buffer(self):
+    def check_input_for_cpp_buffer(self):
         for _, value in self.graph_inputs.items():
             if value.get_dtype() != torch.float32:
                 self.use_cpp_wrapper = False
                 if config.debug:
                     print("set use_cpp_wrapper to False since non-fp32 input exists")
 
-    def validate_output_for_cpp_buffer(self):
+    def check_output_for_cpp_buffer(self):
         for item in self.graph_outputs:
             if isinstance(item, ir.NoneAsConstantBuffer):
                 self.use_cpp_wrapper = False
                 if config.debug:
                     print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")        
 
-    def validate_constant_for_cpp_buffer(self):
+    def check_constant_for_cpp_buffer(self):
         if self.constants:
             self.use_cpp_wrapper = False
             if config.debug:
                 print("set use_cpp_wrapper to False due to constants")        
 
     def get_wrapper(self):
-        self.validate_input_for_cpp_buffer()
-        self.validate_output_for_cpp_buffer()
-        self.validate_constant_for_cpp_buffer()
-        if config.cpp_wrapper and self.use_cpp_wrapper:
-            self.wrapper_code = CppWrapperCodeGen()
-            self.sizevars = CppSizeVarAllocator(self._shape_env)
-        else:
-            self.wrapper_code = WrapperCodeGen()
+        if config.cpp_wrapper:
+            self.check_input_for_cpp_buffer()
+            self.check_output_for_cpp_buffer()
+            self.check_constant_for_cpp_buffer()            
+            if self.use_cpp_wrapper:
+                self.wrapper_code = CppWrapperCodeGen()
+                self.sizevars = CppSizeVarAllocator(self._shape_env)
+                return
+        self.wrapper_code = WrapperCodeGen()
+        return
 
     def codegen(self):
         from .scheduler import Scheduler
