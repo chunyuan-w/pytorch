@@ -50,6 +50,8 @@ class SizeVarAllocator(object):
         self.stride_vars = self.make_stride_vars_cache()
         self.simplify_with_ranges = self.make_simplify_with_ranges_cache()
         self._simplify_loops = self.make_simplify_loops_cache()
+        self.lhs = "("
+        self.rhs = ")"
 
     def seed(self):
         """
@@ -488,10 +490,10 @@ class SizeVarAllocator(object):
     def codegen_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
         parts = list(map(self.codegen_sizevar, shape))
         if len(parts) == 0:
-            return "()"
+            return f"{self.lhs}{self.rhs}"
         if len(parts) == 1:
-            return f"({parts[0]}, )"
-        return f"({', '.join(parts)})"
+            return f"{self.lhs}{parts[0]}, {self.rhs}"
+        return f"{self.lhs}{', '.join(parts)}{self.rhs}"
 
     def codegen_python_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
         return self.codegen_shape_tuple(shape)
@@ -563,6 +565,11 @@ def _join_dimensions_cached(expr: Expr) -> Expr:
 
 
 class CppSizeVarAllocator(SizeVarAllocator):
+    def __init__(self, shape_env=None):
+        super().__init__(shape_env)
+        self.lhs = "{{"
+        self.rhs = "}}"
+
     def codegen(self, code: IndentedBuffer, graph_inputs: Dict[str, ir.Buffer]):
         """Assign all symbolic shapes to locals"""
         if self.need_seed:
@@ -605,14 +612,6 @@ class CppSizeVarAllocator(SizeVarAllocator):
                 elif isinstance(shape, sympy.Symbol):
                     assert shape in added, f"{shape} is needed but not added"
         assert not needed
-
-    def codegen_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
-        parts = list(map(self.codegen_sizevar, shape))
-        if len(parts) == 0:
-            return "{}"
-        if len(parts) == 1:
-            return f"{{{parts[0]}, }}"
-        return f"{{{', '.join(parts)}}}"
 
     def codegen_python_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
         return super().codegen_shape_tuple(shape)
