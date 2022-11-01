@@ -339,12 +339,18 @@ class WrapperCodeGen(CodeGen):
 
         self.writeline(AllocateLine(buffer))
 
+    def write_del_line(self, name):
+        self.writeline(f"del {name}")
+
+    def write_free_if_not_reused_line(self, buffer):
+        self.writeline(FreeIfNotReusedLine(buffer))
+
     def codegen_free(self, buffer):
         name = buffer.get_name()
 
         # can be freed but not reused
         if isinstance(buffer, ir.InputBuffer):
-            self.writeline(f"del {name}")
+            self.write_del_line(name)
             return
 
         if not self.can_reuse(buffer):
@@ -353,10 +359,10 @@ class WrapperCodeGen(CodeGen):
 
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
-            self.writeline(f"del {name}")
+            self.write_del_line(name)
             return
 
-        self.writeline(FreeIfNotReusedLine(buffer))
+        self.write_free_if_not_reused_line(buffer)
 
     def can_reuse(self, buffer):
         name = buffer.get_name()
@@ -586,21 +592,12 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
         self.writeline(CppAllocateLine(buffer))
 
-    def codegen_free(self, buffer):
-        name = buffer.get_name()
+    def write_del_line(self, name):
+        return
 
-        # can be freed but not reused
-        if isinstance(buffer, ir.InputBuffer):
-            return
+    def write_free_if_not_reused_line(self, buffer):
+        return
 
-        if not self.can_reuse(buffer):
-            return
-        self.freed.add(name)
-
-        layout = buffer.get_layout()
-        if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
-            return
-    
     def write_reuse_line(self, input_buffer, output_buffer):
         self.writeline(CppReuseLine(input_buffer, output_buffer))
 
