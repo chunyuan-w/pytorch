@@ -311,6 +311,9 @@ class WrapperCodeGen(CodeGen):
     def next_kernel_name(self):
         return f"kernel{next(self._names_iter)}"
 
+    def write_allocate_line(self, buffer):
+        self.writeline(AllocateLine(buffer))
+
     def codegen_allocation(self, buffer):
         name = buffer.get_name()
         if name in V.graph.removed_buffers or name in self.allocated:
@@ -336,8 +339,8 @@ class WrapperCodeGen(CodeGen):
             )
             self.writeline(allocation)
             return
-
-        self.writeline(AllocateLine(buffer))
+        
+        self.write_allocate_line(buffer)
 
     def write_del_line(self, name):
         self.writeline(f"del {name}")
@@ -564,32 +567,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
             self.write_get_cuda_stream
         )
 
-    def codegen_allocation(self, buffer):
-        name = buffer.get_name()
-        if name in V.graph.removed_buffers or name in self.allocated:
-            return
-        self.allocated.add(name)
-
-        if isinstance(
-            buffer,
-            (ir.ExternKernelAlloc, ir.MultiOutput),
-        ):
-            return
-
-        layout = buffer.get_layout()
-        if isinstance(layout, ir.MutationLayout):
-            return
-        if isinstance(layout, ir.AliasedLayout):
-            assert isinstance(layout.view, ir.ReinterpretView)
-            if not layout.maybe_guard_aligned():
-                V.graph.unaligned_buffers.add(name)
-            self.codegen_allocation(layout.view.data)
-            allocation = DeferredLine(
-                name, f"auto {name} = {layout.view.codegen_reference()};  // alias"
-            )
-            self.writeline(allocation)
-            return
-
+    def write_allocate_line(self, buffer):
         self.writeline(CppAllocateLine(buffer))
 
     def write_del_line(self, name):
