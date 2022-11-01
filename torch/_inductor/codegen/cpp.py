@@ -16,6 +16,7 @@ from ..utils import sympy_product, sympy_symbol
 from ..virtualized import ops, V
 from .common import (
     BracesBuffer,
+    CppWrapperKernelArgs,
     DeferredIndentedBuffer,
     ExprPrinter,
     IndentedBuffer,
@@ -582,20 +583,21 @@ class CppScheduling:
         kernel_group.finalize_kernel(kernel, scheduler)
 
     def flush(self):
-        from .wrapper import CppWrapperCodeGen
-
-        if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
-            codegen_func = self.kernel_group.cpp_codegen_define_and_call
-        else:
-            codegen_func = self.kernel_group.codegen_define_and_call
-        codegen_func(V.graph.wrapper_code)
+        self.kernel_group.codegen_func(V.graph.wrapper_code)
         self.kernel_group = KernelGroup()
 
 
 class KernelGroup:
     def __init__(self):
         super().__init__()
-        self.args = KernelArgs()
+        from .wrapper import CppWrapperCodeGen
+
+        if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
+            self.args = CppWrapperKernelArgs()
+            self.codegen_func = self.cpp_codegen_define_and_call
+        else:
+            self.args = KernelArgs()
+            self.codegen_func = self.codegen_define_and_call
         self.loops_code = BracesBuffer()
         self.ws = WorkSharing(self.loops_code)
         self.stack = contextlib.ExitStack()
@@ -616,7 +618,7 @@ class KernelGroup:
         if self.count == 0:
             return
 
-        arg_defs, call_args = self.args.cpp_argdefs()
+        arg_defs, call_args, _ = self.args.cpp_argdefs()
         arg_defs = ",\n".ljust(25).join(arg_defs)
         code = BracesBuffer()
         code.writelines([cpp_prefix(), "" f'extern "C" void kernel({arg_defs})'])
@@ -658,7 +660,7 @@ class KernelGroup:
         if self.count == 0:
             return
 
-        arg_defs, arg_types, call_args = self.args.cpp_argdefs_for_cpp_wrapper()
+        arg_defs, call_args, arg_types = self.args.cpp_argdefs()
         arg_defs = ",\n".ljust(25).join(arg_defs)
         arg_types = ",".join(arg_types)
         code = BracesBuffer()

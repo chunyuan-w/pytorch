@@ -5,7 +5,8 @@ import sys
 debug = False
 
 # use cpp wrapper instead of python wrapper
-cpp_wrapper = False
+cpp_wrapper = True
+# cpp_wrapper = False
 
 # dead code elimination
 dce = False
