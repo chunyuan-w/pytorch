@@ -84,7 +84,7 @@ class GraphLowering(torch.fx.Interpreter):
         self.randomness_seeds = []
         self.name_to_buffer = {}
         self.creation_time = time.time()
-        self.use_cpp_wrapper = config.cpp_wrapper
+        self._can_use_cpp_wrapper = config.cpp_wrapper
 
     def get_dtype(self, buffer_name):
         if buffer_name in self.constants:
@@ -133,14 +133,14 @@ class GraphLowering(torch.fx.Interpreter):
 
     def check_buffer_for_cpp_wrapper(self, buffer: ir.ComputedBuffer):
         if isinstance(buffer, ir.ExternKernel):
-            self.use_cpp_wrapper = False
+            self._can_use_cpp_wrapper = False
             if config.debug:
-                print("set use_cpp_wrapper to False due to ExternKernel")
+                print("set _can_use_cpp_wrapper to False due to ExternKernel")
         if isinstance(buffer, ir.ComputedBuffer):
             if buffer.data.get_reduction_type():
-                self.use_cpp_wrapper = False
+                self._can_use_cpp_wrapper = False
                 if config.debug:
-                    print("set use_cpp_wrapper to False due to Reduction")
+                    print("set _can_use_cpp_wrapper to False due to Reduction")
 
     def register_buffer(self, buffer: ir.ComputedBuffer):
         if config.cpp_wrapper:
@@ -339,31 +339,31 @@ class GraphLowering(torch.fx.Interpreter):
             device = self.device_types.pop()
             if device == "cpu":
                 return
-        self.use_cpp_wrapper = False
+        self._can_use_cpp_wrapper = False
         if config.debug:
-            print("set use_cpp_wrapper to False since device is not cpu")
+            print("set _can_use_cpp_wrapper to False since device is not cpu")
 
     def check_input_for_cpp_buffer(self):
         for _, value in self.graph_inputs.items():
             if value.get_dtype() != torch.float32:
-                self.use_cpp_wrapper = False
+                self._can_use_cpp_wrapper = False
                 if config.debug:
-                    print("set use_cpp_wrapper to False since non-fp32 input exists")
+                    print("set _can_use_cpp_wrapper to False since non-fp32 input exists")
 
     def check_output_for_cpp_buffer(self):
         for item in self.graph_outputs:
             if isinstance(item, ir.NoneAsConstantBuffer):
-                self.use_cpp_wrapper = False
+                self._can_use_cpp_wrapper = False
                 if config.debug:
-                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")
+                    print("set _can_use_cpp_wrapper to False due to NoneAsConstantBuffer")
 
     def check_constant_for_cpp_buffer(self):
         if self.constants:
-            self.use_cpp_wrapper = False
+            self._can_use_cpp_wrapper = False
             if config.debug:
-                print("set use_cpp_wrapper to False due to constants")
+                print("set _can_use_cpp_wrapper to False due to constants")
 
-    def check_for_cpp_wrapper(self):
+    def check_cpp_wrapper(self):
         self.check_device_for_cpp_buffer()
         self.check_input_for_cpp_buffer()
         self.check_output_for_cpp_buffer()
@@ -371,8 +371,8 @@ class GraphLowering(torch.fx.Interpreter):
 
     def get_wrapper(self):
         if config.cpp_wrapper:
-            self.check_for_cpp_wrapper()
-            if self.use_cpp_wrapper:
+            self.check_cpp_wrapper()
+            if self._can_use_cpp_wrapper:
                 self.wrapper_code = CppWrapperCodeGen()
                 self.sizevars = CppSizeVarAllocator(self._shape_env)
                 return

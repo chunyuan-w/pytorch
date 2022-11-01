@@ -68,8 +68,7 @@ def make_buffer_allocation(buffer):
 
 
 def make_cpp_buffer_allocation(buffer):
-    # TODO: map device to ATen here
-    device = buffer.get_device()
+    # TODO: map layout and device here
     dtype = buffer.get_dtype()
     shape = tuple(buffer.get_size())
     stride = tuple(buffer.get_stride())
@@ -638,7 +637,6 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     )
             else:
                 result.writeline("return; }''' )")
-        # TODO: add id to name as well?
         result.splice(
             f"""
             module = load_inline(
