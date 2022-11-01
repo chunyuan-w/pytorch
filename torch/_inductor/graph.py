@@ -277,13 +277,6 @@ class GraphLowering(torch.fx.Interpreter):
     def call_method(self, target, args, kwargs):
         raise AssertionError()
 
-    def validate_output_for_cpp_buffer(self):
-        for item in self.graph_outputs:
-            if isinstance(item, ir.NoneAsConstantBuffer):
-                self.use_cpp_wrapper = False
-                if config.debug:
-                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")        
-
     def output(self, target, args, kwargs):
         result = super().output(target, args, kwargs)
         assert isinstance(result, (tuple, list)), type(result)
@@ -294,7 +287,6 @@ class GraphLowering(torch.fx.Interpreter):
             for x in result
         ), result
         self.graph_outputs = [ir.ExternKernel.realize_input(x) for x in result]
-        self.validate_output_for_cpp_buffer()
         for name, value in self.graph_inputs.items():
             value.realize()
             assert isinstance(value, TensorBox)
@@ -348,6 +340,13 @@ class GraphLowering(torch.fx.Interpreter):
                 if config.debug:
                     print("set use_cpp_wrapper to False since non-fp32 input exists")
 
+    def validate_output_for_cpp_buffer(self):
+        for item in self.graph_outputs:
+            if isinstance(item, ir.NoneAsConstantBuffer):
+                self.use_cpp_wrapper = False
+                if config.debug:
+                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")        
+
     def validate_constant_for_cpp_buffer(self):
         if self.constants:
             self.use_cpp_wrapper = False
@@ -355,6 +354,9 @@ class GraphLowering(torch.fx.Interpreter):
                 print("set use_cpp_wrapper to False due to constants")        
 
     def get_wrapper(self):
+        self.validate_input_for_cpp_buffer()
+        self.validate_output_for_cpp_buffer()
+        self.validate_constant_for_cpp_buffer()
         if config.cpp_wrapper and self.use_cpp_wrapper:
             self.wrapper_code = CppWrapperCodeGen()
             self.sizevars = CppSizeVarAllocator(self._shape_env)
@@ -363,9 +365,6 @@ class GraphLowering(torch.fx.Interpreter):
 
     def codegen(self):
         from .scheduler import Scheduler
-        
-        self.validate_input_for_cpp_buffer()
-        self.validate_constant_for_cpp_buffer()
         self.get_wrapper()
 
         self.scheduler = Scheduler(self.buffers)
