@@ -145,7 +145,7 @@ class GraphLowering(torch.fx.Interpreter):
     def register_buffer(self, buffer: ir.ComputedBuffer):
         if config.cpp_wrapper:
             self.check_buffer_for_cpp_wrapper(buffer)
-               
+
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)
         self.name_to_buffer[name] = buffer
@@ -341,7 +341,7 @@ class GraphLowering(torch.fx.Interpreter):
                 return
         self.use_cpp_wrapper = False
         if config.debug:
-            print("set use_cpp_wrapper to False since device is not cpu")        
+            print("set use_cpp_wrapper to False since device is not cpu")
 
     def check_input_for_cpp_buffer(self):
         for _, value in self.graph_inputs.items():
@@ -355,19 +355,19 @@ class GraphLowering(torch.fx.Interpreter):
             if isinstance(item, ir.NoneAsConstantBuffer):
                 self.use_cpp_wrapper = False
                 if config.debug:
-                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")        
+                    print("set use_cpp_wrapper to False due to NoneAsConstantBuffer")
 
     def check_constant_for_cpp_buffer(self):
         if self.constants:
             self.use_cpp_wrapper = False
             if config.debug:
-                print("set use_cpp_wrapper to False due to constants")        
+                print("set use_cpp_wrapper to False due to constants")
 
     def check_for_cpp_wrapper(self):
         self.check_device_for_cpp_buffer()
         self.check_input_for_cpp_buffer()
         self.check_output_for_cpp_buffer()
-        self.check_constant_for_cpp_buffer()  
+        self.check_constant_for_cpp_buffer()
 
     def get_wrapper(self):
         if config.cpp_wrapper:
@@ -381,6 +381,7 @@ class GraphLowering(torch.fx.Interpreter):
 
     def codegen(self):
         from .scheduler import Scheduler
+
         self.get_wrapper()
 
         self.scheduler = Scheduler(self.buffers)
