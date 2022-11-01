@@ -314,6 +314,11 @@ class WrapperCodeGen(CodeGen):
     def write_allocate_line(self, buffer):
         self.writeline(AllocateLine(buffer))
 
+    def get_deferred_line(self, name, layout):
+        return DeferredLine(
+            name, f"{name} = {layout.view.codegen_reference()}  # alias"
+        )
+
     def codegen_allocation(self, buffer):
         name = buffer.get_name()
         if name in V.graph.removed_buffers or name in self.allocated:
@@ -334,12 +339,10 @@ class WrapperCodeGen(CodeGen):
             if not layout.maybe_guard_aligned():
                 V.graph.unaligned_buffers.add(name)
             self.codegen_allocation(layout.view.data)
-            allocation = DeferredLine(
-                name, f"{name} = {layout.view.codegen_reference()}  # alias"
-            )
+            allocation = self.get_deferred_line(name, layout)
             self.writeline(allocation)
             return
-        
+
         self.write_allocate_line(buffer)
 
     def write_del_line(self, name):
@@ -578,6 +581,11 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
     def write_reuse_line(self, input_buffer, output_buffer):
         self.writeline(CppReuseLine(input_buffer, output_buffer))
+
+    def get_deferred_line(self, name, layout):
+        return DeferredLine(
+            name, f"auto {name} = {layout.view.codegen_reference()};  // alias"
+        )
 
     @dynamo_utils.dynamo_timed
     def generate(self):
