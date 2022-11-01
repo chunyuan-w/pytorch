@@ -334,6 +334,15 @@ class GraphLowering(torch.fx.Interpreter):
                 result.realize_hint()
         return result
 
+    def check_device_for_cpp_buffer(self):
+        if len(self.device_types) == 1:
+            device = self.device_types.pop()
+            if device == "cpu":
+                return
+        self.use_cpp_wrapper = False
+        if config.debug:
+            print("set use_cpp_wrapper to False since device is not cpu")        
+
     def check_input_for_cpp_buffer(self):
         for _, value in self.graph_inputs.items():
             if value.get_dtype() != torch.float32:
@@ -356,6 +365,7 @@ class GraphLowering(torch.fx.Interpreter):
 
     def get_wrapper(self):
         if config.cpp_wrapper:
+            self.check_device_for_cpp_buffer()
             self.check_input_for_cpp_buffer()
             self.check_output_for_cpp_buffer()
             self.check_constant_for_cpp_buffer()            
