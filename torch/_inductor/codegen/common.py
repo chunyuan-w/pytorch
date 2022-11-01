@@ -397,7 +397,6 @@ class KernelArgs:
         for outer, inner in self.sizevars.items():
             arg_types.append(f"const {INDEX_TYPE}")
             arg_defs.append(f"const {INDEX_TYPE} {inner}")
-            # TODO: what is c_long corresponds to?
             call_args.append(f"{outer}")
         return arg_defs, arg_types, call_args
 

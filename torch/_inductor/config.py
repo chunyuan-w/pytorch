@@ -2,11 +2,10 @@ import os
 import sys
 
 # add some debug printouts
-debug = True
+debug = False
 
 # use cpp wrapper instead of python wrapper
-# TODO: turn it off for triton
-cpp_wrapper = True
+cpp_wrapper = False
 
 # dead code elimination
 dce = False

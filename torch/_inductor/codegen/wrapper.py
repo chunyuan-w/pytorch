@@ -646,7 +646,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])
             """
         )
-        # Wrap the func to support result._boxed_call = True
+        # Wrap the func to support setting result._boxed_call = True
         result.splice(
             f"""
             def _wrap_func(f):
