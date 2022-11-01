@@ -28,29 +28,19 @@ def buffer_reuse_key(node: ir.Buffer):
     )
 
 
-def make_buffer_reuse(old, new):
+def make_buffer_reuse(old, new, del_needed, declare, endding, as_strided):
     assert old.get_dtype() == new.get_dtype()
     del_line = ""
-    if old.get_name() not in V.graph.get_output_names():
-        del_line = f"; del {old.get_name()}"
+    if del_needed:
+        if old.get_name() not in V.graph.get_output_names():
+            del_line = f"; del {old.get_name()}"
     if old.get_size() == new.get_size() and old.get_stride() == new.get_stride():
-        return f"{new.get_name()} = {old.get_name()}{del_line}"
+        return f"{declare}{new.get_name()} = {old.get_name()}{del_line}{endding}"
 
     return (
-        f"{new.get_name()} = as_strided({old.get_name()}, "
+        f"{declare}{new.get_name()} = {as_strided}({old.get_name()}, "
         f"{V.graph.sizevars.codegen_shape_tuple(new.get_size())}, "
-        f"{V.graph.sizevars.codegen_shape_tuple(new.get_stride())}){del_line}"
-    )
-
-
-def make_cpp_buffer_reuse(old, new):
-    assert old.get_dtype() == new.get_dtype()
-    if old.get_size() == new.get_size() and old.get_stride() == new.get_stride():
-        return f"auto {new.get_name()} = {old.get_name()};"
-    return (
-        f"auto {new.get_name()} = at::as_strided({old.get_name()}, "
-        f"{V.graph.sizevars.codegen_shape_tuple(new.get_size())}, "
-        f"{V.graph.sizevars.codegen_shape_tuple(new.get_stride())});"
+        f"{V.graph.sizevars.codegen_shape_tuple(new.get_stride())}){del_line}{endding}"
     )
 
 
@@ -170,7 +160,17 @@ class ReuseLine(MemoryPlanningLine):
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
         assert self.reused_as.get_name() not in V.graph.removed_buffers
-        code.writeline(make_buffer_reuse(self.node, self.reused_as) + "  # reuse")
+        code.writeline(
+            make_buffer_reuse(
+                self.node,
+                self.reused_as,
+                del_needed=True,
+                declare="",
+                endding="",
+                as_strided="as_strided",
+            )
+            + "  # reuse"
+        )
 
 
 @dataclasses.dataclass
@@ -181,7 +181,17 @@ class CppReuseLine(ReuseLine):
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
         assert self.reused_as.get_name() not in V.graph.removed_buffers
-        code.writeline(make_cpp_buffer_reuse(self.node, self.reused_as) + "  // reuse")
+        code.writeline(
+            make_buffer_reuse(
+                self.node,
+                self.reused_as,
+                del_needed=False,
+                declare="auto ",
+                endding=";",
+                as_strided="at::as_strided",
+            )
+            + "  // reuse"
+        )
 
 
 @dataclasses.dataclass
