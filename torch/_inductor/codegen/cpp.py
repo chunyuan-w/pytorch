@@ -528,8 +528,13 @@ class CppKernel(Kernel):
 
 class CppScheduling:
     def __init__(self, scheduler):
+        from .wrapper import CppWrapperCodeGen
+
         self.scheduler = scheduler
-        self.kernel_group = KernelGroup()
+        if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
+            self.kernel_group = CppWrapperKernelGroup()
+        else:
+            self.kernel_group = KernelGroup()
 
     def group_fn(self, sizes):
         return tuple(tuple(map(V.graph.sizevars.simplify, s)) for s in sizes)
@@ -583,21 +588,18 @@ class CppScheduling:
         kernel_group.finalize_kernel(kernel, scheduler)
 
     def flush(self):
-        self.kernel_group.codegen_func(V.graph.wrapper_code)
-        self.kernel_group = KernelGroup()
-
+        self.kernel_group.codegen_define_and_call(V.graph.wrapper_code)
+        from .wrapper import CppWrapperCodeGen
+        if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
+            self.kernel_group = CppWrapperKernelGroup()
+        else:
+            self.kernel_group = KernelGroup()        
+        
 
 class KernelGroup:
     def __init__(self):
         super().__init__()
-        from .wrapper import CppWrapperCodeGen
-
-        if isinstance(V.graph.wrapper_code, CppWrapperCodeGen):
-            self.args = CppWrapperKernelArgs()
-            self.codegen_func = self.cpp_codegen_define_and_call
-        else:
-            self.args = KernelArgs()
-            self.codegen_func = self.codegen_define_and_call
+        self.args = KernelArgs()
         self.loops_code = BracesBuffer()
         self.ws = WorkSharing(self.loops_code)
         self.stack = contextlib.ExitStack()
@@ -613,71 +615,12 @@ class KernelGroup:
         ws = self.ws
         new_kernel.codegen_loops(code, ws)
 
-    def generate_kernel_calling_code(self, wrapper, kernel_name, call_args):
+    def generate_kernel_calling_code(self, wrapper, kernel_name, call_args, code=None, arg_types=None):
         wrapper.writeline(
             "{}({})".format(kernel_name, ", ".join(call_args)),
         )
 
     def codegen_define_and_call(self, wrapper):
-        self.stack.close()
-        if self.count == 0:
-            return
-
-        arg_defs, call_args, _ = self.args.cpp_argdefs()
-        arg_defs = ",\n".ljust(25).join(arg_defs)
-        code = BracesBuffer()
-        code.writelines([cpp_prefix(), "" f'extern "C" void kernel({arg_defs})'])
-        with code.indent():
-            for old, new in self.args.aliases():
-                code.writeline(f"auto {old} = {new};")
-            code.splice(self.loops_code)
-
-        codecache_def = IndentedBuffer()
-        codecache_def.writeline("async_compile.cpp('''")
-        codecache_def.splice(code)
-        codecache_def.writeline("''')")
-
-        kernel_name = wrapper.next_kernel_name()
-        codecache_str = codecache_def.getvalue()
-        # TODO(voz): Ostensibly, we should not need this. But there are cases where C++ codegen does
-        # not use BracesBuffer, so we have no good indicator of a C++ buffer atm.
-        codecache_str = codecache_str.replace("#pragma CMT", "//")
-        wrapper.define_kernel(kernel_name, codecache_str)
-
-        # generate the code to call this
-        self.generate_kernel_calling_code(wrapper, kernel_name, call_args)
-
-    def get_kernel_path(self, code):
-        # TODO: this duplicates with CodeCache logic
-        ext = "so"
-        extra = cpp_compile_command("i", "o")
-        # \n is required to match with the CodeCache behavior
-        source_code = "\n" + code.getvalue()
-        basename = code_hash(source_code + extra)
-        subdir = os.path.join(cache_dir(), basename[1:3])
-        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
-        return kernel_path
-
-    def generate_cpp_wrapper_kernel_calling_code(
-        self, wrapper, kernel_name, call_args, code, arg_types
-    ):
-        kernel_path = self.get_kernel_path(code)
-
-        wrapper.writeline(
-            f'auto {kernel_name}_lib = dlopen("{kernel_path}", RTLD_NOW);'
-        )
-        wrapper.writeline(f"assert({kernel_name}_lib != nullptr);")
-        wrapper.writeline(f"void (*{kernel_name})({arg_types});")
-        wrapper.writeline(
-            f'*(void **) (&{kernel_name}) = dlsym({kernel_name}_lib, "kernel");'
-        )
-
-        # generate the code to call this
-        wrapper.writeline(
-            "{}({});".format(kernel_name, ", ".join(call_args)),
-        )
-
-    def cpp_codegen_define_and_call(self, wrapper):
         self.stack.close()
         if self.count == 0:
             return
@@ -704,10 +647,47 @@ class KernelGroup:
         codecache_str = codecache_str.replace("#pragma CMT", "//")
         wrapper.define_kernel(kernel_name, codecache_str)
 
-        self.generate_cpp_wrapper_kernel_calling_code(
-            wrapper, kernel_name, call_args, code, arg_types
+        # generate the code to call this
+        self.generate_kernel_calling_code(wrapper, kernel_name, call_args, code, arg_types)
+
+    def get_kernel_path(self, code):
+        # TODO: this duplicates with CodeCache logic
+        ext = "so"
+        extra = cpp_compile_command("i", "o")
+        # \n is required to match with the CodeCache behavior
+        source_code = "\n" + code.getvalue()
+        basename = code_hash(source_code + extra)
+        subdir = os.path.join(cache_dir(), basename[1:3])
+        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
+        return kernel_path
+
+class CppWrapperKernelGroup(KernelGroup):
+    def __init__(self):
+        super().__init__()
+        self.args = CppWrapperKernelArgs()
+
+        self.loops_code = BracesBuffer()
+        self.ws = WorkSharing(self.loops_code)
+        self.stack = contextlib.ExitStack()
+        self.stack.enter_context(self.ws)
+        self.count = 0
+
+    def generate_kernel_calling_code(self, wrapper, kernel_name, call_args, code, arg_types):
+        kernel_path = self.get_kernel_path(code)
+
+        wrapper.writeline(
+            f'auto {kernel_name}_lib = dlopen("{kernel_path}", RTLD_NOW);'
+        )
+        wrapper.writeline(f"assert({kernel_name}_lib != nullptr);")
+        wrapper.writeline(f"void (*{kernel_name})({arg_types});")
+        wrapper.writeline(
+            f'*(void **) (&{kernel_name}) = dlsym({kernel_name}_lib, "kernel");'
         )
 
+        # generate the code to call this
+        wrapper.writeline(
+            "{}({});".format(kernel_name, ", ".join(call_args)),
+        )          
 
 class WorkSharing:
     def __init__(self, code):
