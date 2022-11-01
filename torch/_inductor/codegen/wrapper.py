@@ -369,12 +369,15 @@ class WrapperCodeGen(CodeGen):
             return False
         return True
 
+    def write_reuse_line(self, input_buffer, output_buffer):
+        self.writeline(ReuseLine(input_buffer, output_buffer))
+
     def codegen_inplace_reuse(self, input_buffer, output_buffer):
         assert buffer_reuse_key(input_buffer) == buffer_reuse_key(output_buffer)
         self.codegen_allocation(input_buffer)
         self.freed.add(input_buffer.get_name())
         self.allocated.add(output_buffer.get_name())
-        self.writeline(ReuseLine(input_buffer, output_buffer))
+        self.write_reuse_line(input_buffer, output_buffer)
 
     @dynamo_utils.dynamo_timed
     def generate(self):
@@ -597,12 +600,8 @@ class CppWrapperCodeGen(WrapperCodeGen):
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
             return
-
-    def codegen_inplace_reuse(self, input_buffer, output_buffer):
-        assert buffer_reuse_key(input_buffer) == buffer_reuse_key(output_buffer)
-        self.codegen_allocation(input_buffer)
-        self.freed.add(input_buffer.get_name())
-        self.allocated.add(output_buffer.get_name())
+    
+    def write_reuse_line(self, input_buffer, output_buffer):
         self.writeline(CppReuseLine(input_buffer, output_buffer))
 
     @dynamo_utils.dynamo_timed
