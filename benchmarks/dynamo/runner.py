@@ -76,6 +76,7 @@ TABLE = {
         "ofi": "--backend=ofi",
         "ipex": "--backend=ipex --float32",
         "onnxrt_cpu": "--backend=onnxrt_cpu",
+        "onednn": "--backend=onednn",
     },
 }
 
