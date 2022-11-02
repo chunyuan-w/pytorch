@@ -2,12 +2,11 @@ import collections
 import dataclasses
 import functools
 import hashlib
-import os
 from itertools import count
 from typing import Any, Dict, List
 
 from .. import codecache, config, ir
-from ..codecache import cache_dir, code_hash, cpp_compile_command
+from ..codecache import cpp_compile_command, get_code_path
 from ..utils import dynamo_utils, has_triton, sympy_dot, sympy_product
 from ..virtualized import V
 from .common import CodeGen, DeferredLine, IndentedBuffer, Kernel
@@ -586,14 +585,11 @@ class CppWrapperCodeGen(WrapperCodeGen):
         )
 
     def get_kernel_path(self, code):
-        # TODO: this duplicates with CodeCache logic
         ext = "so"
         extra = cpp_compile_command("i", "o")
         # \n is required to match with the CodeCache behavior
         source_code = "\n" + code.getvalue()
-        basename = code_hash(source_code + extra)
-        subdir = os.path.join(cache_dir(), basename[1:3])
-        kernel_path = os.path.join(subdir, f"{basename}.{ext}")
+        _, _, kernel_path = get_code_path(source_code, ext, extra)
         return kernel_path
 
     def load_kernel(self, name: str = None, kernel: str = None, arg_types: List = None):
