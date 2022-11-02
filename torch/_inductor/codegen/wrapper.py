@@ -28,12 +28,11 @@ def buffer_reuse_key(node: ir.Buffer):
     )
 
 
-def make_buffer_reuse(old, new, del_needed, declare, ending, as_strided):
+def make_buffer_reuse(old, new, del_func, declare, ending, as_strided):
     assert old.get_dtype() == new.get_dtype()
     del_line = ""
-    if del_needed:
-        if old.get_name() not in V.graph.get_output_names():
-            del_line = f"; del {old.get_name()}"
+    if old.get_name() not in V.graph.get_output_names():
+        del_line = del_func(old.get_name())
     if old.get_size() == new.get_size() and old.get_stride() == new.get_stride():
         return f"{declare}{new.get_name()} = {old.get_name()}{del_line}{ending}"
 
@@ -164,7 +163,7 @@ class ReuseLine(MemoryPlanningLine):
             make_buffer_reuse(
                 self.node,
                 self.reused_as,
-                del_needed=True,
+                del_func=lambda name: f"; del {name}",
                 declare="",
                 ending="",
                 as_strided="as_strided",
@@ -185,7 +184,7 @@ class CppReuseLine(ReuseLine):
             make_buffer_reuse(
                 self.node,
                 self.reused_as,
-                del_needed=False,
+                del_func=lambda name: f"; {name}.reset()",
                 declare="auto ",
                 ending=";",
                 as_strided="at::as_strided",
@@ -570,6 +569,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.writeline(CppAllocateLine(buffer))
 
     def write_del_line(self, name):
+        self.writeline(f"{name}.reset();")
         return
 
     def write_free_if_not_reused_line(self, buffer):
