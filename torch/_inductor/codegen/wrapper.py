@@ -2,10 +2,12 @@ import collections
 import dataclasses
 import functools
 import hashlib
+import os
 from itertools import count
 from typing import Any, Dict, List
 
 from .. import codecache, config, ir
+from ..codecache import cache_dir, code_hash, cpp_compile_command
 from ..utils import dynamo_utils, has_triton, sympy_dot, sympy_product
 from ..virtualized import V
 from .common import CodeGen, DeferredLine, IndentedBuffer, Kernel
@@ -584,10 +586,6 @@ class CppWrapperCodeGen(WrapperCodeGen):
         )
 
     def get_kernel_path(self, code):
-        import os
-
-        from ..codecache import cache_dir, code_hash, cpp_compile_command
-
         # TODO: this duplicates with CodeCache logic
         ext = "so"
         extra = cpp_compile_command("i", "o")
@@ -621,13 +619,24 @@ class CppWrapperCodeGen(WrapperCodeGen):
             result.writeline("return; }''' )")
 
     def generate_end(self, result):
+        shared = codecache.shared()
+        pre_cpp_command = codecache.pre_cpp_command()
+        post_cpp_command = codecache.post_cpp_command()
+        ipaths, lpaths, libs = codecache.get_include_and_linking_paths()
+
+        extra_cflags = f"{pre_cpp_command} {post_cpp_command}"
+        extra_ldflags = f"{shared} {lpaths} {libs}"
+        extra_include_paths = f"{ipaths}"
+
         result.splice(
             f"""
             module = load_inline(
                 name='inline_extension',
                 cpp_sources=[wrapper],
                 functions=['call_{self._call_func_id}'],
-                extra_cflags=['-DCPU_CAPABILITY_AVX2 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'])
+                extra_cflags=['{extra_cflags}'],
+                extra_ldflags=['{extra_ldflags}'],
+                extra_include_paths=['{extra_include_paths}'])
             """
         )
         # Wrap the func to support setting result._boxed_call = True

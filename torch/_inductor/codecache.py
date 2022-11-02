@@ -143,7 +143,19 @@ def is_gcc():
     return re.search(r"(gcc|g\+\+)", cpp_compiler())
 
 
-def cpp_compile_command(input, output, include_pytorch=False):
+def shared():
+    return "-shared"
+
+
+def pre_cpp_command():
+    return "-fPIC -Wall -std=c++14 -Wno-unused-variable"
+
+
+def post_cpp_command():
+    return "-march=native -O3 -ffast-math -fno-finite-math-only -fopenmp"
+
+
+def get_include_and_linking_paths(include_pytorch):
     if include_pytorch:
         ipaths = cpp_extension.include_paths() + [sysconfig.get_path("include")]
         lpaths = cpp_extension.library_paths() + [sysconfig.get_config_var("LIBDIR")]
@@ -159,13 +171,19 @@ def cpp_compile_command(input, output, include_pytorch=False):
     ipaths = " ".join(["-I" + p for p in ipaths])
     lpaths = " ".join(["-L" + p for p in lpaths])
     libs = " ".join(["-l" + p for p in libs])
+    return ipaths, lpaths, libs
+
+
+def cpp_compile_command(input, output, include_pytorch=False):
+    ipaths, lpaths, libs = get_include_and_linking_paths(include_pytorch)
+
     return re.sub(
         r"[ \n]+",
         " ",
         f"""
-            {cpp_compiler()} -shared -fPIC -Wall -std=c++14 -Wno-unused-variable
+            {cpp_compiler()} {shared()} {pre_cpp_command()}
             {ipaths} {lpaths} {libs}
-            -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp
+            {post_cpp_command()}
             -o{output} {input}
         """,
     ).strip()
