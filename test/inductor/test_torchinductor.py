@@ -3663,6 +3663,7 @@ class CommonTemplate:
             torch._inductor.metrics.generated_kernel_count, expected_kernel
         )
 
+    @cpp_wrapper
     @patch.object(config.triton, "cudagraphs", False)
     def test_lowmem_dropout1(self):
         n = 100000
