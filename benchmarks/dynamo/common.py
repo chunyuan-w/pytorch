@@ -368,7 +368,7 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
     is_correct = True
 
     baseline_model_iter_fn = get_baseline_model_iter_fn(args, model_iter_fn)
-    baseline_model = get_baseline_model(args, model.to(memory_format=torch.contiguous_format))
+    baseline_model = get_baseline_model(args, model)
 
     import contextlib
 
@@ -388,18 +388,9 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
                 if should_randomize_input
                 else example_inputs
             )
-            baseline_inputs=inputs
-            if args.channels_last:
-                baseline_inputs=[]
-                for item in inputs:
-                    if isinstance(item, torch.Tensor):
-                        baseline_inputs.append(item.contiguous())
-                    else:
-                        baseline_inputs.append(item)
-                baseline_inputs=tuple(baseline_inputs)
             # interleave the runs to handle frequency scaling and load changes
             timings[rep, 0], expected_output = timed(
-                baseline_model, baseline_model_iter_fn, baseline_inputs, return_result=True
+                baseline_model, baseline_model_iter_fn, inputs, return_result=True
             )
             timings[rep, 1], actual_output = timed(
                 model, frozen_model_iter_fn, inputs, return_result=True
