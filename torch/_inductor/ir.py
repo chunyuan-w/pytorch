@@ -2369,7 +2369,8 @@ class ExternKernel(InputsKernel):
     def codegen_kwargs(self):
         kwargs = []
         if self.kwargs:
-            kwargs = [f"{k}={repr(v)}" for k, v in self.kwargs.items()]
+            # kwargs = [f"{k}={repr(v)}" for k, v in self.kwargs.items()]
+            kwargs = [f"{repr(v)}" for k, v in self.kwargs.items()]
         return kwargs
 
     def codegen_size_asserts(self, wrapper):
@@ -2665,6 +2666,7 @@ class MatrixMultiplyAdd(ExternKernelOut):
     def __init__(self, layout, inputs, constant_args=(), kwargs=None, output_view=None):
         super().__init__(layout, inputs, constant_args, kwargs or {}, output_view)
         self.kernel = "aten.addmm.out"
+        self.cpp_kernel = "at::addmm_out"
 
     @classmethod
     def create(cls, inp, a, b, beta, alpha):

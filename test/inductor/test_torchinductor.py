@@ -1250,6 +1250,7 @@ class CommonTemplate:
             ),
         )
 
+    @cpp_wrapper
     def test_linear1(self):
         mod = torch.nn.Sequential(
             torch.nn.Linear(8, 16),
@@ -1258,6 +1259,7 @@ class CommonTemplate:
         )
         self.common(mod, (torch.randn(2, 8),))
 
+    @patch.object(config, "cpp_wrapper", True)
     def test_linear2(self):
         mod = torch.nn.Sequential(
             torch.nn.Linear(8, 8),

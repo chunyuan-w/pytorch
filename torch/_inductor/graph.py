@@ -67,7 +67,9 @@ class GraphLowering(torch.fx.Interpreter):
             self._shape_env = shape_env
             self.reuse_shape_env = True
         self._shape_env = shape_env
-        self.sizevars = SizeVarAllocator(shape_env)
+        # TODO: need to change it here so that codegen uses the correct size var
+        self.sizevars = CppSizeVarAllocator(shape_env)
+        # self.sizevars = SizeVarAllocator(shape_env)
         self.graph_inputs = {}
         self.graph_inputs_original = {}
         self.graph_outputs = None
@@ -133,7 +135,7 @@ class GraphLowering(torch.fx.Interpreter):
 
     def disable_cpp_wrapper(self, cond):
         self._can_use_cpp_wrapper = False
-        log.debug("Set _can_use_cpp_wrapper to False due to %s", cond)
+        print("Set _can_use_cpp_wrapper to False due to %s", cond)
 
     def check_buffer_for_cpp_wrapper(self, buffer: ir.ComputedBuffer):
         if isinstance(buffer, ir.ExternKernel):
