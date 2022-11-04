@@ -1271,6 +1271,7 @@ class CommonTemplate:
         )
         self.common(mod, (torch.randn(2, 8),))
 
+    @cpp_wrapper
     def test_bmm1(self):
         def fn(a, b):
             return (
@@ -1294,7 +1295,8 @@ class CommonTemplate:
             ),
             check_lowp=False,
         )
-
+    
+    @cpp_wrapper
     def test_bmm2(self):
         def fn(a, b):
             return torch.bmm(a.permute(0, 2, 1), b)
@@ -3639,7 +3641,8 @@ class CommonTemplate:
                 torch.randn([1, 2016, 21, 21]),
             ],
         )
-
+    
+    @cpp_wrapper
     def test_mm_views(self):
         def fn(a, b):
             return torch.mm(a.view(32, 32), b.view(32, 32))

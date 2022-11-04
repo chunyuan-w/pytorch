@@ -140,8 +140,8 @@ class GraphLowering(torch.fx.Interpreter):
             self.disable_cpp_wrapper("ExternKernel")
 
     def register_buffer(self, buffer: ir.ComputedBuffer):
-        if config.cpp_wrapper:
-            self.check_buffer_for_cpp_wrapper(buffer)
+        # if config.cpp_wrapper:
+        #     self.check_buffer_for_cpp_wrapper(buffer)
 
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)

@@ -1361,8 +1361,10 @@ class ReinterpretView(BaseView):
         stride = V.graph.sizevars.codegen_shape_tuple(self.layout.stride)
         offset = V.graph.sizevars.codegen_sizevar(self.layout.offset)
         if offset != "0":
-            return f"as_strided({self.get_name()}, {size}, {stride}, {offset})"
-        return f"as_strided({self.get_name()}, {size}, {stride})"
+            # return f"as_strided({self.get_name()}, {size}, {stride}, {offset})"
+            return f"at::as_strided({self.get_name()}, {size}, {stride}, {offset})"
+        # return f"as_strided({self.get_name()}, {size}, {stride})"
+        return f"at::as_strided({self.get_name()}, {size}, {stride})"
 
     def cpp_wrapper_codegen_reference(self):
         return self.codegen_reference()
@@ -2437,10 +2439,17 @@ class ExternKernelOut(ExternKernel):
             args.extend(kwargs)
 
         if self.output_view:
-            args.append(f"out={self.output_view.codegen_reference()}")
+            output_as_strided = f"{self.output_view.codegen_reference()}"
+            output_name = self.output_view.get_name()
+            output_name =  f"{output_name}_as_strided"
+            args.insert(0, output_name)
+            wrapper.writeline(f"auto {output_name} = {output_as_strided};")
+            # args.append(f"out={self.output_view.codegen_reference()}")
         else:
-            args.append(f"out={self.codegen_reference()}")
-        wrapper.writeline(f"{self.kernel}({', '.join(args)})")
+            # args.append(f"out={self.codegen_reference()}")
+            args.insert(0, f"{self.codegen_reference()}")
+        # wrapper.writeline(f"{self.kernel}({', '.join(args)})")
+        wrapper.writeline(f"{self.cpp_kernel}({', '.join(args)});")
 
     def __init__(self, layout, inputs, constant_args=(), kwargs=None, output_view=None):
         super().__init__(
@@ -2540,6 +2549,7 @@ class IndexPutFallback(ExternKernel):
 
 class MatrixMultiply(ExternKernelOut):
     kernel = "aten.mm.out"
+    cpp_kernel = "at::mm_out"
 
     def __init__(
         self, layout, inputs, constant_args=(), output_view=None, kernel="aten.mm.out"
@@ -2679,6 +2689,7 @@ class MatrixMultiplyAdd(ExternKernelOut):
 
 class BatchMatrixMultiply(ExternKernelOut):
     kernel = "aten.bmm.out"
+    cpp_kernel = "at::bmm_out"
 
     def __init__(self, layout, inputs, constant_args=(), output_view=None):
         super().__init__(layout, inputs, constant_args, output_view)
