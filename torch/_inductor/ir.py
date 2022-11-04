@@ -2467,6 +2467,7 @@ class ExternKernelAlloc(ExternKernel):
     def codegen(self, wrapper):
         wrapper.writeline(
             f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
+            # f"auto {self.get_name()} = {self.cpp_kernel}({', '.join(self.codegen_args())});"
         )
         if isinstance(self.layout, Layout):
             self.codegen_size_asserts(wrapper)
@@ -2839,6 +2840,7 @@ class FallbackKernel(ExternKernelAlloc):
         )
         if getattr(torch.ops.aten, kernel.__name__, None) is kernel:
             self.kernel = f"aten.{kernel.__name__}"
+            # self.cpp_kernel = f"at::{kernel.__name__}"
         else:
             self.kernel = (
                 f"{kernel.__module__.replace('._ops.', '.ops.')}.{kernel.__name__}"
@@ -2865,6 +2867,7 @@ class FallbackKernel(ExternKernelAlloc):
         kwargs = list(gen_kwarg(k, v) for k, v in self.kwargs.items())
 
         return list(map(repr, self.unflatten_args(tensor_args, constant_args))) + kwargs
+        # return list(map(lambda x : repr(x).replace('[', '{').replace(']', '}').replace('False', 'false').replace('True', 'true'), self.unflatten_args(tensor_args, constant_args))) + kwargs
 
     @classmethod
     def create(cls, kernel, *args, **kwargs):
