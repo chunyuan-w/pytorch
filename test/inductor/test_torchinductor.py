@@ -1471,6 +1471,7 @@ class CommonTemplate:
             (torch.randn([4, 4, 4]),),
         )
 
+    @patch.object(config, "cpp_wrapper", True)
     def test_convolution1(self):
         m = torch.nn.Sequential(
             torch.nn.Conv2d(5, 6, [3, 3]),
@@ -1487,7 +1488,8 @@ class CommonTemplate:
             atol=6e-5,
             rtol=0.001,
         )
-
+    
+    @patch.object(config, "cpp_wrapper", True)
     def test_convolution2(self):
         def fn(x, w, b):
             # transposed conv
@@ -1503,6 +1505,7 @@ class CommonTemplate:
             check_lowp=False,
         )
 
+    @patch.object(config, "cpp_wrapper", True)
     @unittest.skipIf(HAS_CUDA, "only support cpu channels_last")
     def test_conv2d_channels_last(self):
         m = torch.nn.Sequential(
@@ -1556,6 +1559,7 @@ class CommonTemplate:
             check_lowp=False,
         )
 
+    @patch.object(config, "cpp_wrapper", True)
     @unittest.skipIf(HAS_CUDA, "only support cpu channels_last")
     def test_conv3d_channels_last(self):
         m = torch.nn.Sequential(
