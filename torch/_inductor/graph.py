@@ -27,6 +27,17 @@ from .virtualized import V
 log = logging.getLogger(__name__)
 
 
+# TODO: refactor this func
+def is_supported_extern_kernel_of_cpp_wrapper(buffer):
+    for item in [
+        ir.MatrixMultiply,
+        ir.BatchMatrixMultiply,
+    ]:
+        if isinstance(buffer, item):
+            return True
+    return False
+
+
 class GraphLowering(torch.fx.Interpreter):
     def symbolic_sizes_strides(self, ex: torch.Tensor):
         """
@@ -135,7 +146,8 @@ class GraphLowering(torch.fx.Interpreter):
 
     def check_buffer_for_cpp_wrapper(self, buffer: ir.ComputedBuffer):
         if isinstance(buffer, ir.ExternKernel):
-            self.disable_cpp_wrapper("ExternKernel")
+            if not is_supported_extern_kernel_of_cpp_wrapper(buffer):
+                self.disable_cpp_wrapper("ExternKernel")
 
     def register_buffer(self, buffer: ir.ComputedBuffer):
         if config.cpp_wrapper:
