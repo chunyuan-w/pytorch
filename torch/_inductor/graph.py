@@ -32,6 +32,7 @@ def is_supported_extern_kernel_of_cpp_wrapper(buffer):
     for item in [
         ir.MatrixMultiply,
         ir.BatchMatrixMultiply,
+        ir.MatrixMultiplyAdd,
     ]:
         if isinstance(buffer, item):
             return True

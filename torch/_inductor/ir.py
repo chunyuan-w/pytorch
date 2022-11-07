@@ -2426,6 +2426,13 @@ class ExternKernel(InputsKernel):
             kwargs = [f"{k}={repr(v)}" for k, v in self.kwargs.items()]
         return kwargs
 
+    def cpp_wrapper_codegen_kwargs(self):
+        kwargs = []
+        # TODO: how to guarantee the order is correct
+        if self.kwargs:
+            kwargs = [f"{repr(v)}" for k, v in self.kwargs.items()]
+        return kwargs
+
     def codegen_size_asserts(self, wrapper):
         if config.size_asserts:
             size = V.graph.sizevars.codegen_shape_tuple(self.get_size())
@@ -2488,12 +2495,16 @@ class ExternKernelOut(ExternKernel):
     def codegen(self, wrapper):
         args = self.codegen_args()
 
-        kwargs = self.codegen_kwargs()
+        from torch._inductor.codegen.wrapper import CppWrapperCodeGen
+
+        if isinstance(wrapper, CppWrapperCodeGen):
+            kwargs = self.cpp_wrapper_codegen_kwargs()
+        else:
+            kwargs = self.codegen_kwargs()
         if kwargs:
             args.extend(kwargs)
 
         # TODO: remove duplicated code
-        from torch._inductor.codegen.wrapper import CppWrapperCodeGen
 
         if isinstance(wrapper, CppWrapperCodeGen):
             if self.output_view:
@@ -2728,6 +2739,7 @@ class MatrixMultiplyAdd(ExternKernelOut):
     def __init__(self, layout, inputs, constant_args=(), kwargs=None, output_view=None):
         super().__init__(layout, inputs, constant_args, kwargs or {}, output_view)
         self.kernel = "aten.addmm.out"
+        self.cpp_kernel = "at::addmm_out"
 
     @classmethod
     def create(cls, inp, a, b, beta, alpha):
