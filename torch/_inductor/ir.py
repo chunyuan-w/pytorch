@@ -1361,18 +1361,13 @@ class ReinterpretView(BaseView):
         size = V.graph.sizevars.codegen_shape_tuple(self.layout.size)
         stride = V.graph.sizevars.codegen_shape_tuple(self.layout.stride)
         offset = V.graph.sizevars.codegen_sizevar(self.layout.offset)
+        as_strided = V.graph.sizevars.as_strided
         if offset != "0":
-            return f"as_strided({self.get_name()}, {size}, {stride}, {offset})"
-        return f"as_strided({self.get_name()}, {size}, {stride})"
+            return f"{as_strided}({self.get_name()}, {size}, {stride}, {offset})"
+        return f"{as_strided}({self.get_name()}, {size}, {stride})"
 
     def cpp_wrapper_codegen_reference(self):
-        # TODO: remove duplicated code
-        size = V.graph.sizevars.codegen_shape_tuple(self.layout.size)
-        stride = V.graph.sizevars.codegen_shape_tuple(self.layout.stride)
-        offset = V.graph.sizevars.codegen_sizevar(self.layout.offset)
-        if offset != "0":
-            return f"at::as_strided({self.get_name()}, {size}, {stride}, {offset})"
-        return f"at::as_strided({self.get_name()}, {size}, {stride})"
+        return self.codegen_reference()
 
 
 class SliceView(View):
