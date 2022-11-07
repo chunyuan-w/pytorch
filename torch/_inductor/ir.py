@@ -2499,26 +2499,13 @@ class ExternKernelOut(ExternKernel):
         if kwargs:
             args.extend(kwargs)
 
-        # TODO: remove duplicated code
-
-        if isinstance(wrapper, CppWrapperCodeGen):
-            if self.output_view:
-                output_as_strided = f"{self.output_view.codegen_reference()}"
-                output_name = self.output_view.get_name()
-                output_name = f"{output_name}_as_strided"
-                # TODO: will out always be at index 0?
-                args.insert(0, output_name)
-                wrapper.writeline(f"auto {output_name} = {output_as_strided};")
-            else:
-                # TODO: will out always be at index 0?
-                args.insert(0, f"{self.codegen_reference()}")
-            wrapper.writeline(f"{self.cpp_kernel}({', '.join(args)});")
-        else:
-            if self.output_view:
-                args.append(f"out={self.output_view.codegen_reference()}")
-            else:
-                args.append(f"out={self.codegen_reference()}")
-            wrapper.writeline(f"{self.kernel}({', '.join(args)})")
+        wrapper.generate_extern_kernel_out(
+            self.output_view,
+            self.codegen_reference(),
+            args,
+            self.kernel,
+            self.cpp_kernel,
+        )
 
     def __init__(self, layout, inputs, constant_args=(), kwargs=None, output_view=None):
         super().__init__(
