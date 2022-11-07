@@ -2425,7 +2425,12 @@ class ExternKernel(InputsKernel):
         kwargs = []
         # TODO: how to guarantee the order is correct
         if self.kwargs:
-            kwargs = [f"{repr(v)}" for k, v in self.kwargs.items()]
+            for arg_name in self.ordered_kwargs_for_cpp_kernel:
+                assert arg_name in self.kwargs, (
+                    "arg %s not found in self.kwargs" % arg_name
+                )
+                v = self.kwargs.get(arg_name)
+                kwargs.append(repr(v))
         return kwargs
 
     def codegen_size_asserts(self, wrapper):
@@ -2722,6 +2727,7 @@ class MatrixMultiplyAdd(ExternKernelOut):
         super().__init__(layout, inputs, constant_args, kwargs or {}, output_view)
         self.kernel = "aten.addmm.out"
         self.cpp_kernel = "at::addmm_out"
+        self.ordered_kwargs_for_cpp_kernel = ["beta", "alpha"]
 
     @classmethod
     def create(cls, inp, a, b, beta, alpha):
