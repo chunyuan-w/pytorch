@@ -405,6 +405,9 @@ class WrapperCodeGen(CodeGen):
         else:
             result.writeline("return ()")
 
+    def generate_string_enclose(self, result):
+        return
+
     def generate_end(self, result):
         return
 
@@ -447,6 +450,7 @@ class WrapperCodeGen(CodeGen):
 
             self.generate_return(self.wrapper_call)
         
+        self.generate_string_enclose(self.wrapper_call)
         
         result.splice(self.wrapper_call)
 
@@ -631,15 +635,19 @@ class CppWrapperCodeGen(WrapperCodeGen):
     def generate_return(self, result):
         if self.output_refs:
             if len(self.output_refs) == 1:
-                result.writeline("return " + self.output_refs[0] + "; }''' )")
+                result.writeline("return " + self.output_refs[0] + ";")
             else:
                 result.writeline(
                     "return std::make_tuple("
                     + ", ".join(self.output_refs)
-                    + "); }''' )"
+                    + ");"
                 )
         else:
-            result.writeline("return; }''' )")
+            result.writeline("return;")
+
+    def generate_string_enclose(self, result):
+        result.writeline("}")
+        result.writeline("''' )")
 
     def generate_end(self, result):
         shared = codecache.shared()
