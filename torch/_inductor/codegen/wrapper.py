@@ -448,8 +448,7 @@ class WrapperCodeGen(CodeGen):
             self.generate_return(self.wrapper_call)
         
         
-        with result.indent():
-            result.splice(self.wrapper_call)
+        result.splice(self.wrapper_call)
 
 
         print("wrapper call: ", self.wrapper_call.getvalue())
@@ -556,34 +555,35 @@ class CppWrapperCodeGen(WrapperCodeGen):
             #include <assert.h>
             """
         )
-        with self.wrapper_call.indent():
-            inputs_len = len(V.graph.graph_inputs.keys())
-            if self.output_refs:
-                if len(self.output_refs) == 1:
-                    output_types = "at::Tensor"
-                else:
-                    output_return_type = "at::Tensor"
-                    output_return_types = [output_return_type] * len(self.output_refs)
-                    output_return_types = ", ".join(output_return_types)
-                    output_types = f"std::tuple<{output_return_types}>"
+        inputs_len = len(V.graph.graph_inputs.keys())
+        if self.output_refs:
+            if len(self.output_refs) == 1:
+                output_types = "at::Tensor"
             else:
-                output_types = "void"
+                output_return_type = "at::Tensor"
+                output_return_types = [output_return_type] * len(self.output_refs)
+                output_return_types = ", ".join(output_return_types)
+                output_types = f"std::tuple<{output_return_types}>"
+        else:
+            output_types = "void"
 
-            if inputs_len != 0:
-                inputs_args = ["at::Tensor"] * len(V.graph.graph_inputs.keys())
-                inputs_args = ", ".join(inputs_args)
-                inputs_args = f"std::tuple<{inputs_args}>"
+        if inputs_len != 0:
+            inputs_args = ["at::Tensor"] * len(V.graph.graph_inputs.keys())
+            inputs_args = ", ".join(inputs_args)
+            inputs_args = f"std::tuple<{inputs_args}>"
 
-                self.wrapper_call.writeline(
-                    f"{output_types} call_{self._call_func_id}({inputs_args} args) {{"
-                )
+            self.wrapper_call.writeline(
+                f"{output_types} call_{self._call_func_id}({inputs_args} args) {{"
+            )
+            with self.wrapper_call.indent():
                 inputs_keys_str = ", ".join(V.graph.graph_inputs.keys())
                 self.wrapper_call.writeline(f"at::Tensor {inputs_keys_str};")
                 self.wrapper_call.writeline(f"std::tie({inputs_keys_str}) = args;")
-            else:
-                self.wrapper_call.writeline(
-                    f"{output_types} call_{self._call_func_id}(std::tuple<> args) {{"
+        else:
+            self.wrapper_call.writeline(
+                f"{output_types} call_{self._call_func_id}(std::tuple<> args) {{"
                 )
+        with self.wrapper_call.indent():
             for name in V.graph.randomness_seeds:
                 self.wrapper_call.writeline(f"at::Tensor {name};")
                 self.wrapper_call.writeline(
