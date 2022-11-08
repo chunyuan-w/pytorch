@@ -222,6 +222,7 @@ class WrapperCodeGen(CodeGen):
         self._names_iter = count()
         self.header = IndentedBuffer()
         self.prefix = IndentedBuffer()
+        self.wrapper_call = IndentedBuffer()
         self.kernels = {}
         self.lines = []
         self.header.splice(
@@ -298,17 +299,17 @@ class WrapperCodeGen(CodeGen):
             def call(args):
             """
         )
-        with self.prefix.indent():
+        with self.wrapper_call.indent():
             inp_len = len(V.graph.graph_inputs.keys())
             if inp_len != 0:
                 lhs = f"{', '.join(V.graph.graph_inputs.keys())}{'' if inp_len != 1 else ','}"
-                self.prefix.writeline(f"{lhs} = args")
-                self.prefix.writeline("args.clear()")
+                self.wrapper_call.writeline(f"{lhs} = args")
+                self.wrapper_call.writeline("args.clear()")
             for name in V.graph.randomness_seeds:
-                self.prefix.writeline(
+                self.wrapper_call.writeline(
                     f"torch.randint(2**31, size=(), dtype=torch.int64, out={name})"
                 )
-            V.graph.sizevars.codegen(self.prefix, V.graph.graph_inputs)
+            V.graph.sizevars.codegen(self.wrapper_call, V.graph.graph_inputs)
 
     def write_get_cuda_stream(self, index):
         name = f"stream{index}"
@@ -423,7 +424,7 @@ class WrapperCodeGen(CodeGen):
         result.splice(self.prefix)
 
         out_names = V.graph.get_output_names()
-        with result.indent():
+        with self.wrapper_call.indent():
             while (
                 self.lines
                 and isinstance(self.lines[-1], MemoryPlanningLine)
@@ -440,11 +441,19 @@ class WrapperCodeGen(CodeGen):
 
             for line in self.lines:
                 if isinstance(line, MemoryPlanningLine):
-                    line.codegen(result)
+                    line.codegen(self.wrapper_call)
                 else:
-                    result.writeline(line)
+                    self.wrapper_call.writeline(line)
 
-            self.generate_return(result)
+            self.generate_return(self.wrapper_call)
+        
+        
+        with result.indent():
+            result.splice(self.wrapper_call)
+
+
+        print("wrapper call: ", self.wrapper_call.getvalue())
+        print("end wrapper call")
 
         self.generate_end(result)
 
@@ -547,7 +556,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
             #include <assert.h>
             """
         )
-        with self.prefix.indent():
+        with self.wrapper_call.indent():
             inputs_len = len(V.graph.graph_inputs.keys())
             if self.output_refs:
                 if len(self.output_refs) == 1:
@@ -565,22 +574,22 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 inputs_args = ", ".join(inputs_args)
                 inputs_args = f"std::tuple<{inputs_args}>"
 
-                self.prefix.writeline(
+                self.wrapper_call.writeline(
                     f"{output_types} call_{self._call_func_id}({inputs_args} args) {{"
                 )
                 inputs_keys_str = ", ".join(V.graph.graph_inputs.keys())
-                self.prefix.writeline(f"at::Tensor {inputs_keys_str};")
-                self.prefix.writeline(f"std::tie({inputs_keys_str}) = args;")
+                self.wrapper_call.writeline(f"at::Tensor {inputs_keys_str};")
+                self.wrapper_call.writeline(f"std::tie({inputs_keys_str}) = args;")
             else:
-                self.prefix.writeline(
+                self.wrapper_call.writeline(
                     f"{output_types} call_{self._call_func_id}(std::tuple<> args) {{"
                 )
             for name in V.graph.randomness_seeds:
-                self.prefix.writeline(f"at::Tensor {name};")
-                self.prefix.writeline(
+                self.wrapper_call.writeline(f"at::Tensor {name};")
+                self.wrapper_call.writeline(
                     f"{name} = at::randint(std::pow(2, 31), {{}}, at::ScalarType::Long);"
                 )
-            V.graph.sizevars.codegen(self.prefix, V.graph.graph_inputs)
+            V.graph.sizevars.codegen(self.wrapper_call, V.graph.graph_inputs)
 
     def write_allocate_line(self, buffer):
         self.writeline(CppAllocateLine(buffer))
@@ -643,10 +652,12 @@ class CppWrapperCodeGen(WrapperCodeGen):
         extra_ldflags = f"{shared} {lpaths} {libs}"
         extra_include_paths = f"{ipaths}"
 
+        # get the hash of the wrapper code to name the extension
+        wrapper_call_hash = codecache.code_hash(self.wrapper_call.getvalue())
         result.splice(
             f"""
             module = load_inline(
-                name='inline_extension',
+                name='inline_extension_{wrapper_call_hash}',
                 cpp_sources=[wrapper],
                 functions=['call_{self._call_func_id}'],
                 extra_cflags=['{extra_cflags}'],
