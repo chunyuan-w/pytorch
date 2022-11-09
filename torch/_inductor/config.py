@@ -6,6 +6,7 @@ debug = False
 
 # use cpp wrapper instead of python wrapper
 cpp_wrapper = False
+bench_time = True
 
 # dead code elimination
 dce = False

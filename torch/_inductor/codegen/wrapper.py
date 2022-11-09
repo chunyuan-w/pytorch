@@ -509,9 +509,17 @@ class WrapperCodeGen(CodeGen):
         return "{}({})".format(name, ", ".join(call_args))
 
     def generate_kernel_call(self, name, call_args):
+        if config.bench_time:
+            self.writeline(f"auto time_run_{name} = std::chrono::high_resolution_clock::now();")        
+        
         self.writeline(
             self.wrap_kernel_call(name, call_args),
         )
+
+
+        if config.bench_time:
+            self.writeline(f'std::cout << "dnnl_verbose,1,2,kernel_run,3,4,5,6,7,8," << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_run_{name}).count() / 1000000.0 << std::endl; ')
+
 
     def call_kernel(self, name: str, kernel: Kernel):
         tmp = IndentedBuffer()
@@ -551,6 +559,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
             '''
             #include <dlfcn.h>
             #include <assert.h>
+            #include <chrono>
             """
         )
         with self.wrapper_call.indent():
@@ -613,11 +622,14 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
     def load_kernel(self, name: str = None, kernel: str = None, arg_types: List = None):
         kernel_path = self.get_kernel_path(kernel)
-
+        if config.bench_time:
+            self.writeline(f"auto time_{name} = std::chrono::high_resolution_clock::now();")
         self.writeline(f'auto {name}_lib = dlopen("{kernel_path}", RTLD_NOW);')
         self.writeline(f"assert({name}_lib != nullptr);")
         self.writeline(f"void (*{name})({arg_types});")
         self.writeline(f'*(void **) (&{name}) = dlsym({name}_lib, "kernel");')
+        if config.bench_time:
+            self.writeline(f'std::cout << "dnnl_verbose,1,2,kernel_load,3,4,5,6,7,8," << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_{name}).count() / 1000000.0 << std::endl; ')
 
     def wrap_kernel_call(self, name, call_args):
         return "{}({});".format(name, ", ".join(call_args))
