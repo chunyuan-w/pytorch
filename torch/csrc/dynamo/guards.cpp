@@ -382,6 +382,8 @@ static PyObject* assert_size_stride(PyObject* dummy, PyObject* args) {
 
 static PyObject* call_0(PyObject* dummy, PyObject* args) {
 printf("enter call_0\n");
+
+
     at::Tensor arg0_1;
 
 
@@ -394,12 +396,29 @@ printf("enter call_0\n");
     checks.reserve(len);
     for (auto i : c10::irange(len)) {
         PyObject* item = PyTuple_GET_ITEM(args, i);
-        if (!THPVariable_CheckExact(item) && !THPVariable_Check(item)) {
-        PyErr_SetString(PyExc_TypeError, "expected Tensor()");
-        return NULL;
+        if (!PyList_Check(item)) {
+          PyErr_SetString(PyExc_TypeError, "expected list");
+          return NULL;
         }
-        // checks.emplace_back(THPVariable_Unpack(item));
-        arg0_1 = THPVariable_Unpack(item);
+
+        auto len_list = PyList_GET_SIZE(item);
+        for (auto i : c10::irange(len_list)) {
+          PyObject* tensor = PyList_GET_ITEM(item, i);
+          if (!THPVariable_CheckExact(tensor) && !THPVariable_Check(tensor)) {
+          PyErr_SetString(PyExc_TypeError, "expected Tensor()");
+          return NULL;
+          }
+          arg0_1 = THPVariable_Unpack(tensor);
+        }
+
+
+        // clear args
+        if (PyList_SetSlice(item, 0, PyList_Size(item), NULL)<0) {
+            PyErr_SetString(PyExc_TypeError, "PyList_SetSlice Failed");
+            return NULL;
+        }
+
+
     }
 
 

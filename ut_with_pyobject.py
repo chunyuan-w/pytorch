@@ -1,8 +1,4 @@
 
-
-# python /tmp/torchinductor_chunyuan/6k/c6klun6icb2q6fhan74isorkhn2zlyvp7pqr5nwmb5lgryqvuns7.py
-
-
 from ctypes import c_void_p, c_long
 import torch
 import random
@@ -156,7 +152,7 @@ static struct PyModuleDef _module = {
 
 def _wrap_func(f):
     def g(args):
-        return f(*args)
+        return f(args)
     return g
 call = _wrap_func(torch._C._dynamo.guards.call_0)
 # call = torch._C._dynamo.guards.call_0
