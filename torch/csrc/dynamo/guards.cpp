@@ -3,6 +3,9 @@
 #include <torch/csrc/utils/python_numbers.h>
 #include <torch/extension.h>
 #include <sstream>
+#include <dlfcn.h>
+#include <assert.h>
+#include <torch/csrc/autograd/utils/wrap_outputs.h>
 
 namespace {
 
@@ -376,8 +379,52 @@ static PyObject* assert_size_stride(PyObject* dummy, PyObject* args) {
   Py_RETURN_TRUE;
 }
 
+
+static PyObject* call_0(PyObject* dummy, PyObject* args) {
+printf("enter call_0\n");
+    at::Tensor arg0_1;
+
+
+    std::vector<at::Tensor> checks;
+    if (!PyTuple_CheckExact(args)) {
+        PyErr_SetString(PyExc_TypeError, "expected tuple()");
+        return NULL;
+    }
+    auto len = PyTuple_GET_SIZE(args);
+    checks.reserve(len);
+    for (auto i : c10::irange(len)) {
+        PyObject* item = PyTuple_GET_ITEM(args, i);
+        if (!THPVariable_CheckExact(item) && !THPVariable_Check(item)) {
+        PyErr_SetString(PyExc_TypeError, "expected Tensor()");
+        return NULL;
+        }
+        // checks.emplace_back(THPVariable_Unpack(item));
+        arg0_1 = THPVariable_Unpack(item);
+    }
+
+
+    auto buf3 = at::empty_strided({8, 36}, {36, 1}, at::ScalarType::Float); 
+    auto buf0 = as_strided(buf3, {8, 16}, {36, 1});  // alias
+    auto buf2 = as_strided(buf3, {8, 16}, {36, 1}, 20);  // alias
+    auto buf1 = as_strided(buf3, {8, 4}, {36, 1}, 16);  // alias
+    auto buf6 = at::empty_strided({16, 16}, {16, 1}, at::ScalarType::Float); 
+    auto buf4 = as_strided(buf6, {8, 16}, {16, 1});  // alias
+    auto buf5 = as_strided(buf6, {8, 16}, {16, 1}, 128);  // alias
+    auto buf9 = at::empty_strided({16, 16}, {16, 1}, at::ScalarType::Double); 
+    auto buf7 = as_strided(buf9, {8, 16}, {16, 1});  // alias
+    auto buf8 = as_strided(buf9, {8, 16}, {16, 1}, 128);  // alias
+    auto kernel0_lib = dlopen("/tmp/torchinductor_chunyuan/uy/cuyozondpmse65c3lujshvrlilo64eyfvikamb5yumyioheix44x.so", RTLD_NOW);
+    assert(kernel0_lib != nullptr);
+    void (*kernel0)(const float*,float*,float*,float*,float*,float*,double*,double*);
+    *(void **) (&kernel0) = dlsym(kernel0_lib, "kernel");
+    kernel0((float*)(arg0_1.data_ptr()), (float*)(buf0.data_ptr()), (float*)(buf2.data_ptr()), (float*)(buf1.data_ptr()), (float*)(buf4.data_ptr()), (float*)(buf5.data_ptr()), (double*)(buf7.data_ptr()), (double*)(buf8.data_ptr()));
+    arg0_1.reset();
+    std::tuple<at::Tensor, at::Tensor, at::Tensor> outputs = std::make_tuple(buf3, buf6, buf9);
+    return torch::autograd::utils::wrap(outputs); }
+
 static PyMethodDef _methods[] = {
     {"check_type_id", check_type_id, METH_VARARGS, NULL},
+    {"call_0", call_0, METH_VARARGS, NULL},
     {"check_obj_id", check_obj_id, METH_VARARGS, NULL},
     {"assert_size_stride", assert_size_stride, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
