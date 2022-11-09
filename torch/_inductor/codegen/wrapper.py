@@ -640,6 +640,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
     def generate_end(self, result):
         shared = codecache.shared()
         cpp_flags = codecache.cpp_flags()
+        cpp_flags += " -ftemplate-depth-5000 -fconstexpr-depth=1024"
         optimization_flags = codecache.optimization_flags()
         ipaths, lpaths, libs = codecache.get_include_and_linking_paths()
 
