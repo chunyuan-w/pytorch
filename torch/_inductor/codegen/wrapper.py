@@ -510,7 +510,9 @@ class WrapperCodeGen(CodeGen):
 
     def generate_kernel_call(self, name, call_args):
         if config.bench_time:
-            self.writeline(f"auto time_run_{name} = std::chrono::high_resolution_clock::now();")        
+            self.writeline("import time")        
+            self.writeline(f"time_run_{name} = time.time()")        
+            # self.writeline(f"auto time_run_{name} = std::chrono::high_resolution_clock::now();")        
         
         self.writeline(
             self.wrap_kernel_call(name, call_args),
@@ -518,7 +520,8 @@ class WrapperCodeGen(CodeGen):
 
 
         if config.bench_time:
-            self.writeline(f'std::cout << "dnnl_verbose,1,2,kernel_run,3,4,5,6,7,8," << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_run_{name}).count() / 1000000.0 << std::endl; ')
+            self.writeline(f'print("dnnl_verbose,1,2,kernel_run,3,4,5,6,7,8,", (time.time() - time_run_{name})*1000)')
+            # self.writeline(f'std::cout << "dnnl_verbose,1,2,kernel_run,3,4,5,6,7,8," << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_run_{name}).count() / 1000000.0 << std::endl; ')
 
 
     def call_kernel(self, name: str, kernel: Kernel):
