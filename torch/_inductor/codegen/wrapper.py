@@ -453,7 +453,7 @@ class WrapperCodeGen(CodeGen):
         result.splice(self.prefix)
         self.generate_kernel_init_func_ending(result)
         result.splice(self.kernel_declaration)
-        self.generate_static_kernel(result)
+        self.generate_kernel_class_def_ending(result)
 
         with result.indent():
             result.splice(self.wrapper_call)
@@ -517,7 +517,7 @@ class WrapperCodeGen(CodeGen):
     def generate_kernel_init_func_ending(self, result):
         return
 
-    def generate_static_kernel(self, result):
+    def generate_kernel_class_def_ending(self, result):
         return
 
     def generate_kernel_call(self, name, call_args):
@@ -615,6 +615,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     f"{name} = at::randint(std::pow(2, 31), {{}}, at::ScalarType::Long);"
                 )
             V.graph.sizevars.codegen(self.wrapper_call, V.graph.graph_inputs)
+            self.wrapper_call.writeline("static LoadKernel load_kernel_;")
 
     def write_allocate_line(self, buffer):
         self.writeline(CppAllocateLine(buffer))
@@ -674,12 +675,10 @@ class CppWrapperCodeGen(WrapperCodeGen):
             """
         )
 
-    def generate_static_kernel(self, result):
+    def generate_kernel_class_def_ending(self, result):
         result.splice(
             """
             };
-
-            static LoadKernel load_kernel_;
             """
         )
 
