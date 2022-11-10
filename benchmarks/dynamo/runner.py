@@ -320,11 +320,8 @@ def generate_commands(args, dtypes, suites, devices, compilers, output_dir):
                 info = TABLE[mode]
                 for compiler in compilers:
                     base_cmd = info[compiler]
-                    output_filename = f"{output_dir}/{compiler}_{suite}_{dtype}_{mode}_{device}_{testing}.csv"
-
-                    cmd = f"{numactl} python benchmarks/dynamo/{suite}.py --{testing} --{dtype} -d{device} --output={output_filename}"
                     output_filename = f"{output_dir}/{generate_csv_name(args, dtype, suite, device, compiler, testing)}"
-                    cmd = f"python benchmarks/dynamo/{suite}.py --{testing} --{dtype} -d{device} --output={output_filename}"
+                    cmd = f"{numactl} python benchmarks/dynamo/{suite}.py --{testing} --{dtype} -d{device} --output={output_filename}"
                     cmd = f"{cmd} {base_cmd} {args.extra_args} --no-skip --dashboard"
 
                     skip_tests_str = get_skip_tests(suite)
