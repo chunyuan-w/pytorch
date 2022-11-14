@@ -2,11 +2,16 @@ import os
 import sys
 
 # add some debug printouts
-debug = False
+debug = True
 
 # use cpp wrapper instead of python wrapper
-cpp_wrapper = False
+cpp_wrapper = True
+# cpp_wrapper = False
+# bench_time = True
 bench_time = False
+
+ending = False
+beginning = True
 
 # dead code elimination
 dce = False

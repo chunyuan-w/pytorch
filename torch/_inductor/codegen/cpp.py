@@ -622,12 +622,16 @@ class KernelGroup:
         arg_defs = ",\n".ljust(25).join(arg_defs)
         arg_types = ",".join(arg_types)
         code = BracesBuffer()
-        code.writelines([cpp_prefix(), "" f'extern "C" void kernel({arg_defs})'])
+        code.writelines([cpp_prefix(), "#include <chrono>", "#include <iostream>","" f'extern "C" void kernel({arg_defs})'])
         with code.indent():
+            config.beginning = False
             for old, new in self.args.aliases():
                 code.writeline(f"auto {old} = {new};")
             code.splice(self.loops_code)
+            config.ending = True
 
+        config.beginning = True
+        config.ending = False
         codecache_def = IndentedBuffer()
         codecache_def.writeline("async_compile.cpp('''")
         codecache_def.splice(code)

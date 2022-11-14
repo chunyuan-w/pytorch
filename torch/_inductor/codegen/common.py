@@ -16,6 +16,7 @@ from sympy.printing.printer import Printer
 from .. import metrics
 from ..utils import free_symbol_startswith, sympy_dot, sympy_subs, sympy_symbol, unique
 from ..virtualized import ops, V
+from .. import config
 
 log = logging.getLogger(__name__)
 
@@ -259,6 +260,9 @@ class BracesBuffer(IndentedBuffer):
         def ctx():
             for _ in range(offset):
                 self.writeline("{")
+                if config.bench_time:
+                    if self._indent == 0 and config.beginning:
+                        self.writeline("auto time_run = std::chrono::high_resolution_clock::now();")                
                 self._indent += 1
             for _ in range(-offset):
                 self._indent -= 1
@@ -269,6 +273,9 @@ class BracesBuffer(IndentedBuffer):
                 self._indent += 1
             for _ in range(offset):
                 self._indent -= 1
+                if config.bench_time:
+                    if self._indent == 0 and config.ending:
+                        self.writeline('std::cout << "dnnl_verbose,1,2,loop_kernel_run,3,4,5,6,7,8," << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_run).count() / 1000000.0 << std::endl; ')
                 self.writeline("}")
 
         return ctx()
