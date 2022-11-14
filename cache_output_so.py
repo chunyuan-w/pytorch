@@ -25,7 +25,7 @@ extern "C" void kernel(const float* __restrict__ in_ptr0,
 {
     #pragma omp parallel num_threads(56)
     {
-        #pragma omp for 
+        #pragma omp for
         for(long i0=0; i0<8; ++i0)
         {
             #pragma GCC ivdep
@@ -61,7 +61,7 @@ extern "C" void kernel(const float* __restrict__ in_ptr0,
                 }
             }
         }
-        #pragma omp for 
+        #pragma omp for
         for(long i0=0; i0<128; ++i0)
         {
             {
@@ -104,45 +104,48 @@ void (*kernel0)(const float*,float*,float*,float*,float*,float*,double*,double*)
     std::vector<at::Tensor> call_0(std::tuple<at::Tensor&> args) {
     auto& [arg0_1] = args;
     static LoadKernel_call0 load_kernel_;
-    auto buf3 = at::empty_strided({8, 36}, {36, 1}, at::ScalarType::Float); 
+    auto buf3 = at::empty_strided({8, 36}, {36, 1}, at::ScalarType::Float);
     auto buf0 = at::as_strided(buf3, {8, 16}, {36, 1});  // alias
     auto buf2 = at::as_strided(buf3, {8, 16}, {36, 1}, 20);  // alias
     auto buf1 = at::as_strided(buf3, {8, 4}, {36, 1}, 16);  // alias
-    auto buf6 = at::empty_strided({16, 16}, {16, 1}, at::ScalarType::Float); 
+    auto buf6 = at::empty_strided({16, 16}, {16, 1}, at::ScalarType::Float);
     auto buf4 = at::as_strided(buf6, {8, 16}, {16, 1});  // alias
     auto buf5 = at::as_strided(buf6, {8, 16}, {16, 1}, 128);  // alias
-    auto buf9 = at::empty_strided({16, 16}, {16, 1}, at::ScalarType::Double); 
+    auto buf9 = at::empty_strided({16, 16}, {16, 1}, at::ScalarType::Double);
     auto buf7 = at::as_strided(buf9, {8, 16}, {16, 1});  // alias
     auto buf8 = at::as_strided(buf9, {8, 16}, {16, 1}, 128);  // alias
     load_kernel_.kernel0((float*)(arg0_1.data_ptr()), (float*)(buf0.data_ptr()), (float*)(buf2.data_ptr()), (float*)(buf1.data_ptr()), (float*)(buf4.data_ptr()), (float*)(buf5.data_ptr()), (double*)(buf7.data_ptr()), (double*)(buf8.data_ptr()));
     arg0_1.reset();
     return std::vector<at::Tensor>({buf3, buf6, buf9}); }''' )
 
-name = 'inline_extension_cmwqndennbxflz35syenlzd4wg766ajamm6zsobd5wwxmmm4vrht'
-build_dir = "/tmp/torchinductor_chunyuan/torch_extensions"
-import os, importlib
-filepath = os.path.join(build_dir, f'{name}.so')
-#  mkdir /tmp/torchinductor_chunyuan/torch_extensions
-if not os.path.exists(build_dir):
-    os.mkdir(build_dir)
 
-if os.path.exists(filepath):
-    print("found lib")
-    spec = importlib.util.spec_from_file_location(name, filepath)
-    assert spec is not None
-    module = importlib.util.module_from_spec(spec)
-    assert isinstance(spec.loader, importlib.abc.Loader)
-    spec.loader.exec_module(module)
-else:
-    print("build lib from source")
-    module = load_inline(
-        name=name,
-        build_directory=build_dir,
-        cpp_sources=[wrapper],
-        functions=['call_0'],
-        extra_cflags=['-fPIC -Wall -std=c++14 -Wno-unused-variable -ftemplate-depth-5000 -fconstexpr-depth=1024 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'],
-        extra_ldflags=['-shared -L/home/chunyuan/torch-inductor/pytorch/torch/lib -L/home/chunyuan/miniconda3/envs/torch-inductor/lib -lc10 -ltorch -ltorch_cpu -ltorch_python -lgomp'],
-        extra_include_paths=['-I/home/chunyuan/torch-inductor/pytorch/torch/include -I/home/chunyuan/torch-inductor/pytorch/torch/include/torch/csrc/api/include -I/home/chunyuan/torch-inductor/pytorch/torch/include/TH -I/home/chunyuan/torch-inductor/pytorch/torch/include/THC -I/home/chunyuan/miniconda3/envs/torch-inductor/include/python3.8'])
+from torch._inductor.codecache import CppWrapperCodeCache
+module = CppWrapperCodeCache.load(wrapper, 'call_0')
+# name = 'inline_extension_cmwqndennbxflz35syenlzd4wg766ajamm6zsobd5wwxmmm4vrht'
+# build_dir = "/tmp/torchinductor_chunyuan/torch_extensions"
+# import os, importlib
+# filepath = os.path.join(build_dir, f'{name}.so')
+# #  mkdir /tmp/torchinductor_chunyuan/torch_extensions
+# if not os.path.exists(build_dir):
+#     os.mkdir(build_dir)
+
+# if os.path.exists(filepath):
+#     print("found lib")
+#     spec = importlib.util.spec_from_file_location(name, filepath)
+#     assert spec is not None
+#     module = importlib.util.module_from_spec(spec)
+#     assert isinstance(spec.loader, importlib.abc.Loader)
+#     spec.loader.exec_module(module)
+# else:
+#     print("build lib from source")
+#     module = load_inline(
+#         name=name,
+#         build_directory=build_dir,
+#         cpp_sources=[wrapper],
+#         functions=['call_0'],
+#         extra_cflags=['-fPIC -Wall -std=c++14 -Wno-unused-variable -ftemplate-depth-5000 -fconstexpr-depth=1024 -march=native -O3 -ffast-math -fno-finite-math-only -fopenmp'],
+#         extra_ldflags=['-shared -L/home/chunyuan/torch-inductor/pytorch/torch/lib -L/home/chunyuan/miniconda3/envs/torch-inductor/lib -lc10 -ltorch -ltorch_cpu -ltorch_python -lgomp'],
+#         extra_include_paths=['-I/home/chunyuan/torch-inductor/pytorch/torch/include -I/home/chunyuan/torch-inductor/pytorch/torch/include/torch/csrc/api/include -I/home/chunyuan/torch-inductor/pytorch/torch/include/TH -I/home/chunyuan/torch-inductor/pytorch/torch/include/THC -I/home/chunyuan/miniconda3/envs/torch-inductor/include/python3.8'])
 
 def _wrap_func(f):
     def g(args):
