@@ -32,8 +32,8 @@ def buffer_reuse_key(node: ir.Buffer):
 def make_buffer_reuse(old, new, del_func, declare, ending, as_strided):
     assert old.get_dtype() == new.get_dtype()
     del_line = ""
-    if old.get_name() not in V.graph.get_output_names():
-        del_line = del_func(old.get_name())
+    # if old.get_name() not in V.graph.get_output_names():
+    #     del_line = del_func(old.get_name())
     if old.get_size() == new.get_size() and old.get_stride() == new.get_stride():
         return f"{declare}{new.get_name()} = {old.get_name()}{del_line}{ending}"
 
@@ -143,8 +143,8 @@ class FreeIfNotReusedLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        if not self.is_reused:
-            code.writeline(f"del {self.node.get_name()}")
+        # if not self.is_reused:
+        #     code.writeline(f"del {self.node.get_name()}")
 
 
 @dataclasses.dataclass
@@ -205,7 +205,7 @@ class FreeLine(MemoryPlanningLine):
 
     def codegen(self, code: IndentedBuffer):
         assert self.node.get_name() not in V.graph.removed_buffers
-        code.writeline(f"del {self.node.get_name()}")
+        # code.writeline(f"del {self.node.get_name()}")
 
 
 class NullLine(MemoryPlanningLine):
@@ -306,7 +306,7 @@ class WrapperCodeGen(CodeGen):
             if inp_len != 0:
                 lhs = f"{', '.join(V.graph.graph_inputs.keys())}{'' if inp_len != 1 else ','}"
                 self.wrapper_call.writeline(f"{lhs} = args")
-                self.wrapper_call.writeline("args.clear()")
+                # self.wrapper_call.writeline("args.clear()")
             for name in V.graph.randomness_seeds:
                 self.wrapper_call.writeline(
                     f"torch.randint(2**31, size=(), dtype=torch.int64, out={name})"
@@ -366,7 +366,7 @@ class WrapperCodeGen(CodeGen):
 
         # can be freed but not reused
         if isinstance(buffer, ir.InputBuffer):
-            self.write_del_line(name)
+            # self.write_del_line(name)
             return
 
         if not self.can_reuse(buffer):
@@ -375,7 +375,7 @@ class WrapperCodeGen(CodeGen):
 
         layout = buffer.get_layout()
         if isinstance(layout, (ir.AliasedLayout, ir.MultiOutputLayout)):
-            self.write_del_line(name)
+            # self.write_del_line(name)
             return
 
         self.write_free_if_not_reused_line(buffer)
@@ -591,6 +591,36 @@ class CppWrapperCodeGen(WrapperCodeGen):
             #include <dlfcn.h>
             #include <assert.h>
             #include <chrono>
+
+
+            #include <iostream>
+            #include <fstream>
+
+            using namespace std;
+
+
+            void mem_usage(double& vm_usage, double& resident_set) {
+            vm_usage = 0.0;
+            resident_set = 0.0;
+            ifstream stat_stream("/proc/self/stat",ios_base::in); //get info from proc directory
+            //create some variables to get info
+            string pid, comm, state, ppid, pgrp, session, tty_nr;
+            string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+            string utime, stime, cutime, cstime, priority, nice;
+            string O, itrealvalue, starttime;
+            unsigned long vsize;
+            long rss;
+            stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+            >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+            >> utime >> stime >> cutime >> cstime >> priority >> nice
+            >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
+            stat_stream.close();
+            long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // for x86-64 is configured to use 2MB pages
+            vm_usage = vsize / 1024.0;
+            resident_set = rss * page_size_kb;
+            }
+
+
             """
         )
         self.prefix.splice(
@@ -620,7 +650,28 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 )
                 inputs_keys_str = ", ".join(V.graph.graph_inputs.keys())
                 # self.wrapper_call.writeline(f"at::Tensor {inputs_keys_str};")
+                
+
+                self.wrapper_call.splice(
+                    """
+                    double vm_before_args, rss_before_args;
+                    mem_usage(vm_before_args, rss_before_args);
+                    cout << "Virtual Memory before _before_args: " << vm_before_args << ", Resident set size: " << rss_before_args << endl;
+                    """
+                )
+
+
                 self.wrapper_call.writeline(f"auto& [{inputs_keys_str}] = args;")
+
+                self.wrapper_call.splice(
+                    """
+                    double vm_after_args, rss_after_args;
+                    mem_usage(vm_after_args, rss_after_args);
+                    cout << "Virtual Memory before _after_args: " << vm_after_args << ", Resident set size: " << rss_after_args << endl;
+                    """
+                )
+
+
             else:
                 self.wrapper_call.writeline(
                     f"{output_types} call_{self._call_func_id}(std::tuple<> args) {{"
@@ -636,8 +687,42 @@ class CppWrapperCodeGen(WrapperCodeGen):
             # if config.bench_time and config.cpp_wrapper:
             #     self.wrapper_call.writeline(" std::chrono::time_point<std::chrono::high_resolution_clock> time_run;")
             
+            # self.wrapper_call.splice(
+            #     """
+            #     int tSize = 0, resident = 0, share = 0;
+            #     ifstream buffer("/proc/self/statm");
+            #     buffer >> tSize >> resident >> share;
+            #     buffer.close();
+
+            #     long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+            #     double rss = resident * page_size_kb;
+            #     cout << "RSS - " << rss << " kB" << endl;
+
+            #     double shared_mem = share * page_size_kb;
+            #     cout << "Shared Memory - " << shared_mem << " kB" << endl;
+
+            #     cout << "Private Memory - " << rss - shared_mem << "kB" << endl;
+            #     """
+            # )
+
+
+            self.wrapper_call.splice(
+                """
+                double vm, rss;
+                mem_usage(vm, rss);
+                cout << "Virtual Memory before: " << vm << ", Resident set size: " << rss << endl;
+                """
+            )
             
             self.wrapper_call.writeline(f"static LoadKernel_call{self._call_func_id} load_kernel_;")
+
+            self.wrapper_call.splice(
+                f"""
+                double vm1, rss1;
+                mem_usage(vm1, rss1);
+                cout << "Virtual Memory call{self._call_func_id}: " << vm1 << ", Resident set size: " << rss1 << endl;
+                """
+            )
 
     def write_allocate_line(self, buffer):
         self.writeline(CppAllocateLine(buffer))
@@ -698,6 +783,15 @@ class CppWrapperCodeGen(WrapperCodeGen):
         )
 
     def generate_return(self):
+
+        self.wrapper_call.splice(
+            """
+            double vm_before_return, rss_before_return;
+            mem_usage(vm_before_return, rss_before_return);
+            cout << "Virtual Memory _before_return: " << vm_before_return << ", Resident set size: " << rss_before_return << endl;
+            """
+        )   
+        
         if self.output_refs:
             if len(self.output_refs) == 1:
                 self.wrapper_call.writeline(

@@ -123,6 +123,7 @@ def cpp_compiler_search(search):
 
 
 def install_gcc_via_conda():
+    return "/usr/bin/g++"
     """On older systems, this is a quick way to get a modern compiler"""
     prefix = os.path.join(cache_dir(), "gcc")
     cxx_path = os.path.join(prefix, "bin", "g++")
@@ -161,7 +162,7 @@ def cpp_flags():
 
 
 def optimization_flags():
-    return "-march=native -O3 -ffast-math -fno-finite-math-only -fopenmp"
+    return "-march=native -O3 -g -ffast-math -fno-finite-math-only -fopenmp"
 
 
 def get_include_and_linking_paths(include_pytorch=False):
@@ -254,7 +255,8 @@ class CppWrapperCodeCache:
     def load(cls, source_code, func_name):
         key = code_hash(source_code)
         # cpp_wrapper_dir = os.path.join(cache_dir(), "cpp_wrapper")
-        cpp_wrapper_dir = cpp_extension.get_default_build_root()
+        # cpp_wrapper_dir = cpp_extension.get_default_build_root()
+        cpp_wrapper_dir="/home/chunyuan/.cache/torch_extensions"
         name = f"inline_extension_{key}"
         EXT = "so"
         filepath = os.path.join(cpp_wrapper_dir, f"{name}.{EXT}")

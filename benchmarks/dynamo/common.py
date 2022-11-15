@@ -8,6 +8,7 @@ import io
 import logging
 import os
 import random
+import psutil
 import signal
 import subprocess
 import sys
@@ -382,19 +383,21 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
     with maybe_profile(enabled=args.export_profiler_trace) as p:
         frozen_model_iter_fn = torch._dynamo.run(model_iter_fn)
         for rep in range(args.repeat):
-            inputs = (
-                randomize_input(copy.deepcopy(example_inputs))
-                if should_randomize_input
-                else example_inputs
-            )
-
+            # inputs = (
+            #     randomize_input(copy.deepcopy(example_inputs))
+            #     if should_randomize_input
+            #     else example_inputs
+            # )
+            inputs = example_inputs
             # interleave the runs to handle frequency scaling and load changes
-            timings[rep, 0], expected_output = timed(
-                baseline_model, baseline_model_iter_fn, inputs, return_result=True
-            )
+            # timings[rep, 0], expected_output = timed(
+            #     baseline_model, baseline_model_iter_fn, inputs, return_result=True
+            # )
+            timings[rep, 0] = 0
             timings[rep, 1], actual_output = timed(
                 model, frozen_model_iter_fn, inputs, return_result=True
             )
+            print("mem: ", psutil.virtual_memory())
             if should_check_result:
                 is_correct = is_correct and same(expected_output, actual_output)
     if args.export_profiler_trace:
@@ -403,6 +406,9 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
         p.export_chrome_trace(name)
     pvalue = ttest_ind(timings[:, 0], timings[:, 1]).pvalue
     median = np.median(timings, axis=0)
+    print("time eager: ", median[0])
+    print("time dynamo: ", median[1])
+    
     speedup = median[0] / median[1]
     if args.dump_raw_metrics:
         np.save(
@@ -1145,9 +1151,11 @@ class BenchmarkRunner:
             experiment_kwargs = {}
             results = []
 
-            eager_latency, eager_peak_mem = warmup(
-                self.model_iter_fn, model, example_inputs, "eager"
-            )
+            # eager_latency, eager_peak_mem = warmup(
+            #     self.model_iter_fn, model, example_inputs, "eager"
+            # )
+            eager_latency = 100
+            eager_peak_mem = 100
             optimized_model_iter_fn = optimize_ctx(self.model_iter_fn)
             dynamo_latency, dynamo_peak_mem = warmup(
                 optimized_model_iter_fn, model, example_inputs, "dynamo"
