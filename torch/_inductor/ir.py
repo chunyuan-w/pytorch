@@ -2412,7 +2412,9 @@ class ExternKernel(InputsKernel):
 
     def codegen_args(self):
         args = [x.codegen_reference() for x in self.inputs]
+        
         args.extend(map(repr, self.constant_args))
+        # args.extend(map(lambda x: repr(x).replace('(', '{').replace(')', '}').replace('False', 'false').replace('True', 'true').replace('None', 'at::Tensor()').replace('[]', '{}').replace("'", '"'), self.constant_args))
         return args
 
     def codegen_kwargs(self):
@@ -3002,6 +3004,7 @@ class MultiOutput(ExternKernel):
 
 class Convolution(ExternKernelAlloc):
     kernel = "aten.convolution"
+    cpp_kernel = "at::convolution"
 
     def __init__(
         self,
@@ -3023,8 +3026,15 @@ class Convolution(ExternKernelAlloc):
         wrapper.writeline(
             f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
         )
-        if isinstance(self.layout, Layout):
-            self.codegen_size_asserts(wrapper)
+
+        # wrapper.writeline(
+        #     f"auto {self.get_name()} = {self.cpp_kernel}({', '.join(self.codegen_args())});"
+        # )
+
+
+        # TODO: how to call it from cpp
+        # if isinstance(self.layout, Layout):
+        #     self.codegen_size_asserts(wrapper)
 
     @classmethod
     def create(
@@ -3366,6 +3376,8 @@ def _prepare_convolution_fusion_create(
 
 class ConvolutionUnary(ExternKernelAlloc):
     kernel = "torch.ops.mkldnn._convolution_pointwise"
+    # TODO: fail to call this from c++
+    cpp_kernel = "torch::mkldnn::_convolution_pointwise"
 
     def __init__(
         self,
@@ -3381,6 +3393,9 @@ class ConvolutionUnary(ExternKernelAlloc):
         wrapper.writeline(
             f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
         )
+        # wrapper.writeline(
+        #     f"auto {self.get_name()} = {self.cpp_kernel}({', '.join(self.codegen_args())});"
+        # )
 
     @classmethod
     def create(
