@@ -8,6 +8,7 @@
 #include <ATen/core/PhiloxRNGEngine.h>
 #include <c10/util/Half.h>
 #include <c10/util/BFloat16.h>
+#include <ATen/record_function.h>
 
 typedef at::Half half;
 typedef at::BFloat16 bfloat16;

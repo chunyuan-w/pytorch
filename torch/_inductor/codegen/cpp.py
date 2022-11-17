@@ -624,6 +624,8 @@ class KernelGroup:
         code = BracesBuffer()
         code.writelines([cpp_prefix(), "#include <chrono>", "#include <iostream>","" f'extern "C" void kernel({arg_defs})'])
         with code.indent():
+            if config.cpp.enable_profile:
+                code.writeline('RECORD_FUNCTION("kernel", c10::ArrayRef<c10::IValue>({}));')            
             config.beginning = False
             for old, new in self.args.aliases():
                 code.writeline(f"auto {old} = {new};")

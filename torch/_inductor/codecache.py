@@ -182,8 +182,9 @@ def get_include_and_linking_paths(include_pytorch=False):
     libs = " ".join(["-l" + p for p in libs])
     return ipaths, lpaths, libs
 
-
-def cpp_compile_command(input, output, include_pytorch=False):
+# include pytorch to enable RECORD_FUNCTION
+# put .cpp before libs to avoid undefined symbol issue
+def cpp_compile_command(input, output, include_pytorch=True):
     ipaths, lpaths, libs = get_include_and_linking_paths(include_pytorch)
 
     return re.sub(
@@ -191,9 +192,8 @@ def cpp_compile_command(input, output, include_pytorch=False):
         " ",
         f"""
             {cpp_compiler()} {shared()} {cpp_flags()}
-            {ipaths} {lpaths} {libs}
+            {ipaths}  -o{output} {input} {lpaths} {libs}
             {optimization_flags()}
-            -o{output} {input}
         """,
     ).strip()
 
