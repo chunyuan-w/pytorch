@@ -3366,10 +3366,14 @@ def _prepare_convolution_fusion_create(
             [0, 0],
             groups,
         )
-        req_stride_order = get_stride_order(output.stride())
+        output_size = output.size()
+        stride_order = [0] + list(reversed(range(1, 2 + 1)))
+        if len(stride_order) < len(output_size):
+            # add batch dim if it exists
+            req_stride_order = [len(stride_order)] + stride_order
+        ouput_stride = make_channels_last_strides_for(output_size)
 
     x = cls.require_stride_order(x, req_stride_order)
-    weight = cls.require_stride_order(weight, req_stride_order)
     assert x.get_device().type == "cpu" and weight.get_device().type == "cpu"
     inputs = [x, weight]
 
@@ -3377,7 +3381,7 @@ def _prepare_convolution_fusion_create(
         x.get_device(),
         x.get_dtype(),
         output.size(),
-        output.stride(),
+        ouput_stride,
     )
     constant_args = [padding, stride, dilation, groups]
 
