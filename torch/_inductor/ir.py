@@ -2412,10 +2412,13 @@ class ExternKernel(InputsKernel):
 
     def codegen_args(self):
         args = [x.codegen_reference() for x in self.inputs]
-        
         args.extend(map(repr, self.constant_args))
-        # args.extend(map(lambda x: repr(x).replace('(', '{').replace(')', '}').replace('False', 'false').replace('True', 'true').replace('None', 'at::Tensor()').replace('[]', '{}').replace("'", '"'), self.constant_args))
         return args
+
+    def cpp_wrapper_codegen_args(self):
+        args = [x.codegen_reference() for x in self.inputs]
+        args.extend(map(lambda x: repr(x).replace('(', '{').replace(')', '}').replace('False', 'false').replace('True', 'true').replace('None', 'at::Tensor()').replace('[]', '{}').replace("'", '"'), self.constant_args))
+        return args        
 
     def codegen_kwargs(self):
         kwargs = []
@@ -3023,13 +3026,15 @@ class Convolution(ExternKernelAlloc):
             wrapper.header.writeline(
                 f"import {config.inductor_import}.triton_ops.conv as {self.kernel}"
             )
-        wrapper.writeline(
-            f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
-        )
 
-        # wrapper.writeline(
-        #     f"auto {self.get_name()} = {self.cpp_kernel}({', '.join(self.codegen_args())});"
-        # )
+        from torch._inductor.codegen.wrapper import CppWrapperCodeGen
+
+        if isinstance(wrapper, CppWrapperCodeGen):
+            args = self.cpp_wrapper_codegen_args()
+        else:
+            args = self.codegen_args()
+
+        wrapper.writeline(wrapper.generate_conv_code(self.get_name(), self.kernel, self.cpp_kernel, args))
 
 
         # TODO: how to call it from cpp

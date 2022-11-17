@@ -431,6 +431,9 @@ class WrapperCodeGen(CodeGen):
         #         f'print("dnnl_verbose,1,2,extern_kernel_run,3,4,5,6,7,8,", (time.time() - time_run)*1000)'
         #     )
 
+    def generate_conv_code(self,name, kernel, cpp_kernel, codegen_args):
+        return f"{name} = {kernel}({', '.join(codegen_args)})"
+
     @dynamo_utils.dynamo_timed
     def generate(self):
         result = IndentedBuffer()
@@ -758,3 +761,6 @@ class CppWrapperCodeGen(WrapperCodeGen):
         # if config.bench_time:
             # self.writeline(f'std::cout << "dnnl_verbose,1,2,extern_kernel_run,3,4,5,6,7,8," << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_run).count() / 1000000.0 << std::endl; ')
 
+
+    def generate_conv_code(self, name, kernel, cpp_kernel, codegen_args):
+        return f"auto {name} = {cpp_kernel}({', '.join(codegen_args)});"
