@@ -46,7 +46,11 @@ def compute_speedups(
             else:
                 from torch._inductor.utils import timed
 
-                timings[rep, m] = timed(model, example_inputs)
+                # warmup
+                model(*example_inputs)
+                model(*example_inputs)
+                model(*example_inputs)
+                timings[rep, m] = timed(model, example_inputs, 10) / 10
     return np.median(timings, axis=0)
 
 
@@ -220,7 +224,7 @@ def benchmark(
             except Exception as e:
                 print(f"error {operator}")
                 print(e)
-                raise e
+                # raise e
 
         if not timings:
             continue
