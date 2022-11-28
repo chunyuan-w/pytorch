@@ -3,6 +3,7 @@ import dataclasses
 import functools
 import getpass
 import hashlib
+import importlib
 import logging
 import multiprocessing
 import os
@@ -337,7 +338,9 @@ def use_custom_generated_macros():
     return "-D C10_USING_CUSTOM_GENERATED_MACROS"
 
 
-def get_include_and_linking_paths(include_pytorch=False, vec_isa: VecISA = invalid_vec_isa):
+def get_include_and_linking_paths(
+    include_pytorch=False, vec_isa: VecISA = invalid_vec_isa
+):
     if sys.platform == "linux" and (
         include_pytorch
         or vec_isa != invalid_vec_isa
@@ -364,7 +367,8 @@ def get_include_and_linking_paths(include_pytorch=False, vec_isa: VecISA = inval
     ipaths = " ".join(["-I" + p for p in ipaths])
     lpaths = " ".join(["-L" + p for p in lpaths])
     libs = " ".join(["-l" + p for p in libs])
-    return ipaths, lpaths, libs, macros        
+    return ipaths, lpaths, libs, macros
+
 
 def cpp_compile_command(
     input,
@@ -374,7 +378,9 @@ def cpp_compile_command(
     include_pytorch=False,
     vec_isa: VecISA = invalid_vec_isa,
 ):
-    ipaths, lpaths, libs, macros = get_include_and_linking_paths(include_pytorch, vec_isa)
+    ipaths, lpaths, libs, macros = get_include_and_linking_paths(
+        include_pytorch, vec_isa
+    )
 
     return re.sub(
         r"[ \n]+",
@@ -451,6 +457,50 @@ class PyCodeCache:
                 exec(code, mod.__dict__, mod.__dict__)
                 # another thread might set this first
                 cls.cache.setdefault(key, mod)
+        return cls.cache[key]
+
+
+class CppWrapperCodeCache:
+    cache = dict()
+    clear = staticmethod(cache.clear)
+
+    @classmethod
+    def load(cls, source_code, func_name):
+        key = code_hash(source_code)
+        # cpp_wrapper_dir = os.path.join(cache_dir(), "cpp_wrapper")
+        cpp_wrapper_dir = cpp_extension.get_default_build_root()
+        name = f"inline_extension_{key}"
+        EXT = "so"
+        filepath = os.path.join(cpp_wrapper_dir, f"{name}.{EXT}")
+        # TODO: what about key?
+        if not os.path.exists(filepath):
+            # TODO: Filelock
+            if not os.path.exists(cpp_wrapper_dir):
+                os.mkdir(cpp_wrapper_dir)
+
+            ipaths, lpaths, libs, macros = get_include_and_linking_paths()
+
+            extra_cflags = f"{cpp_flags()} -ftemplate-depth-5000 -fconstexpr-depth=1024 {optimization_flags()} {get_warning_all_flag()} {macros} {use_custom_generated_macros()}"
+            extra_ldflags = f"{get_shared()} {lpaths} {libs}"
+            extra_include_paths = f"{ipaths}"
+
+            mod = torch.utils.cpp_extension.load_inline(
+                name=name,
+                build_directory=cpp_wrapper_dir,
+                cpp_sources=[source_code],
+                functions=[func_name],
+                extra_cflags=[extra_cflags],
+                extra_ldflags=[extra_ldflags],
+                extra_include_paths=[extra_include_paths],
+            )
+            cls.cache[key] = mod
+        else:
+            spec = importlib.util.spec_from_file_location(name, filepath)
+            assert spec is not None
+            mod = importlib.util.module_from_spec(spec)
+            assert isinstance(spec.loader, importlib.abc.Loader)
+            spec.loader.exec_module(mod)
+            cls.cache[key] = mod
         return cls.cache[key]
 
 
