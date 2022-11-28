@@ -93,6 +93,8 @@ class cpp:
         "clang++",
         "g++",
     )
+    # Allow kernel performance profiling via PyTorch profiler
+    enable_kernel_profile = True
 
 
 # config specific to codegen/triton.py

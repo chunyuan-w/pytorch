@@ -2256,16 +2256,32 @@ class ConcatKernel(NopKernel):
                     )
             offsets_end.append(new_size[dim])
 
-        with torch._subclasses.FakeTensorMode():
-             x_fake = [ir_node_to_tensor(x, guard_shape=True) for x in inputs]
-              output = torch.ops.aten.cat(x_fake, dim)
+        output_stride = FlexibleLayout.contiguous_strides(new_size)
+        for i in range(len(inputs)):
+            x = inputs[i]
+            if is_storage_and_layout(x):
+                if isinstance(x.get_layout(), FixedLayout):
+                    actual_size = x.get_layout().size
+                    actual_stride = x.get_layout().stride
+                    if len(actual_size) in [4, 5]:
+                        channels_last_stride = make_channels_last_strides_for(actual_size)
+                        if actual_stride == channels_last_stride:
+                            output_stride = channels_last_stride
+                            break
+
+        # with torch._subclasses.FakeTensorMode():
+        #     x_fake = [ir_node_to_tensor(x, guard_shape=True) for x in inputs]
+        #     output = torch.ops.aten.cat(x_fake, dim)
+        # output_stride = output.stride()
+
+
         kernel = ConcatKernel(
             name=None,
             layout=FixedLayout(
                 device=device,
                 dtype=dtype,
                 size=new_size,
-                stride=output.stride(),
+                stride=output_stride,
             ),
             inputs=[],
         )
