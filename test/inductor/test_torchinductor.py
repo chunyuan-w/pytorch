@@ -4677,6 +4677,22 @@ class CommonTemplate:
             [torch.randn((4, 2)), torch.randn((4))],
         )
 
+    @patch.object(config, "cpp_wrapper", True)
+    def test_cpp_wrapper(self):
+        device = "cpu"
+        for name in [
+            "test_as_strided",  # buffer reuse
+            "test_cat",  # alias
+            "test_relu",  # multiple inputs
+            "test_transpose",  # multiple outputs, buffer clear
+            "test_upsample_bilinear2d_b",  # single input, single output
+        ]:
+            test_name = f"{name}_{device}"
+            assert hasattr(self, test_name), "undefined function"
+            func = getattr(self, test_name)
+            assert callable(func), "not a callable"
+            func()
+
 
 if HAS_CPU:
 
