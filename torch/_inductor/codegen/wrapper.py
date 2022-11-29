@@ -58,6 +58,7 @@ def make_buffer_allocation(buffer):
 
 def make_cpp_buffer_allocation(buffer):
     from .cpp import DTYPE_TO_ATEN
+
     # TODO: map layout and device here
     dtype = buffer.get_dtype()
     shape = tuple(buffer.get_size())
@@ -445,6 +446,9 @@ class WrapperCodeGen(CodeGen):
             args.append(f"out={codegen_reference}")
         self.writeline(f"{kernel}({', '.join(args)})")
 
+    def generate_mkl_packed_linear_code(self, name, kernel, cpp_kernel, codegen_args):
+        return f"{name} = {kernel}({', '.join(codegen_args)})"
+
     @dynamo_utils.dynamo_timed
     def generate(self):
         result = IndentedBuffer()
@@ -651,6 +655,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
     def get_kernel_path(self, code):
         from ..codecache import pick_vec_isa
+
         picked_vec_isa = pick_vec_isa()
         ext = "so"
         extra = cpp_compile_command("i", "o", vec_isa=picked_vec_isa)
@@ -746,3 +751,6 @@ class CppWrapperCodeGen(WrapperCodeGen):
         else:
             args.insert(0, f"{codegen_reference}")
         self.writeline(f"{cpp_kernel}({', '.join(args)});")
+
+    def generate_mkl_packed_linear_code(self, name, kernel, cpp_kernel, codegen_args):
+        return f"auto {name} = {cpp_kernel}({', '.join(codegen_args)});"
