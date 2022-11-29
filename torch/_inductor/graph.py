@@ -55,6 +55,7 @@ def supported_extern_kernel_of_cpp_wrapper(buffer):
         ir.MatrixMultiply,
         ir.BatchMatrixMultiply,
         ir.MatrixMultiplyAdd,
+        ir.MKLPackedLinear,
     ]:
         if isinstance(buffer, kernel_type):
             return True
