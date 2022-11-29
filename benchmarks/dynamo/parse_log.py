@@ -4,6 +4,7 @@ parser.add_argument('--log-file', type=str, default="inductor.log", help='log fi
 parser.add_argument('--compare-file', type=str, default=None, help='log file to compare')
 args = parser.parse_args()
 
+all_models = []
 def parse_log(file):
     result = []
     with open(file, 'r') as reader:
@@ -14,6 +15,10 @@ def parse_log(file):
                 model = line.split(" Time cost")[0].split(" ")[-1].strip()
             elif line.startswith("eager: "):
                 result.append(model+", "+ line)
+            elif "cpu  eval" in line:
+                m = line.split("cpu  eval")[-1].strip().split(" ")[0].strip()
+                if m not in all_models:
+                    all_models.append(m)
     return result
 
 def str_to_dict(contents):
@@ -34,14 +39,7 @@ else:
     old_res_dict = str_to_dict(old_res)
     new_res_dict = str_to_dict(new_res)
     results = ["Model, Eager(old), Inductor(old), Eager(new), Inductor(new), Eager Ratio(new/old), Inductor Ratio(new/old)\n"]
-    all_keys = []
-    for key in new_res_dict.keys():
-        all_keys.append(key)
-    for key in old_res_dict.keys():
-        if key not in all_keys:
-            all_keys.append(key)
-    all_keys.sort()
-    for key in all_keys:
+    for key in all_models:
         line = key+", "
         if key in old_res_dict:
             for item in old_res_dict[key]:
