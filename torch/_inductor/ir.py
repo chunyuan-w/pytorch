@@ -3428,22 +3428,51 @@ def _prepare_convolution_transpose_fusion_create(
         bias_fake = (
             ir_node_to_tensor(bias, guard_shape=True) if bias is not None else bias
         )
-        output = torch.ops.aten.convolution(
-            x_fake,
-            weight_fake,
-            bias_fake,
-            stride,
-            padding,
-            dilation,
-            True,
-            output_padding,
-            groups,
-        )
-        output_size = output.size()
+        # output = torch.ops.aten.convolution(
+        #     x_fake,
+        #     weight_fake,
+        #     bias_fake,
+        #     stride,
+        #     padding,
+        #     dilation,
+        #     True,
+        #     output_padding,
+        #     groups,
+        # )
+        # output_size = output.size()
+
+        input_size = x_fake.size()
+        dim = len(input_size)
+
+        assert dim > 2, "Expect input size > 2"
+        print("weight fake size: ", weight_fake.size())
+        # weight is packed: weight is in OIHW or G, O, I/G, ...
+        if groups > 1:
+            weight_size = []
+            weight_size.append(weight_fake.size()[1] * groups)
+            weight_size.append(weight_fake.size()[0] / groups)
+            for d in range(2, dim):
+                weight_size.append(weight_fake.size()[d])
+        else:
+            weight_size = weight_fake.transpose(0, 1).size()
+        
+        assert len(input_size) == len(weight_size), "Expect input size == weight size"
+        
+
+        BATCH_DIM = 0
+        WEIGHT_INPUT_CHANNELS_DIM = 1
+        output_size = []
+        output_size.append(input_size[BATCH_DIM])
+        output_size.append(weight_size[WEIGHT_INPUT_CHANNELS_DIM] * groups)
+        for d in range(2, dim):
+            kernel = (weight_size[d] - 1) * dilation[d - 2] + 1;
+            output_size_d = (input_size[d] - 1) * stride[d - 2] - (padding[d - 2] * 2) + kernel + output_padding[d - 2];            
+            output_size.append(output_size_d)
+
         req_stride_order = [0] + list(reversed(range(1, len(stride) + 1)))
         req_stride_order = [len(req_stride_order)] + req_stride_order
         output_stride = make_channels_last_strides_for(output_size)
-
+    print("req_stride_order: ", req_stride_order)
     x = cls.require_stride_order(x, req_stride_order)
     assert x.get_device().type == "cpu" and weight.get_device().type == "cpu"
     inputs = [x, weight]
@@ -3451,7 +3480,7 @@ def _prepare_convolution_transpose_fusion_create(
     kernel_layout = FixedLayout(
         x.get_device(),
         x.get_dtype(),
-        output.size(),
+        output_size,
         output_stride,
     )
     constant_args = [padding, stride, dilation, groups, output_padding]

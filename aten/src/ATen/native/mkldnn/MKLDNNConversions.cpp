@@ -134,7 +134,7 @@ Tensor mkldnn_reorder_conv2d_weight(
   ideep::tensor result;
   result.init(desc);
   result.feed_from(w);
-
+  std::cout << "packed weight size: " << result.get_dims() << "\n";
   return new_with_itensor_mkldnn(std::move(result), optTypeMetaToScalarType(self.options().dtype_opt()),
                                  self.options().device_opt());
 }
@@ -267,25 +267,32 @@ Tensor mkldnn_reorder_conv_transpose2d_weight(
       ideep::algorithm::deconvolution_direct,
       w.get_data_type(),
       src_dims);
+  
+  // TODO: transpose will convert the weight back to the public format
+  // std::cout << "is public before transpose: " << expected_desc.is_plain() << "\n";
   if (groups > 1) {
     expected_desc = expected_desc.transpose(1, 2);
   } else {
     expected_desc = expected_desc.transpose(0, 1);
   }
+  // std::cout << "is public after transpose: " << expected_desc.is_plain() << "\n";
+
 
   ideep::tensor result;
   result.init(expected_desc);
   w.transpose_(0, 1);
   result.feed_from(w, /*is_deconv_weights*/true);
   
-  if (groups > 1) {
-    result = result.transpose(1, 2);
-  } else {
-    result = result.transpose(0, 1);
-  }
+  // if (groups > 1) {
+  //   result = result.transpose(1, 2);
+  // } else {
+  //   result = result.transpose(0, 1);
+  // }
 
   
   std::cout << "packed weight size: " << result.get_dims() << "\n";
+  std::cout << "is public before return: " << result.is_public_format() << "\n";
+
   return new_with_itensor_mkldnn(std::move(result), optTypeMetaToScalarType(self.options().dtype_opt()),
                                  self.options().device_opt());
 

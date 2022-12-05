@@ -193,6 +193,8 @@ void _mkldnn_convolution_out (
   auto weight = weight_t.is_mkldnn() ? weight_t : weight_t.contiguous(memory_format);
   const ideep::tensor x = itensor_from_tensor(input);
   const ideep::tensor w = itensor_from_tensor(weight);
+  
+  printf("w is mkldnn: %d\n", weight_t.is_mkldnn());
   if (bias.defined()) {
     const ideep::tensor b = itensor_from_tensor(bias);
     ideep::convolution_forward::compute_v3(
@@ -265,6 +267,7 @@ Tensor _mkldnn_convolution(
     output.resize_(output_sizes, memory_format);
     y = itensor_from_tensor(output);
   }
+  std::cout << "weight size in compute: " << weight_t.sizes() << "\n";
   _mkldnn_convolution_out(
       input_t,
       weight_t,
@@ -647,23 +650,35 @@ Tensor _mkldnn_convolution_transpose(
   bool is_channels_last = use_channels_last || input_t.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
   
   printf("weight is packed: %d\n", weight_t.is_mkldnn());
+  std::cout << "weight size in fwd: " << weight_t.sizes() << "\n";
   
-  // When weight is mkldnn (it is packed), it has been changed from OIHW to IOHW
   // TODO: this is not working when groups > 1!!!!!!
-  // TORCH_CHECK(input_t.sizes().size() > 2);
-  // TORCH_CHECK(input_t.sizes().size() == weight_t.sizes().size());
-  // auto dim = input_t.sizes().size();
-  // std::vector<int64_t> weight_IOHW_sizes(dim);
-  // weight_IOHW_sizes[0] = weight_t.sizes()[1];
-  // weight_IOHW_sizes[1] = weight_t.sizes()[0];
-  // for (const auto d : c10::irange(2, dim)) {
-  //   weight_IOHW_sizes[d] = weight_t.sizes()[d];
-  // }
+  // Need original weight size in IOHW here
+  TORCH_CHECK(input_t.sizes().size() > 2);
+  TORCH_CHECK(input_t.sizes().size() == weight_t.sizes().size());
+  auto dim = input_t.sizes().size();
+  std::vector<int64_t> weight_IOHW_sizes(dim);
+  if (groups > 1) {
+    // [g * o, i / g, ...]
+    weight_IOHW_sizes[0] = weight_t.sizes()[1] * groups;
+    weight_IOHW_sizes[1] = weight_t.sizes()[0] / groups;
+  } else {
+    weight_IOHW_sizes[0] = weight_t.sizes()[1];
+    weight_IOHW_sizes[1] = weight_t.sizes()[0];
+  }
+  for (const auto d : c10::irange(2, dim)) {
+    weight_IOHW_sizes[d] = weight_t.sizes()[d];
+  }  
 
-  auto output_sizes = conv_input_size(input_t.sizes(), weight_t.sizes(), padding, output_padding, stride, dilation, groups);
-  auto output = at::empty({0}, input_t.options());
+  auto memory_format =
+      mkldnn_convolution_memory_format(input_t.ndimension(), use_channels_last);
 
-  const ideep::tensor x = itensor_from_tensor(input_t);
+  auto input = input_t.to(memory_format);
+
+  auto output_sizes = conv_input_size(input.sizes(), weight_IOHW_sizes, padding, output_padding, stride, dilation, groups);
+  auto output = at::empty({0}, input.options());
+
+  const ideep::tensor x = itensor_from_tensor(input);
   ideep::tensor w = itensor_from_tensor(weight_t);
   
   // When weight is_mkldnn (it is packed), no need to do transpose
@@ -680,28 +695,34 @@ Tensor _mkldnn_convolution_transpose(
   // } else {
   //   w = w.transpose(0, 1);
   // }
-  if (weight_t.is_mkldnn()) {
-    std::cout << "mkldnn weight shape: " << w.get_dims() <<"\n";
-    if (groups > 1) {
-      w.transpose_(1, 2);
-    } else {
-      w.transpose_(0, 1);
-    }
+  // if (weight_t.is_mkldnn()) {
+  //   std::cout << "mkldnn weight shape: " << w.get_dims() <<"\n";
+  //   std::cout << "is public when computing before trans: " << w.is_public_format() <<"\n";
+  //   if (groups > 1) {
+  //     w.transpose_(1, 2);
+  //   } else {
+  //     w.transpose_(0, 1);
+  //   }
 
-  } else {
-    std::cout << "non mkldnn weight shape: " << w.get_dims() <<"\n";
+  //   std::cout << "is public when computing after trans: " << w.is_public_format() <<"\n";
 
-    w.transpose_(0, 1);
-  }
 
-  auto memory_format =
-      mkldnn_convolution_memory_format(input_t.ndimension(), use_channels_last);
+  // } else {
+  //   std::cout << "non mkldnn weight shape: " << w.get_dims() <<"\n";
+
+  //   w.transpose_(0, 1);
+  // }
+
+
 
   ideep::tensor y;
   if (is_channels_last) {
     output.resize_(output_sizes, memory_format);
     y = itensor_from_tensor(output);
   }
+
+std::cout << "w is public: " << w.is_public_format() << "\n";
+
 
 std::cout << "x size: " << x.get_dims() << "\n";
 std::cout << "w size: " << w.get_dims() << "\n";
@@ -738,10 +759,10 @@ std::cout << "y stride: " << y.get_strides() << "\n";
         groups,
         op_attr);
   }
-  if (input_t.is_mkldnn()) {
-    return MKLDNNTensor(y, input_t.options());
+  if (input.is_mkldnn()) {
+    return MKLDNNTensor(y, input.options());
   } else if (!is_channels_last) {
-    return mkldnn_to_dense(MKLDNNTensor(y, input_t.options()));
+    return mkldnn_to_dense(MKLDNNTensor(y, input.options()));
   } else {
     TORCH_INTERNAL_ASSERT(y.get_desc().is_nhwc());
     return output;
@@ -761,8 +782,9 @@ Tensor mkldnn_convolution_transpose_pointwise(
     torch::List<c10::optional<at::Scalar>> scalars,
     c10::optional<c10::string_view> algorithm) {
   c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
-  bool use_channels_last =
-      weight_t.is_mkldnn() || mkldnn_conv_use_channels_last(input_t, weight_t);  
+  // bool use_channels_last =
+  //     weight_t.is_mkldnn() || mkldnn_conv_use_channels_last(input_t, weight_t);  
+  bool use_channels_last = true;
   return _mkldnn_convolution_transpose(
       input_t,
       weight_t,
