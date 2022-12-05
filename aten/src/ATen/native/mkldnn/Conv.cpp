@@ -624,6 +624,7 @@ Tensor _mkldnn_convolution_transpose(
     IntArrayRef dilation,
     int64_t groups,
     IntArrayRef output_padding,
+    bool use_channels_last,
     c10::string_view attr = "none",
     torch::List<c10::optional<at::Scalar>> scalars =
         torch::List<c10::optional<at::Scalar>>(),
@@ -643,22 +644,73 @@ Tensor _mkldnn_convolution_transpose(
     TORCH_CHECK(mkldnn_bf16_device_check(),
         "mkldnn_convolution_transpose: bf16 path needs the cpu support avx512bw, avx512vl and avx512dq");
   }
-  bool is_channels_last = input_t.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
+  bool is_channels_last = use_channels_last || input_t.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
+  
+  printf("weight is packed: %d\n", weight_t.is_mkldnn());
+  
+  // When weight is mkldnn (it is packed), it has been changed from OIHW to IOHW
+  // TODO: this is not working when groups > 1!!!!!!
+  // TORCH_CHECK(input_t.sizes().size() > 2);
+  // TORCH_CHECK(input_t.sizes().size() == weight_t.sizes().size());
+  // auto dim = input_t.sizes().size();
+  // std::vector<int64_t> weight_IOHW_sizes(dim);
+  // weight_IOHW_sizes[0] = weight_t.sizes()[1];
+  // weight_IOHW_sizes[1] = weight_t.sizes()[0];
+  // for (const auto d : c10::irange(2, dim)) {
+  //   weight_IOHW_sizes[d] = weight_t.sizes()[d];
+  // }
 
   auto output_sizes = conv_input_size(input_t.sizes(), weight_t.sizes(), padding, output_padding, stride, dilation, groups);
   auto output = at::empty({0}, input_t.options());
 
   const ideep::tensor x = itensor_from_tensor(input_t);
   ideep::tensor w = itensor_from_tensor(weight_t);
-  // mkldnn transposed convolution has weight in logical order of OIHW or OIDHW,
-  // while PyTorch has IOHW or IODHW, `._tranpose()` switches strides (no memory copy).
-  w.transpose_(0, 1);
+  
+  // When weight is_mkldnn (it is packed), no need to do transpose
+  // When weight is packed, will use fake tensor to run. Fake tensor is not mkldnn,
+  // while the shape is already OIHW
+  // if (!weight_t.is_mkldnn()) {
+  //   // mkldnn transposed convolution has weight in logical order of OIHW or OIDHW,
+  //   // while PyTorch has IOHW or IODHW, `._tranpose()` switches strides (no memory copy).
+    // w.transpose_(0, 1);
+  // }
+
+  // if (groups > 1) {
+  //   w = w.transpose(1, 2);
+  // } else {
+  //   w = w.transpose(0, 1);
+  // }
+  if (weight_t.is_mkldnn()) {
+    std::cout << "mkldnn weight shape: " << w.get_dims() <<"\n";
+    if (groups > 1) {
+      w.transpose_(1, 2);
+    } else {
+      w.transpose_(0, 1);
+    }
+
+  } else {
+    std::cout << "non mkldnn weight shape: " << w.get_dims() <<"\n";
+
+    w.transpose_(0, 1);
+  }
+
+  auto memory_format =
+      mkldnn_convolution_memory_format(input_t.ndimension(), use_channels_last);
 
   ideep::tensor y;
   if (is_channels_last) {
-    output.resize_(output_sizes, input_t.suggest_memory_format());
+    output.resize_(output_sizes, memory_format);
     y = itensor_from_tensor(output);
   }
+
+std::cout << "x size: " << x.get_dims() << "\n";
+std::cout << "w size: " << w.get_dims() << "\n";
+std::cout << "y size: " << y.get_dims() << "\n";
+std::cout << "output_sizes: " << output_sizes << "\n";
+
+std::cout << "x stride: " << x.get_strides() << "\n";
+std::cout << "y stride: " << y.get_strides() << "\n";
+
   if (bias.defined()) {
     const ideep::tensor b = itensor_from_tensor(bias);
     ideep::convolution_transpose_forward::compute(
@@ -709,6 +761,8 @@ Tensor mkldnn_convolution_transpose_pointwise(
     torch::List<c10::optional<at::Scalar>> scalars,
     c10::optional<c10::string_view> algorithm) {
   c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
+  bool use_channels_last =
+      weight_t.is_mkldnn() || mkldnn_conv_use_channels_last(input_t, weight_t);  
   return _mkldnn_convolution_transpose(
       input_t,
       weight_t,
@@ -718,6 +772,7 @@ Tensor mkldnn_convolution_transpose_pointwise(
       dilation,
       groups,
       output_padding,
+      use_channels_last,
       attr,
       scalars,
       algorithm
@@ -869,6 +924,9 @@ TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_convolution_pointwise_.binary"),
       TORCH_FN(mkldnn_convolution_pointwise_binary_));
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_convolution_transpose_pointwise"),
+      TORCH_FN(mkldnn_convolution_transpose_pointwise));      
 }
 }}  // namespace at::native
 
