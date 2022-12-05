@@ -782,9 +782,12 @@ Tensor mkldnn_convolution_transpose_pointwise(
     torch::List<c10::optional<at::Scalar>> scalars,
     c10::optional<c10::string_view> algorithm) {
   c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
-  // bool use_channels_last =
-  //     weight_t.is_mkldnn() || mkldnn_conv_use_channels_last(input_t, weight_t);  
-  bool use_channels_last = true;
+  bool use_channels_last =
+      weight_t.is_mkldnn() || mkldnn_conv_use_channels_last(input_t, weight_t);  
+  // TODO: when prepacking, it is always True. When running with fake tensor, it will be False?? But fake tensor
+  // weight is always public format, won't matter here
+  // bool use_channels_last = true;
+  
   return _mkldnn_convolution_transpose(
       input_t,
       weight_t,
