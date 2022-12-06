@@ -209,27 +209,6 @@ ideep::tensor::desc get_conv_transpose_expected_weights_desc(
 }
 
 
-static inline std::vector<int64_t> padding_r(
-    IntArrayRef padding, IntArrayRef output_padding)
-{
-  // ConvTranpose padding adjustment
-  //
-  // PyTorch uses padding/output_padding:
-  //   osize = (isize - 1) * stride - 2 * padding + dilation * (kernel_size - 1) + output_padding + 1
-  //
-  // MKLDNN uses padding_l/padding_r:
-  //   osize = (isize - 1) * stride - padding_l - padding_r + dilation * (kernel_size - 1) + 1
-  //
-  // So: padding_l = padding, padding_r = padding - output_padding
-  //
-  auto dim = padding.size();
-  std::vector<int64_t> pad_r(dim);
-  for (const auto d : c10::irange(dim)) {
-    pad_r[d] = padding[d] - output_padding[d];
-  }
-  return pad_r;
-}
-
 Tensor mkldnn_reorder_conv_transpose2d_weight(
     const Tensor& self,
     IntArrayRef padding,
