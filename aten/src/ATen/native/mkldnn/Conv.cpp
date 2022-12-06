@@ -594,6 +594,7 @@ Tensor& mkldnn_convolution_pointwise_binary_(
   return other_t;
 }
 
+// TODO: make padding_r a util func
 static inline std::vector<int64_t> padding_r(
     IntArrayRef padding, IntArrayRef output_padding)
 {
@@ -613,6 +614,32 @@ static inline std::vector<int64_t> padding_r(
     pad_r[d] = padding[d] - output_padding[d];
   }
   return pad_r;
+}
+
+std::vector<int64_t> _original_deconv_weight_size(
+    const Tensor& weight_t,
+    int64_t groups) {
+  // TODO: add check on weight size
+  // Different from the conventional aten deconv: [i, o, ...]
+  // weight shape is always prepacked
+  // With groups: [g*o, i/g, ...]
+  // No groups: [o, i, ...]
+  // Need original weight size in IOHW here
+  auto dim = weight_t.sizes().size();
+  TORCH_CHECK(dim > 2);
+
+  std::vector<int64_t> weight_IOHW_sizes(dim);
+  if (groups > 1) {
+    weight_IOHW_sizes[0] = weight_t.sizes()[1] * groups;
+    weight_IOHW_sizes[1] = weight_t.sizes()[0] / groups;
+  } else {
+    weight_IOHW_sizes[0] = weight_t.sizes()[1];
+    weight_IOHW_sizes[1] = weight_t.sizes()[0];
+  }
+  for (const auto d : c10::irange(2, dim)) {
+    weight_IOHW_sizes[d] = weight_t.sizes()[d];
+  }
+  return weight_IOHW_sizes;
 }
 
 Tensor _mkldnn_convolution_transpose(
@@ -646,34 +673,7 @@ Tensor _mkldnn_convolution_transpose(
   }
   bool is_channels_last = use_channels_last || input_t.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
   
-  // TODO: add check on weight size
-  // Different from the conventional aten deconv: [i, o, ...]
-  // weight shape is always prepacked
-  // With groups: [g*o, i/g, ...]
-  // No groups: [o, i, ...]
-  // Need original weight size in IOHW here
-  TORCH_CHECK(input_t.sizes().size() > 2);
-  TORCH_CHECK(input_t.sizes().size() == weight_t.sizes().size());
-  auto dim = input_t.sizes().size();
-  std::vector<int64_t> weight_IOHW_sizes(dim);
-  if (groups > 1) {
-    // [g * o, i / g, ...]
-    weight_IOHW_sizes[0] = weight_t.sizes()[1] * groups;
-    weight_IOHW_sizes[1] = weight_t.sizes()[0] / groups;
-  } else {
-    weight_IOHW_sizes[0] = weight_t.sizes()[1];
-    weight_IOHW_sizes[1] = weight_t.sizes()[0];
-  }
-  for (const auto d : c10::irange(2, dim)) {
-    weight_IOHW_sizes[d] = weight_t.sizes()[d];
-  }
-
-  std::vector<int64_t> weight_OIHW_sizes(dim);
-  weight_OIHW_sizes[0] = weight_IOHW_sizes[1];
-  weight_OIHW_sizes[1] = weight_IOHW_sizes[0];
-  for (const auto d : c10::irange(2, dim)) {
-    weight_OIHW_sizes[d] = weight_IOHW_sizes[d];
-  }  
+  std::vector<int64_t> weight_IOHW_sizes = _original_deconv_weight_size(weight_t, groups);
 
   auto memory_format =
       mkldnn_convolution_memory_format(input_t.ndimension(), use_channels_last);
@@ -692,7 +692,7 @@ Tensor _mkldnn_convolution_transpose(
   } else {
     at::Tensor origin_weight_t;
     if (groups > 1) {
-      origin_weight_t = weight_t.reshape(weight_OIHW_sizes).transpose(0, 1);
+      origin_weight_t = weight_t.transpose(0, 1).reshape(weight_IOHW_sizes);
     } else {
       origin_weight_t = weight_t.transpose(0, 1);
     }
