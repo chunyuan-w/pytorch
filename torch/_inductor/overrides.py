@@ -443,12 +443,10 @@ class ConvTransposeUnary2d(nn.ConvTranspose2d):
                 self.output_padding,
                 input_size,
             )
-        print("packed_weight device", packed_weight.is_mkldnn)
         self.weight = torch.nn.Parameter(
             packed_weight,
             requires_grad=self.weight.requires_grad,            
         )
-        print("weight device after prepack", self.weight.is_mkldnn)
 
     def _conv_transpose_forward(self, input, weight, bias):
         if self.padding_mode != "zeros":
@@ -482,7 +480,6 @@ class ConvTransposeUnary2d(nn.ConvTranspose2d):
         )
 
     def forward(self, input):
-        print("weight device in fwd: ", self.weight.is_mkldnn)
         return self._conv_transpose_forward(input, self.weight, self.bias)
 
 

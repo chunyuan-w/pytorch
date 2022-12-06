@@ -193,8 +193,6 @@ void _mkldnn_convolution_out (
   auto weight = weight_t.is_mkldnn() ? weight_t : weight_t.contiguous(memory_format);
   const ideep::tensor x = itensor_from_tensor(input);
   const ideep::tensor w = itensor_from_tensor(weight);
-  
-  printf("w is mkldnn: %d\n", weight_t.is_mkldnn());
   if (bias.defined()) {
     const ideep::tensor b = itensor_from_tensor(bias);
     ideep::convolution_forward::compute_v3(
@@ -267,7 +265,6 @@ Tensor _mkldnn_convolution(
     output.resize_(output_sizes, memory_format);
     y = itensor_from_tensor(output);
   }
-  std::cout << "weight size in compute: " << weight_t.sizes() << "\n";
   _mkldnn_convolution_out(
       input_t,
       weight_t,
@@ -649,9 +646,6 @@ Tensor _mkldnn_convolution_transpose(
   }
   bool is_channels_last = use_channels_last || input_t.suggest_memory_format() == at::MemoryFormat::ChannelsLast;
   
-  printf("weight is packed: %d\n", weight_t.is_mkldnn());
-  std::cout << "weight size in fwd: " << weight_t.sizes() << "\n";
-  
   // TODO: add check on weight size
   // Different from the conventional aten deconv: [i, o, ...]
   // weight shape is always prepacked
@@ -712,17 +706,6 @@ Tensor _mkldnn_convolution_transpose(
     y = itensor_from_tensor(output);
   }
 
-std::cout << "w is public: " << w.is_public_format() << "\n";
-
-
-std::cout << "x size: " << x.get_dims() << "\n";
-std::cout << "w size: " << w.get_dims() << "\n";
-std::cout << "y size: " << y.get_dims() << "\n";
-std::cout << "output_sizes: " << output_sizes << "\n";
-
-std::cout << "x stride: " << x.get_strides() << "\n";
-std::cout << "y stride: " << y.get_strides() << "\n";
-
   if (bias.defined()) {
     const ideep::tensor b = itensor_from_tensor(bias);
     ideep::convolution_transpose_forward::compute(
@@ -775,10 +758,6 @@ Tensor mkldnn_convolution_transpose_pointwise(
   c10::impl::ExcludeDispatchKeyGuard edkg(c10::autograd_dispatch_keyset);
   bool use_channels_last =
       weight_t.is_mkldnn() || mkldnn_conv_use_channels_last(input_t, weight_t);  
-  // TODO: when prepacking, it is always True. When running with fake tensor, it will be False?? But fake tensor
-  // weight is always public format, won't matter here
-  // bool use_channels_last = true;
-  
   return _mkldnn_convolution_transpose(
       input_t,
       weight_t,

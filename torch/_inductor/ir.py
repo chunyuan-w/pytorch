@@ -3425,30 +3425,12 @@ def _prepare_convolution_transpose_fusion_create(
     with torch._subclasses.FakeTensorMode():
         x_fake = ir_node_to_tensor(x, guard_shape=True)
         weight_fake = ir_node_to_tensor(weight, guard_shape=True)
-        bias_fake = (
-            ir_node_to_tensor(bias, guard_shape=True) if bias is not None else bias
-        )
-        # Weight is always the prepacked shape. Can not run with aten deconv to get the 
-        # output size here. Will infer output size use the formular below
-        # output = torch.ops.aten.convolution(
-        #     x_fake,
-        #     weight_fake,
-        #     bias_fake,
-        #     stride,
-        #     padding,
-        #     dilation,
-        #     True,
-        #     output_padding,
-        #     groups,
-        # )
-        # output_size = output.size()
 
         input_size = x_fake.size()
         dim = len(input_size)
 
         assert dim > 2, "Expect input size > 2"
-        print("weight fake size: ", weight_fake.size())
-        # weight is packed: weight is in OIHW or G, O, I/G, ...
+        # weight is packed: weight is in OIHW or G * O, I/G, ...
         if groups > 1:
             weight_size = []
             weight_size.append(weight_fake.size()[1] * groups)
@@ -3474,7 +3456,6 @@ def _prepare_convolution_transpose_fusion_create(
         req_stride_order = [0] + list(reversed(range(1, len(stride) + 1)))
         req_stride_order = [len(req_stride_order)] + req_stride_order
         output_stride = make_channels_last_strides_for(output_size)
-    print("req_stride_order: ", req_stride_order)
     x = cls.require_stride_order(x, req_stride_order)
     assert x.get_device().type == "cpu" and weight.get_device().type == "cpu"
     inputs = [x, weight]
