@@ -652,7 +652,11 @@ Tensor _mkldnn_convolution_transpose(
   printf("weight is packed: %d\n", weight_t.is_mkldnn());
   std::cout << "weight size in fwd: " << weight_t.sizes() << "\n";
   
-  // TODO: this is not working when groups > 1!!!!!!
+  // TODO: add check on weight size
+  // Different from the conventional aten deconv: [i, o, ...]
+  // weight shape is always prepacked
+  // With groups: [g*o, i/g, ...]
+  // No groups: [o, i, ...]
   // Need original weight size in IOHW here
   TORCH_CHECK(input_t.sizes().size() > 2);
   TORCH_CHECK(input_t.sizes().size() == weight_t.sizes().size());
@@ -668,6 +672,13 @@ Tensor _mkldnn_convolution_transpose(
   }
   for (const auto d : c10::irange(2, dim)) {
     weight_IOHW_sizes[d] = weight_t.sizes()[d];
+  }
+
+  std::vector<int64_t> weight_OIHW_sizes(dim);
+  weight_OIHW_sizes[0] = weight_IOHW_sizes[1];
+  weight_OIHW_sizes[1] = weight_IOHW_sizes[0];
+  for (const auto d : c10::irange(2, dim)) {
+    weight_OIHW_sizes[d] = weight_IOHW_sizes[d];
   }  
 
   auto memory_format =
@@ -679,41 +690,21 @@ Tensor _mkldnn_convolution_transpose(
   auto output = at::empty({0}, input.options());
 
   const ideep::tensor x = itensor_from_tensor(input);
-  ideep::tensor w = itensor_from_tensor(weight_t);
-  
-  // When weight is_mkldnn (it is packed), no need to do transpose
-  // When weight is packed, will use fake tensor to run. Fake tensor is not mkldnn,
-  // while the shape is already OIHW
-  // if (!weight_t.is_mkldnn()) {
-  //   // mkldnn transposed convolution has weight in logical order of OIHW or OIDHW,
-  //   // while PyTorch has IOHW or IODHW, `._tranpose()` switches strides (no memory copy).
-    // w.transpose_(0, 1);
-  // }
 
-  // if (groups > 1) {
-  //   w = w.transpose(1, 2);
-  // } else {
-  //   w = w.transpose(0, 1);
-  // }
-  // if (weight_t.is_mkldnn()) {
-  //   std::cout << "mkldnn weight shape: " << w.get_dims() <<"\n";
-  //   std::cout << "is public when computing before trans: " << w.is_public_format() <<"\n";
-  //   if (groups > 1) {
-  //     w.transpose_(1, 2);
-  //   } else {
-  //     w.transpose_(0, 1);
-  //   }
-
-  //   std::cout << "is public when computing after trans: " << w.is_public_format() <<"\n";
-
-
-  // } else {
-  //   std::cout << "non mkldnn weight shape: " << w.get_dims() <<"\n";
-
-  //   w.transpose_(0, 1);
-  // }
-
-
+  // weight_t: prepacked shape, fake tensor or real mkldnn tensor
+  ideep::tensor w;
+  if (weight_t.is_mkldnn()) {
+    w = itensor_from_tensor(weight_t);
+  } else {
+    at::Tensor origin_weight_t;
+    if (groups > 1) {
+      origin_weight_t = weight_t.reshape(weight_OIHW_sizes).transpose(0, 1);
+    } else {
+      origin_weight_t = weight_t.transpose(0, 1);
+    }
+    w = itensor_from_tensor(origin_weight_t);
+    w.transpose_(0, 1);
+  }
 
   ideep::tensor y;
   if (is_channels_last) {

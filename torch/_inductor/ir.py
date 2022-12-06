@@ -3428,6 +3428,8 @@ def _prepare_convolution_transpose_fusion_create(
         bias_fake = (
             ir_node_to_tensor(bias, guard_shape=True) if bias is not None else bias
         )
+        # Weight is always the prepacked shape. Can not run with aten deconv to get the 
+        # output size here. Will infer output size use the formular below
         # output = torch.ops.aten.convolution(
         #     x_fake,
         #     weight_fake,
