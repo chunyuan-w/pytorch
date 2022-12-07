@@ -1292,6 +1292,11 @@ class View(BaseView):
         if V.graph.sizevars.maybe_guard_list_equals(old_size, new_size):
             return x
 
+        if isinstance(x, StorageBox) and isinstance(x.data, Buffer):
+            if isinstance(x.data.layout, FlexibleLayout):
+                reindex = cls.dynamic_reshape_indexer(old_size, new_size)
+                return cls(x, tuple(new_size), reindex)
+        
         # TODO: a new class for FixedTransferLayout that output layout is constrained by input layout
         if is_contiguous_storage_and_layout(x) and not isinstance(
             x.data, ExternKernelAlloc
@@ -1577,7 +1582,11 @@ class Layout(IRNode):
         size: List[Expr],
         stride: List[Expr],
         offset: Expr = Integer(0),
-    ):
+    ):  
+        print("size in Layout: ", size)
+        if (size == (1, 1024, 128, 128)):
+            print("hit target size")
+        print("stride in Layout: ", stride)
         self.device = device
         self.dtype = dtype
         self.size = size
