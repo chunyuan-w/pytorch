@@ -1,0 +1,1258 @@
+Fail to import hypothesis in common_utils, tests are not derandomized
+/home/chunyuan/torch-inductor/vision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /home/chunyuan/torch-inductor/vision/torchvision/image.so: undefined symbol: _ZN3c106detail19maybe_wrap_dim_slowEllb
+  warn(f"Failed to load image Python extension: {e}")
+/home/chunyuan/torch-inductor/pytorch/torch/storage.py:315: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.
+  warnings.warn(message, UserWarning)
+/home/chunyuan/torch-inductor/pytorch/torch/storage.py:315: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.
+  warnings.warn(message, UserWarning)
+[2022-12-07 16:44:52,183] torch._inductor.compile_fx: [INFO] Step 3: torchinductor compiling FORWARDS graph 0
+size in Layout:  [64, 8, 7, 7]
+stride in Layout:  [1, 0, 0, 0]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [128, 64, 4, 4]
+stride in Layout:  [1, 0, 0, 0]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [256, 128, 4, 4]
+stride in Layout:  [1, 0, 0, 0]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  []
+stride in Layout:  []
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  []
+stride in Layout:  []
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  []
+stride in Layout:  []
+size in Layout:  [16, 3, 128, 128]
+stride in Layout:  [49152, 1, 384, 3]
+size in Layout:  [16, 5]
+stride in Layout:  [5, 1]
+size in Layout:  [16, 5]
+stride in Layout:  [5, 1]
+size in Layout:  [16, 5, 1, 1]
+stride in Layout:  [5, 1, 1, 1]
+size in Layout:  [16, 5, 128, 128]
+stride in Layout:  [5, 1, 0, 0]
+size in Layout:  [16, 8, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 3, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 3, 128, 128]
+stride in Layout:  [49152, 16384, 128, 1]
+size in Layout:  [16, 3, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 5, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 5, 128, 128]
+stride in Layout:  [81920, 16384, 128, 1]
+size in Layout:  [16, 5, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 8, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 8, 128, 128]
+stride in Layout:  [131072, 1, 1024, 8]
+size in Layout:  torch.Size([16, 64, 128, 128])
+stride in Layout:  (1048576, 1, 8192, 64)
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [1024]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  None
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  None
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  [16, 64, 128, 128]
+stride in Layout:  [1048576, 16384, 128, 1]
+size in Layout:  [16, 64, 128, 128]
+stride in Layout:  [1048576, 16384, 128, 1]
+size in Layout:  [16, 64, 128, 128]
+stride in Layout:  None
+size in Layout:  [16, 64, 128, 128]
+stride in Layout:  [1048576, 16384, 128, 1]
+size in Layout:  [16, 64, 128, 128]
+stride in Layout:  [1048576, 1, 8192, 64]
+size in Layout:  torch.Size([16, 128, 64, 64])
+stride in Layout:  (524288, 1, 8192, 128)
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [2048]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  None
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  None
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  [16, 128, 64, 64]
+stride in Layout:  [524288, 4096, 64, 1]
+size in Layout:  [16, 128, 64, 64]
+stride in Layout:  [524288, 4096, 64, 1]
+size in Layout:  [16, 128, 64, 64]
+stride in Layout:  None
+size in Layout:  [16, 128, 64, 64]
+stride in Layout:  [524288, 4096, 64, 1]
+size in Layout:  [16, 128, 64, 64]
+stride in Layout:  [524288, 1, 8192, 128]
+size in Layout:  torch.Size([16, 256, 32, 32])
+stride in Layout:  (262144, 1, 8192, 256)
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [4096]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  [0]
+stride in Layout:  [1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  None
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  None
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  [16, 256, 32, 32]
+stride in Layout:  [262144, 1024, 32, 1]
+size in Layout:  [16, 256, 32, 32]
+stride in Layout:  [262144, 1024, 32, 1]
+size in Layout:  [16, 256, 32, 32]
+stride in Layout:  None
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  [16, 3, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 3, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 5, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 5, 128, 128]
+stride in Layout:  [131072, 16384, 128, 1]
+size in Layout:  [16, 8, 128, 128]
+stride in Layout:  [131072, 1, 1024, 8]
+size in Layout:  [16, 8, 128, 128]
+stride in Layout:  [131072, 1, 1024, 8]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  (1, 1024, 128, 128)
+hit target size
+stride in Layout:  [16777216, 16384, 128, 1]
+size in Layout:  [64]
+stride in Layout:  [1]
+size in Layout:  [16, 64, 128, 128]
+stride in Layout:  [1048576, 1, 8192, 64]
+size in Layout:  [16, 64, 128, 128]
+stride in Layout:  [1048576, 1, 8192, 64]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  (1, 2048, 64, 64)
+stride in Layout:  [8388608, 4096, 64, 1]
+size in Layout:  [128]
+stride in Layout:  [1]
+size in Layout:  [16, 128, 64, 64]
+stride in Layout:  [524288, 1, 8192, 128]
+size in Layout:  [16, 128, 64, 64]
+stride in Layout:  [524288, 1, 8192, 128]
+size in Layout:  [256]
+stride in Layout:  [1]
+size in Layout:  (1, 4096, 32, 32)
+stride in Layout:  [4194304, 1024, 32, 1]
+size in Layout:  [256]
+stride in Layout:  [1]
+
+from ctypes import c_void_p, c_long
+import torch
+import random
+from torch import empty_strided, as_strided, device
+from torch._inductor.codecache import AsyncCompile
+
+aten = torch.ops.aten
+assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+async_compile = AsyncCompile()
+
+
+kernel_cpp_0 = async_compile.cpp('''
+#include "/tmp/torchinductor_chunyuan/77/c7773nj5pwikpmm2pwa62rcudlf7p3if7eyqb5k4sjsvewwje4le.h"
+extern "C" void kernel(const float* __restrict__ in_ptr0,
+                       const float* __restrict__ in_ptr1,
+                       const float* __restrict__ in_ptr2,
+                       float* __restrict__ out_ptr0,
+                       float* __restrict__ out_ptr1,
+                       float* __restrict__ out_ptr2)
+{
+    #pragma omp parallel num_threads(56)
+    {
+        #pragma omp for  collapse(3)
+        for(long i0=0; i0<16; i0+=1)
+        {
+            for(long i1=0; i1<3; i1+=1)
+            {
+                for(long i2=0; i2<16384; i2+=1)
+                {
+                    {
+                        {
+                            auto tmp0 = in_ptr0[i1 + (3*i2) + (49152*i0)];
+                            out_ptr0[i2 + (16384*i1) + (131072*i0)] = tmp0;
+                        }
+                    }
+                }
+            }
+        }
+        #pragma omp for  collapse(2)
+        for(long i0=0; i0<16; i0+=1)
+        {
+            for(long i1=0; i1<5; i1+=1)
+            {
+                for(long i2=0; i2<1024; i2+=1)
+                {
+                    auto tmp0 = at::vec::Vectorized<float>(in_ptr1[i1 + (5*i0)]);
+                    tmp0.store(out_ptr1 + (16*i2) + (16384*i1) + (131072*i0));
+                }
+                #pragma omp simd simdlen(8) 
+                for(long i2=16384; i2<16384; i2+=1)
+                {
+                    auto tmp0 = in_ptr1[i1 + (5*i0)];
+                    out_ptr1[i2 + (16384*i1) + (131072*i0)] = tmp0;
+                }
+            }
+        }
+        #pragma omp for  collapse(2)
+        for(long i0=0; i0<16; i0+=1)
+        {
+            for(long i1=0; i1<8; i1+=1)
+            {
+                #pragma GCC ivdep
+                for(long i2=0; i2<16384; i2+=1)
+                {
+                    {
+                        {
+                            auto tmp0 = in_ptr2[i2 + (16384*i1) + (131072*i0)];
+                            out_ptr2[i1 + (8*i2) + (131072*i0)] = tmp0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+''')
+
+
+kernel_cpp_1 = async_compile.cpp('''
+#include "/tmp/torchinductor_chunyuan/77/c7773nj5pwikpmm2pwa62rcudlf7p3if7eyqb5k4sjsvewwje4le.h"
+extern "C" void kernel(const float* __restrict__ in_ptr0,
+                       const float* __restrict__ in_ptr1,
+                       const float* __restrict__ in_ptr2,
+                       const float* __restrict__ in_ptr3,
+                       const float* __restrict__ in_ptr4,
+                       float* __restrict__ out_ptr0,
+                       float* __restrict__ out_ptr1,
+                       float* __restrict__ out_ptr2,
+                       float* __restrict__ out_ptr3,
+                       float* __restrict__ out_ptr4,
+                       float* __restrict__ out_ptr5)
+{
+    #pragma omp parallel num_threads(56)
+    {
+        #pragma omp for 
+        for(long i0=0; i0<64; i0+=1)
+        {
+            {
+                #pragma omp declare reduction(+:at::vec::Vectorized<float>:omp_out += omp_in) initializer(omp_priv={{0}})
+                float tmp1 = 0;
+                auto tmp1_vec = at::vec::Vectorized<float>(tmp1);
+                for(long i1=0; i1<1; i1+=1)
+                {
+                    auto tmp0 = at::vec::Vectorized<float>(in_ptr0[i0]);
+                    tmp1_vec += tmp0;
+                }
+                tmp1 = at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>&y) {return x + y;}, tmp1_vec);
+                #pragma omp simd simdlen(8)  reduction(+:tmp1)
+                for(long i1=16; i1<16; i1+=1)
+                {
+                    auto tmp0 = in_ptr0[i0];
+                    tmp1 += tmp0;
+                }
+                out_ptr0[i0] = tmp1;
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<1024; i0+=1)
+        {
+            #pragma GCC ivdep
+            for(long i1=0; i1<16384; i1+=1)
+            {
+                {
+                    {
+                        auto tmp0 = in_ptr1[(64*i1) + (1048576*(i0 / 64)) + (i0 % 64)];
+                        auto tmp1 = in_ptr0[i0 % 64];
+                        auto tmp3 = in_ptr2[i0 % 64];
+                        auto tmp11 = in_ptr3[i0 % 64];
+                        auto tmp13 = in_ptr4[i0 % 64];
+                        auto tmp2 = tmp0 - tmp1;
+                        auto tmp4 = static_cast<float>(1e-05);
+                        auto tmp5 = tmp3 + tmp4;
+                        auto tmp6 = std::sqrt(tmp5);
+                        auto tmp7 = 1 / tmp6;
+                        auto tmp8 = static_cast<float>(1);
+                        auto tmp9 = tmp7 * tmp8;
+                        auto tmp10 = tmp2 * tmp9;
+                        auto tmp12 = tmp10 * tmp11;
+                        auto tmp14 = tmp12 + tmp13;
+                        out_ptr1[i1 + (16384*i0)] = tmp14;
+                    }
+                }
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<64; i0+=1)
+        {
+            {
+                #pragma omp declare reduction(+:at::vec::Vectorized<float>:omp_out += omp_in) initializer(omp_priv={{0}})
+                float tmp1 = 0;
+                auto tmp1_vec = at::vec::Vectorized<float>(tmp1);
+                for(long i1=0; i1<1; i1+=1)
+                {
+                    auto tmp0 = at::vec::Vectorized<float>(in_ptr2[i0]);
+                    tmp1_vec += tmp0;
+                }
+                tmp1 = at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>&y) {return x + y;}, tmp1_vec);
+                #pragma omp simd simdlen(8)  reduction(+:tmp1)
+                for(long i1=16; i1<16; i1+=1)
+                {
+                    auto tmp0 = in_ptr2[i0];
+                    tmp1 += tmp0;
+                }
+                out_ptr2[i0] = tmp1;
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<4; i0+=1)
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(out_ptr0 + 16*i0);
+            auto tmp3 = at::vec::Vectorized<float>::loadu(out_ptr2 + 16*i0);
+            auto tmp1 = at::vec::Vectorized<float>(static_cast<float>(16));
+            auto tmp2 = tmp0 / tmp1;
+            auto tmp4 = tmp3 / tmp1;
+            tmp2.store(out_ptr3 + 16*i0);
+            tmp4.store(out_ptr4 + 16*i0);
+        }
+        #pragma omp for simd simdlen(8) 
+        for(long i0=64; i0<64; i0+=1)
+        {
+            auto tmp0 = out_ptr0[i0];
+            auto tmp3 = out_ptr2[i0];
+            auto tmp1 = static_cast<float>(16);
+            auto tmp2 = tmp0 / tmp1;
+            auto tmp4 = tmp3 / tmp1;
+            out_ptr3[i0] = tmp2;
+            out_ptr4[i0] = tmp4;
+        }
+        #pragma omp for 
+        for(long i0=0; i0<1048576; i0+=1)
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(out_ptr1 + 16*i0);
+            auto tmp1 = at::vec::clamp_min(tmp0, decltype(tmp0)(0));
+            tmp1.store(out_ptr1 + 16*i0);
+        }
+        #pragma omp for simd simdlen(8) 
+        for(long i0=16777216; i0<16777216; i0+=1)
+        {
+            auto tmp0 = out_ptr1[i0];
+            auto tmp1 = tmp0 * (tmp0>0);
+            out_ptr1[i0] = tmp1;
+        }
+        #pragma omp for  collapse(2)
+        for(long i0=0; i0<16; i0+=1)
+        {
+            for(long i1=0; i1<64; i1+=1)
+            {
+                #pragma GCC ivdep
+                for(long i2=0; i2<16384; i2+=1)
+                {
+                    {
+                        {
+                            auto tmp0 = out_ptr1[i2 + (16384*i1) + (1048576*i0)];
+                            out_ptr5[i1 + (64*i2) + (1048576*i0)] = tmp0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+''')
+
+
+kernel_cpp_2 = async_compile.cpp('''
+#include "/tmp/torchinductor_chunyuan/77/c7773nj5pwikpmm2pwa62rcudlf7p3if7eyqb5k4sjsvewwje4le.h"
+extern "C" void kernel(const float* __restrict__ in_ptr0,
+                       const float* __restrict__ in_ptr1,
+                       const float* __restrict__ in_ptr2,
+                       const float* __restrict__ in_ptr3,
+                       const float* __restrict__ in_ptr4,
+                       float* __restrict__ out_ptr0,
+                       float* __restrict__ out_ptr1,
+                       float* __restrict__ out_ptr2,
+                       float* __restrict__ out_ptr3,
+                       float* __restrict__ out_ptr4,
+                       float* __restrict__ out_ptr5)
+{
+    #pragma omp parallel num_threads(56)
+    {
+        #pragma omp for 
+        for(long i0=0; i0<128; i0+=1)
+        {
+            {
+                #pragma omp declare reduction(+:at::vec::Vectorized<float>:omp_out += omp_in) initializer(omp_priv={{0}})
+                float tmp1 = 0;
+                auto tmp1_vec = at::vec::Vectorized<float>(tmp1);
+                for(long i1=0; i1<1; i1+=1)
+                {
+                    auto tmp0 = at::vec::Vectorized<float>(in_ptr0[i0]);
+                    tmp1_vec += tmp0;
+                }
+                tmp1 = at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>&y) {return x + y;}, tmp1_vec);
+                #pragma omp simd simdlen(8)  reduction(+:tmp1)
+                for(long i1=16; i1<16; i1+=1)
+                {
+                    auto tmp0 = in_ptr0[i0];
+                    tmp1 += tmp0;
+                }
+                out_ptr0[i0] = tmp1;
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<2048; i0+=1)
+        {
+            #pragma GCC ivdep
+            for(long i1=0; i1<4096; i1+=1)
+            {
+                {
+                    {
+                        auto tmp0 = in_ptr1[(128*i1) + (524288*(i0 / 128)) + (i0 % 128)];
+                        auto tmp1 = in_ptr0[i0 % 128];
+                        auto tmp3 = in_ptr2[i0 % 128];
+                        auto tmp11 = in_ptr3[i0 % 128];
+                        auto tmp13 = in_ptr4[i0 % 128];
+                        auto tmp2 = tmp0 - tmp1;
+                        auto tmp4 = static_cast<float>(1e-05);
+                        auto tmp5 = tmp3 + tmp4;
+                        auto tmp6 = std::sqrt(tmp5);
+                        auto tmp7 = 1 / tmp6;
+                        auto tmp8 = static_cast<float>(1);
+                        auto tmp9 = tmp7 * tmp8;
+                        auto tmp10 = tmp2 * tmp9;
+                        auto tmp12 = tmp10 * tmp11;
+                        auto tmp14 = tmp12 + tmp13;
+                        out_ptr1[i1 + (4096*i0)] = tmp14;
+                    }
+                }
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<128; i0+=1)
+        {
+            {
+                #pragma omp declare reduction(+:at::vec::Vectorized<float>:omp_out += omp_in) initializer(omp_priv={{0}})
+                float tmp1 = 0;
+                auto tmp1_vec = at::vec::Vectorized<float>(tmp1);
+                for(long i1=0; i1<1; i1+=1)
+                {
+                    auto tmp0 = at::vec::Vectorized<float>(in_ptr2[i0]);
+                    tmp1_vec += tmp0;
+                }
+                tmp1 = at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>&y) {return x + y;}, tmp1_vec);
+                #pragma omp simd simdlen(8)  reduction(+:tmp1)
+                for(long i1=16; i1<16; i1+=1)
+                {
+                    auto tmp0 = in_ptr2[i0];
+                    tmp1 += tmp0;
+                }
+                out_ptr2[i0] = tmp1;
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<8; i0+=1)
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(out_ptr0 + 16*i0);
+            auto tmp3 = at::vec::Vectorized<float>::loadu(out_ptr2 + 16*i0);
+            auto tmp1 = at::vec::Vectorized<float>(static_cast<float>(16));
+            auto tmp2 = tmp0 / tmp1;
+            auto tmp4 = tmp3 / tmp1;
+            tmp2.store(out_ptr3 + 16*i0);
+            tmp4.store(out_ptr4 + 16*i0);
+        }
+        #pragma omp for simd simdlen(8) 
+        for(long i0=128; i0<128; i0+=1)
+        {
+            auto tmp0 = out_ptr0[i0];
+            auto tmp3 = out_ptr2[i0];
+            auto tmp1 = static_cast<float>(16);
+            auto tmp2 = tmp0 / tmp1;
+            auto tmp4 = tmp3 / tmp1;
+            out_ptr3[i0] = tmp2;
+            out_ptr4[i0] = tmp4;
+        }
+        #pragma omp for 
+        for(long i0=0; i0<524288; i0+=1)
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(out_ptr1 + 16*i0);
+            auto tmp1 = at::vec::clamp_min(tmp0, decltype(tmp0)(0));
+            tmp1.store(out_ptr1 + 16*i0);
+        }
+        #pragma omp for simd simdlen(8) 
+        for(long i0=8388608; i0<8388608; i0+=1)
+        {
+            auto tmp0 = out_ptr1[i0];
+            auto tmp1 = tmp0 * (tmp0>0);
+            out_ptr1[i0] = tmp1;
+        }
+        #pragma omp for  collapse(2)
+        for(long i0=0; i0<16; i0+=1)
+        {
+            for(long i1=0; i1<128; i1+=1)
+            {
+                #pragma GCC ivdep
+                for(long i2=0; i2<4096; i2+=1)
+                {
+                    {
+                        {
+                            auto tmp0 = out_ptr1[i2 + (4096*i1) + (524288*i0)];
+                            out_ptr5[i1 + (128*i2) + (524288*i0)] = tmp0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+''')
+
+
+kernel_cpp_3 = async_compile.cpp('''
+#include "/tmp/torchinductor_chunyuan/77/c7773nj5pwikpmm2pwa62rcudlf7p3if7eyqb5k4sjsvewwje4le.h"
+extern "C" void kernel(const float* __restrict__ in_ptr0,
+                       const float* __restrict__ in_ptr1,
+                       const float* __restrict__ in_ptr2,
+                       const float* __restrict__ in_ptr3,
+                       const float* __restrict__ in_ptr4,
+                       float* __restrict__ out_ptr0,
+                       float* __restrict__ out_ptr1,
+                       float* __restrict__ out_ptr2,
+                       float* __restrict__ out_ptr3,
+                       float* __restrict__ out_ptr4)
+{
+    #pragma omp parallel num_threads(56)
+    {
+        #pragma omp for 
+        for(long i0=0; i0<256; i0+=1)
+        {
+            {
+                #pragma omp declare reduction(+:at::vec::Vectorized<float>:omp_out += omp_in) initializer(omp_priv={{0}})
+                float tmp1 = 0;
+                auto tmp1_vec = at::vec::Vectorized<float>(tmp1);
+                for(long i1=0; i1<1; i1+=1)
+                {
+                    auto tmp0 = at::vec::Vectorized<float>(in_ptr0[i0]);
+                    tmp1_vec += tmp0;
+                }
+                tmp1 = at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>&y) {return x + y;}, tmp1_vec);
+                #pragma omp simd simdlen(8)  reduction(+:tmp1)
+                for(long i1=16; i1<16; i1+=1)
+                {
+                    auto tmp0 = in_ptr0[i0];
+                    tmp1 += tmp0;
+                }
+                out_ptr0[i0] = tmp1;
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<4096; i0+=1)
+        {
+            #pragma GCC ivdep
+            for(long i1=0; i1<1024; i1+=1)
+            {
+                {
+                    {
+                        auto tmp0 = in_ptr1[(256*i1) + (262144*(i0 / 256)) + (i0 % 256)];
+                        auto tmp1 = in_ptr0[i0 % 256];
+                        auto tmp3 = in_ptr2[i0 % 256];
+                        auto tmp11 = in_ptr3[i0 % 256];
+                        auto tmp13 = in_ptr4[i0 % 256];
+                        auto tmp2 = tmp0 - tmp1;
+                        auto tmp4 = static_cast<float>(1e-05);
+                        auto tmp5 = tmp3 + tmp4;
+                        auto tmp6 = std::sqrt(tmp5);
+                        auto tmp7 = 1 / tmp6;
+                        auto tmp8 = static_cast<float>(1);
+                        auto tmp9 = tmp7 * tmp8;
+                        auto tmp10 = tmp2 * tmp9;
+                        auto tmp12 = tmp10 * tmp11;
+                        auto tmp14 = tmp12 + tmp13;
+                        out_ptr1[i1 + (1024*i0)] = tmp14;
+                    }
+                }
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<256; i0+=1)
+        {
+            {
+                #pragma omp declare reduction(+:at::vec::Vectorized<float>:omp_out += omp_in) initializer(omp_priv={{0}})
+                float tmp1 = 0;
+                auto tmp1_vec = at::vec::Vectorized<float>(tmp1);
+                for(long i1=0; i1<1; i1+=1)
+                {
+                    auto tmp0 = at::vec::Vectorized<float>(in_ptr2[i0]);
+                    tmp1_vec += tmp0;
+                }
+                tmp1 = at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>&y) {return x + y;}, tmp1_vec);
+                #pragma omp simd simdlen(8)  reduction(+:tmp1)
+                for(long i1=16; i1<16; i1+=1)
+                {
+                    auto tmp0 = in_ptr2[i0];
+                    tmp1 += tmp0;
+                }
+                out_ptr2[i0] = tmp1;
+            }
+        }
+        #pragma omp for 
+        for(long i0=0; i0<16; i0+=1)
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(out_ptr0 + 16*i0);
+            auto tmp3 = at::vec::Vectorized<float>::loadu(out_ptr2 + 16*i0);
+            auto tmp1 = at::vec::Vectorized<float>(static_cast<float>(16));
+            auto tmp2 = tmp0 / tmp1;
+            auto tmp4 = tmp3 / tmp1;
+            tmp2.store(out_ptr3 + 16*i0);
+            tmp4.store(out_ptr4 + 16*i0);
+        }
+        #pragma omp for simd simdlen(8) 
+        for(long i0=256; i0<256; i0+=1)
+        {
+            auto tmp0 = out_ptr0[i0];
+            auto tmp3 = out_ptr2[i0];
+            auto tmp1 = static_cast<float>(16);
+            auto tmp2 = tmp0 / tmp1;
+            auto tmp4 = tmp3 / tmp1;
+            out_ptr3[i0] = tmp2;
+            out_ptr4[i0] = tmp4;
+        }
+        #pragma omp for 
+        for(long i0=0; i0<262144; i0+=1)
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(out_ptr1 + 16*i0);
+            auto tmp1 = at::vec::clamp_min(tmp0, decltype(tmp0)(0));
+            tmp1.store(out_ptr1 + 16*i0);
+        }
+        #pragma omp for simd simdlen(8) 
+        for(long i0=4194304; i0<4194304; i0+=1)
+        {
+            auto tmp0 = out_ptr1[i0];
+            auto tmp1 = tmp0 * (tmp0>0);
+            out_ptr1[i0] = tmp1;
+        }
+    }
+}
+''')
+
+
+async_compile.wait(globals())
+del async_compile
+
+def call(args):
+    arg0_1, arg1_1, arg2_1, arg3_1, arg4_1, arg5_1, arg6_1, arg7_1, arg8_1, arg9_1, arg10_1, arg11_1, arg12_1, arg13_1, arg14_1, arg15_1, arg16_1, arg17_1, arg18_1, arg19_1 = args
+    args.clear()
+    buf2 = empty_strided((16, 8, 128, 128), (131072, 16384, 128, 1), device='cpu', dtype=torch.float32)
+    buf0 = as_strided(buf2, (16, 3, 128, 128), (131072, 16384, 128, 1))  # alias
+    buf1 = as_strided(buf2, (16, 5, 128, 128), (131072, 16384, 128, 1), 49152)  # alias
+    buf3 = empty_strided((16, 8, 128, 128), (131072, 1, 1024, 8), device='cpu', dtype=torch.float32)
+    kernel_cpp_0(c_void_p(arg18_1.data_ptr()), c_void_p(arg19_1.data_ptr()), c_void_p(buf2.data_ptr()), c_void_p(buf0.data_ptr()), c_void_p(buf1.data_ptr()), c_void_p(buf3.data_ptr()))
+    del arg18_1
+    del arg19_1
+    del buf0
+    del buf1
+    del buf2
+    buf4 = torch.ops.mkldnn._convolution_pointwise(buf3, arg0_1, None, (3, 3), (1, 1), (1, 1), 1, 'none', [], '')
+    assert_size_stride(buf4, (16, 64, 128, 128), (1048576, 1, 8192, 64))
+    del arg0_1
+    del buf3
+    buf5 = empty_strided((64, ), (1, ), device='cpu', dtype=torch.float32)
+    buf6 = empty_strided((1, 1024, 128, 128), (16777216, 16384, 128, 1), device='cpu', dtype=torch.float32)
+    buf8 = empty_strided((64, ), (1, ), device='cpu', dtype=torch.float32)
+    buf11 = empty_strided((16, 64, 128, 128), (1048576, 1, 8192, 64), device='cpu', dtype=torch.float32)
+    kernel_cpp_1(c_void_p(arg9_1.data_ptr()), c_void_p(buf4.data_ptr()), c_void_p(arg10_1.data_ptr()), c_void_p(arg1_1.data_ptr()), c_void_p(arg2_1.data_ptr()), c_void_p(buf5.data_ptr()), c_void_p(buf6.data_ptr()), c_void_p(buf8.data_ptr()), c_void_p(arg9_1.data_ptr()), c_void_p(arg10_1.data_ptr()), c_void_p(buf11.data_ptr()))
+    del arg10_1
+    del arg1_1
+    del arg2_1
+    del arg9_1
+    del buf4
+    del buf5
+    del buf6
+    del buf8
+    buf12 = torch.ops.mkldnn._convolution_pointwise(buf11, arg3_1, None, (1, 1), (2, 2), (1, 1), 1, 'none', [], '')
+    assert_size_stride(buf12, (16, 128, 64, 64), (524288, 1, 8192, 128))
+    del arg3_1
+    del buf11
+    buf13 = empty_strided((128, ), (1, ), device='cpu', dtype=torch.float32)
+    buf14 = empty_strided((1, 2048, 64, 64), (8388608, 4096, 64, 1), device='cpu', dtype=torch.float32)
+    buf16 = empty_strided((128, ), (1, ), device='cpu', dtype=torch.float32)
+    buf19 = empty_strided((16, 128, 64, 64), (524288, 1, 8192, 128), device='cpu', dtype=torch.float32)
+    kernel_cpp_2(c_void_p(arg12_1.data_ptr()), c_void_p(buf12.data_ptr()), c_void_p(arg13_1.data_ptr()), c_void_p(arg4_1.data_ptr()), c_void_p(arg5_1.data_ptr()), c_void_p(buf13.data_ptr()), c_void_p(buf14.data_ptr()), c_void_p(buf16.data_ptr()), c_void_p(arg12_1.data_ptr()), c_void_p(arg13_1.data_ptr()), c_void_p(buf19.data_ptr()))
+    del arg12_1
+    del arg13_1
+    del arg4_1
+    del arg5_1
+    del buf12
+    del buf13
+    del buf14
+    del buf16
+    buf20 = torch.ops.mkldnn._convolution_pointwise(buf19, arg6_1, None, (1, 1), (2, 2), (1, 1), 1, 'none', [], '')
+    assert_size_stride(buf20, (16, 256, 32, 32), (262144, 1, 8192, 256))
+    del arg6_1
+    del buf19
+    buf21 = empty_strided((256, ), (1, ), device='cpu', dtype=torch.float32)
+    buf22 = empty_strided((1, 4096, 32, 32), (4194304, 1024, 32, 1), device='cpu', dtype=torch.float32)
+    buf24 = empty_strided((256, ), (1, ), device='cpu', dtype=torch.float32)
+    kernel_cpp_3(c_void_p(arg15_1.data_ptr()), c_void_p(buf20.data_ptr()), c_void_p(arg16_1.data_ptr()), c_void_p(arg7_1.data_ptr()), c_void_p(arg8_1.data_ptr()), c_void_p(buf21.data_ptr()), c_void_p(buf22.data_ptr()), c_void_p(buf24.data_ptr()), c_void_p(arg15_1.data_ptr()), c_void_p(arg16_1.data_ptr()))
+    del arg15_1
+    del arg16_1
+    del arg7_1
+    del arg8_1
+    return (as_strided(buf22, (16, 256, 32, 32), (262144, 1024, 32, 1)), )
+
+
+if __name__ == "__main__":
+    from torch._dynamo.testing import rand_strided
+    from torch._inductor.utils import print_performance
+    arg0_1 = rand_strided((64, 8, 7, 7), (1, 0, 0, 0), device='cpu', dtype=torch.float32)
+    arg1_1 = rand_strided((64, ), (1, ), device='cpu', dtype=torch.float32)
+    arg2_1 = rand_strided((64, ), (1, ), device='cpu', dtype=torch.float32)
+    arg3_1 = rand_strided((128, 64, 4, 4), (1, 0, 0, 0), device='cpu', dtype=torch.float32)
+    arg4_1 = rand_strided((128, ), (1, ), device='cpu', dtype=torch.float32)
+    arg5_1 = rand_strided((128, ), (1, ), device='cpu', dtype=torch.float32)
+    arg6_1 = rand_strided((256, 128, 4, 4), (1, 0, 0, 0), device='cpu', dtype=torch.float32)
+    arg7_1 = rand_strided((256, ), (1, ), device='cpu', dtype=torch.float32)
+    arg8_1 = rand_strided((256, ), (1, ), device='cpu', dtype=torch.float32)
+    arg9_1 = rand_strided((64, ), (1, ), device='cpu', dtype=torch.float32)
+    arg10_1 = rand_strided((64, ), (1, ), device='cpu', dtype=torch.float32)
+    arg11_1 = rand_strided((), (), device='cpu', dtype=torch.int64)
+    arg12_1 = rand_strided((128, ), (1, ), device='cpu', dtype=torch.float32)
+    arg13_1 = rand_strided((128, ), (1, ), device='cpu', dtype=torch.float32)
+    arg14_1 = rand_strided((), (), device='cpu', dtype=torch.int64)
+    arg15_1 = rand_strided((256, ), (1, ), device='cpu', dtype=torch.float32)
+    arg16_1 = rand_strided((256, ), (1, ), device='cpu', dtype=torch.float32)
+    arg17_1 = rand_strided((), (), device='cpu', dtype=torch.int64)
+    arg18_1 = rand_strided((16, 3, 128, 128), (49152, 1, 384, 3), device='cpu', dtype=torch.float32)
+    arg19_1 = rand_strided((16, 5), (5, 1), device='cpu', dtype=torch.float32)
+    print_performance(lambda: call([arg0_1, arg1_1, arg2_1, arg3_1, arg4_1, arg5_1, arg6_1, arg7_1, arg8_1, arg9_1, arg10_1, arg11_1, arg12_1, arg13_1, arg14_1, arg15_1, arg16_1, arg17_1, arg18_1, arg19_1]))
+
+[2022-12-07 16:44:53,969] torch._inductor.graph: [CODE] Output code: /tmp/torchinductor_chunyuan/2j/c2j4ozo3vp2ylrwjwnkgpp3jxwwxaig4jctru7hthdu5ojzitzlk.py
+[2022-12-07 16:44:53,971] torch._inductor.compile_fx: [INFO] Step 3: torchinductor done compiling FORWARDS graph 0
+[2022-12-07 16:44:53,973] torch._dynamo.output_graph: [INFO] Step 2: done compiler function compile_fx_wrapper
+[2022-12-07 16:44:53,984] torch._dynamo.output_graph: [CODE] TRACED GRAPH
+ __compiled_fn_0 <eval_with_key>.3 opcode         name          target                                                  args                    kwargs
+-------------  ------------  ------------------------------------------------------  ----------------------  ----------
+placeholder    ex_0_         ex_0_                                                   ()                      {}
+placeholder    ex_1_         ex_1_                                                   ()                      {}
+call_method    view          view                                                    (ex_1_, 16, 5, 1, 1)    {}
+call_method    repeat        repeat                                                  (view, 1, 1, 128, 128)  {}
+call_function  cat           <built-in method cat of type object at 0x7f22d6368600>  ([ex_0_, repeat],)      {'dim': 1}
+call_module    model_main_0  model_main_0                                            (cat,)                  {}
+call_module    model_main_1  model_main_1                                            (model_main_0,)         {}
+call_module    model_main_2  model_main_2                                            (model_main_1,)         {}
+call_module    model_main_3  model_main_3                                            (model_main_2,)         {}
+call_module    model_main_4  model_main_4                                            (model_main_3,)         {}
+call_module    model_main_5  model_main_5                                            (model_main_4,)         {}
+call_module    model_main_6  model_main_6                                            (model_main_5,)         {}
+call_module    model_main_7  model_main_7                                            (model_main_6,)         {}
+call_module    model_main_8  model_main_8                                            (model_main_7,)         {}
+output         output        output                                                  ((model_main_8,),)      {}
+
+[2022-12-07 16:44:53,985] torch._dynamo.convert_frame: [CODE] ORIGINAL BYTECODE run test/inductor/test_torchinductor.py line 305 
+306           0 LOAD_DEREF               0 (model)
+              2 LOAD_FAST                0 (ex)
+              4 LOAD_FAST                1 (kwargs)
+              6 CALL_FUNCTION_EX         1
+              8 RETURN_VALUE
+
+ 
+[2022-12-07 16:44:53,986] torch._dynamo.convert_frame: [CODE] MODIFIED BYTECODE run test/inductor/test_torchinductor.py line 305 
+305           0 LOAD_GLOBAL              0 (__compiled_fn_0)
+              2 LOAD_FAST                0 (ex)
+              4 LOAD_CONST               1 (0)
+              6 BINARY_SUBSCR
+              8 LOAD_FAST                0 (ex)
+             10 LOAD_CONST               2 (1)
+             12 BINARY_SUBSCR
+             14 CALL_FUNCTION            2
+             16 UNPACK_SEQUENCE          1
+             18 RETURN_VALUE
+
+ 
+[2022-12-07 16:44:53,989] torch._dynamo.convert_frame: [CODE] GUARDS:
+ - 
+            local 'ex' LIST_LENGTH
+            {
+                'guard_types': ['LIST_LENGTH'],
+                'code': ['___check_type_id(ex, 94415482381056)', 'len(ex) == 2'],
+                'obj_weakref': None
+                'guarded_class': <weakref at 0x7f22efa4d360; to 'type' at 0x55ded149e300 (tuple)>
+            }
+            
+ - 
+            local 'ex[0]' TENSOR_MATCH
+            {
+                'guard_types': ['TENSOR_MATCH'],
+                'code': None,
+                'obj_weakref': <weakref at 0x7f2299484450; to 'Tensor' at 0x7f2299491f40>
+                'guarded_class': <weakref at 0x7f22df414270; to 'torch._C._TensorMeta' at 0x7f22c494c810 (Tensor)>
+            }
+            
+ - 
+            local 'ex[1]' TENSOR_MATCH
+            {
+                'guard_types': ['TENSOR_MATCH'],
+                'code': None,
+                'obj_weakref': <weakref at 0x7f22994848b0; to 'Tensor' at 0x7f2299491e50>
+                'guarded_class': <weakref at 0x7f22df414270; to 'torch._C._TensorMeta' at 0x7f22c494c810 (Tensor)>
+            }
+            
+ - 
+            local 'model' NN_MODULE
+            {
+                'guard_types': ['ID_MATCH'],
+                'code': ['___check_obj_id(model, 139786578401600)'],
+                'obj_weakref': <weakref at 0x7f227e3e7400; to 'Generator' at 0x7f2299599940>
+                'guarded_class': <weakref at 0x7f22e99171d0; to 'type' at 0x7f22ab57e810 (Generator)>
+            }
+            
+ - 
+            local 'kwargs' DICT_KEYS
+            {
+                'guard_types': ['DICT_KEYS'],
+                'code': ['___check_type_id(kwargs, 94415482401984)', 'set(kwargs.keys()) == set()'],
+                'obj_weakref': None
+                'guarded_class': <weakref at 0x7f22efa400e0; to 'type' at 0x55ded14a34c0 (dict)>
+            }
+            
+ - 
+            global 'torch' FUNCTION_MATCH
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[0]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[1]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[2]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[3]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[4]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[5]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[6]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[7]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+ - 
+            local_nn_module 'model.main[8]' NN_MODULE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+            
+[2022-12-07 16:44:53,989] torch._dynamo.eval_frame: [DEBUG] skipping _fn /home/chunyuan/torch-inductor/pytorch/torch/_dynamo/eval_frame.py
+[2022-12-07 16:44:53,989] torch._dynamo.eval_frame: [DEBUG] skipping nothing /home/chunyuan/torch-inductor/pytorch/torch/_dynamo/eval_frame.py
+[2022-12-07 16:44:54,082] torch._dynamo.eval_frame: [DEBUG] skipping __exit__ /home/chunyuan/miniconda3/envs/torch-inductor/lib/python3.8/contextlib.py
+[2022-12-07 16:44:54,082] torch._dynamo.eval_frame: [DEBUG] skipping __exit__ /home/chunyuan/miniconda3/envs/torch-inductor/lib/python3.8/contextlib.py
+.
+----------------------------------------------------------------------
+Ran 1 test in 2.553s
+
+OK
