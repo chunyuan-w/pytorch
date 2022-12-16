@@ -3671,7 +3671,7 @@ class ConvolutionBinary(ExternKernelAlloc):
         cpp_constant_args = cpp_constant_args + [
             f'"{binary_attr}"',
             str(binary_alpha) if binary_alpha else str(1.0),  # TODO: optional(float)
-            f'"{unary_attr}"' if unary_attr else '""',
+            f'"{unary_attr}"' if unary_attr else '"none"',
             _string(unary_scalars) if unary_scalars else "{-1}",  # TODO: optional(list)
             unary_algorithm if unary_algorithm else '""',
         ]
