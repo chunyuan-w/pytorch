@@ -448,7 +448,14 @@ class WrapperCodeGen(CodeGen):
         self.writeline(f"{kernel}({', '.join(args)})")
 
     def generate_fusion_ops_code(
-        self, name, kernel, cpp_kernel, codegen_args, cpp_op_schema, cpp_kernel_key
+        self,
+        name,
+        kernel,
+        cpp_kernel,
+        codegen_args,
+        cpp_op_schema,
+        cpp_kernel_key,
+        cpp_kernel_overlad_name="",
     ):
         self.writeline(f"{name} = {kernel}({', '.join(codegen_args)})")
 
