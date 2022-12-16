@@ -450,7 +450,7 @@ class WrapperCodeGen(CodeGen):
     def generate_fusion_ops_code(
         self, name, kernel, cpp_kernel, codegen_args, cpp_op_schema, cpp_kernel_key
     ):
-        return f"{name} = {kernel}({', '.join(codegen_args)})"
+        self.writeline(f"{name} = {kernel}({', '.join(codegen_args)})")
 
     @dynamo_utils.dynamo_timed
     def generate(self):
