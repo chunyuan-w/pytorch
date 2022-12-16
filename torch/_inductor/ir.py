@@ -3709,7 +3709,14 @@ class MKLPackedLinear(ExternKernelAlloc):
     ):
         super().__init__(layout, inputs, constant_args)
         self.kernel = kernel
-        self.cpp_kernel = "at::_mkl_linear"
+        self.cpp_kernel = "mkl::_mkl_linear"
+        self.cpp_op_schema = """
+            at::Tensor(
+                const at::Tensor& self,
+                const at::Tensor& mkl_weight_t,
+                const at::Tensor& origin_weight_t,
+                const c10::optional<at::Tensor>& bias_opt,
+                const int64_t prepack_batch_size)"""
         self.cpp_constant_args = cpp_constant_args
 
     def codegen(self, wrapper):
@@ -3721,7 +3728,7 @@ class MKLPackedLinear(ExternKernelAlloc):
             args = self.codegen_args()
 
         wrapper.generate_fusion_ops_code(
-            self.get_name(), self.kernel, self.cpp_kernel, args
+            self.get_name(), self.kernel, self.cpp_kernel, args, self.cpp_op_schema
         )
 
     @classmethod
