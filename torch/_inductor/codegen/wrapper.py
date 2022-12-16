@@ -782,16 +782,23 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.writeline(f"{cpp_kernel}({', '.join(args)});")
 
     def generate_fusion_ops_code(
-        self, name, kernel, cpp_kernel, codegen_args, cpp_op_schema, cpp_kernel_key
+        self,
+        name,
+        kernel,
+        cpp_kernel,
+        codegen_args,
+        cpp_op_schema,
+        cpp_kernel_key,
+        cpp_kernel_overlad_name="",
     ):
-        if cpp_kernel not in self.extern_call_ops:
+        if cpp_kernel_key not in self.extern_call_ops:
             self.writeline(
                 f"""
     static auto op_{cpp_kernel_key} =
     c10::Dispatcher::singleton()
         .findSchemaOrThrow(
             \"{cpp_kernel}\",
-            \"\")
+            \"{cpp_kernel_overlad_name}\")
         .typed<{cpp_op_schema}>();
             """
             )

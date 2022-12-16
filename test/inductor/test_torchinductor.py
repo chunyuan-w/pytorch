@@ -4923,6 +4923,7 @@ class CommonTemplate:
             "test_bmm1",
             "test_bmm2",
             "test_cat",  # alias
+            "test_conv2d_binary",
             "test_conv2d_unary",
             "test_linear1",
             "test_linear2",
