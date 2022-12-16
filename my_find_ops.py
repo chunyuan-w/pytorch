@@ -79,8 +79,8 @@ void (*kernel_cpp_0)(const float*,float*);
                 torch::List<c10::optional<at::Scalar>> scalars,
                 c10::optional<c10::string_view> algorithm)>();
 
-
-    auto buf1 = op.call(buf0, arg0_1, arg1_1, {0, 0}, {1, 1}, {1, 1}, 1, "relu", {}, "");
+    torch::List<c10::optional<at::Scalar>> scalars;
+    auto buf1 = op.call(buf0, arg0_1, arg1_1, {0, 0}, {1, 1}, {1, 1}, 1, "relu", scalars, "");
     //assert_size_stride(buf1, {1, 32, 112, 112}, {401408, 1, 3584, 32})
     arg0_1.reset();
     arg1_1.reset();
