@@ -2576,14 +2576,7 @@ class ExternKernel(InputsKernel):
 
     def cpp_wrapper_codegen_args(self):
         args = [x.codegen_reference() for x in self.inputs]
-        args.extend(
-            map(
-                str,
-                self.cpp_constant_args
-                if hasattr(self, "cpp_constant_args")
-                else self.constant_args,
-            )
-        )
+        args.extend(self.cpp_constant_args)
         return args
 
     def codegen_kwargs(self):
@@ -3420,6 +3413,14 @@ class Convolution(ExternKernelAlloc):
         )
 
 
+def _string(shape: tuple):
+    # return V.graph.sizevars.codegen_shape_tuple(shape)
+    from .sizevars import CppSizeVarAllocator
+
+    sizevars = CppSizeVarAllocator()
+    return sizevars.codegen_shape_tuple(shape)
+
+
 def _prepare_convolution_fusion_create(
     cls,
     x: "TensorBox",
@@ -3474,12 +3475,19 @@ def _prepare_convolution_fusion_create(
         output_stride,
     )
     constant_args = [padding, stride, dilation, groups]
+    cpp_constant_args = [
+        _string(padding),
+        _string(stride),
+        _string(dilation),
+        str(groups),
+    ]
 
     if bias is not None:
         inputs.append(bias)
     else:
         constant_args.insert(0, bias)
-    return inputs, constant_args, kernel_layout, req_stride_order
+        cpp_constant_args.insert(0, "at::Tensor")
+    return inputs, constant_args, kernel_layout, req_stride_order, cpp_constant_args
 
 
 class ConvolutionUnary(ExternKernelAlloc):
@@ -3491,14 +3499,27 @@ class ConvolutionUnary(ExternKernelAlloc):
         inputs,
         constant_args=(),
         kernel="torch.ops.mkldnn._convolution_pointwise",
+        cpp_constant_args=(),
     ):
         super().__init__(layout, inputs, constant_args)
         self.kernel = kernel
+        self.cpp_kernel = "at::_convolution_pointwise"
+        self.cpp_constant_args = cpp_constant_args
 
     def codegen(self, wrapper):
+        from torch._inductor.codegen.wrapper import CppWrapperCodeGen
+
+        if isinstance(wrapper, CppWrapperCodeGen):
+            args = self.cpp_wrapper_codegen_args()
+        else:
+            args = self.codegen_args()
+
         wrapper.writeline(
-            f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
+            wrapper.generate_fusion_ops_code(
+                self.get_name(), self.kernel, self.cpp_kernel, args
+            )
         )
+
         if isinstance(self.layout, Layout):
             self.codegen_size_asserts(wrapper)
 
@@ -3517,15 +3538,27 @@ class ConvolutionUnary(ExternKernelAlloc):
         algorithm,
     ):
         kernel = "torch.ops.mkldnn._convolution_pointwise"
-        (inputs, constant_args, kernel_layout, _) = _prepare_convolution_fusion_create(
+        (
+            inputs,
+            constant_args,
+            kernel_layout,
+            _,
+            cpp_constant_args,
+        ) = _prepare_convolution_fusion_create(
             cls, x, weight, bias, padding_, stride_, dilation_, groups
         )
         constant_args = constant_args + [attr, scalars, algorithm]
+        cpp_constant_args = cpp_constant_args + [
+            f'"{attr}"',
+            _string(scalars),
+            f'"{algorithm}"',
+        ]
         return ConvolutionUnary(
             layout=kernel_layout,
             inputs=inputs,
             constant_args=constant_args,
             kernel=kernel,
+            cpp_constant_args=cpp_constant_args,
         )
 
 
@@ -3678,7 +3711,7 @@ class MKLPackedLinear(ExternKernelAlloc):
             args = self.codegen_args()
 
         wrapper.writeline(
-            wrapper.generate_mkl_packed_linear_code(
+            wrapper.generate_fusion_ops_code(
                 self.get_name(), self.kernel, self.cpp_kernel, args
             )
         )
@@ -3704,7 +3737,7 @@ class MKLPackedLinear(ExternKernelAlloc):
         x = cls.require_stride_order(x, req_stride_order)
         inputs = [x, packed_w, orig_w]
         constant_args = [batch_size]
-        cpp_constant_args = [batch_size]
+        cpp_constant_args = [str(batch_size)]
         if bias is not None:
             inputs.append(bias)
         else:
