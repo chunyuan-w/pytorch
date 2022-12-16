@@ -3504,6 +3504,7 @@ class ConvolutionUnary(ExternKernelAlloc):
         super().__init__(layout, inputs, constant_args)
         self.kernel = kernel
         self.cpp_kernel = "mkldnn::_convolution_pointwise"
+        self.cpp_kernel_key = "convolution_pointwise"
         self.cpp_op_schema = """
             at::Tensor(
                 const at::Tensor& input_t,
@@ -3527,7 +3528,12 @@ class ConvolutionUnary(ExternKernelAlloc):
             args = self.codegen_args()
 
         wrapper.generate_fusion_ops_code(
-            self.get_name(), self.kernel, self.cpp_kernel, args, self.cpp_op_schema
+            self.get_name(),
+            self.kernel,
+            self.cpp_kernel,
+            args,
+            self.cpp_op_schema,
+            self.cpp_kernel_key,
         )
 
         # if isinstance(self.layout, Layout):
@@ -3710,6 +3716,7 @@ class MKLPackedLinear(ExternKernelAlloc):
         super().__init__(layout, inputs, constant_args)
         self.kernel = kernel
         self.cpp_kernel = "mkl::_mkl_linear"
+        self.cpp_kernel_key = "mkl_linear"
         self.cpp_op_schema = """
             at::Tensor(
                 const at::Tensor& self,
@@ -3728,7 +3735,12 @@ class MKLPackedLinear(ExternKernelAlloc):
             args = self.codegen_args()
 
         wrapper.generate_fusion_ops_code(
-            self.get_name(), self.kernel, self.cpp_kernel, args, self.cpp_op_schema
+            self.get_name(),
+            self.kernel,
+            self.cpp_kernel,
+            args,
+            self.cpp_op_schema,
+            self.cpp_kernel_key,
         )
 
     @classmethod

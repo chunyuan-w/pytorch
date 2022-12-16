@@ -448,7 +448,7 @@ class WrapperCodeGen(CodeGen):
         self.writeline(f"{kernel}({', '.join(args)})")
 
     def generate_fusion_ops_code(
-        self, name, kernel, cpp_kernel, codegen_args, generate_fusion_ops_code
+        self, name, kernel, cpp_kernel, codegen_args, cpp_op_schema, cpp_kernel_key
     ):
         return f"{name} = {kernel}({', '.join(codegen_args)})"
 
@@ -590,6 +590,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
     def __init__(self):
         self._call_func_id = next(CppWrapperCodeGen.call_func_id)
         super().__init__()
+        self.extern_call_ops = dict()
 
     @cache_on_self
     def get_output_refs(self):
@@ -781,18 +782,22 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.writeline(f"{cpp_kernel}({', '.join(args)});")
 
     def generate_fusion_ops_code(
-        self, name, kernel, cpp_kernel, codegen_args, cpp_op_schema
+        self, name, kernel, cpp_kernel, codegen_args, cpp_op_schema, cpp_kernel_key
     ):
-        # TODO: auto op will duplictes
-        self.writeline(
-            f"""
-    static auto op =
+        if cpp_kernel not in self.extern_call_ops:
+            self.writeline(
+                f"""
+    static auto op_{cpp_kernel_key} =
     c10::Dispatcher::singleton()
         .findSchemaOrThrow(
             \"{cpp_kernel}\",
             \"\")
         .typed<{cpp_op_schema}>();
-        """
-        )
+            """
+            )
+            self.extern_call_ops[cpp_kernel_key] = True
+
         # self.writeline("torch::List<c10::optional<at::Scalar>> scalars;")
-        self.writeline(f"auto {name} = op.call({', '.join(codegen_args)});")
+        self.writeline(
+            f"auto {name} = op_{cpp_kernel_key}.call({', '.join(codegen_args)});"
+        )
