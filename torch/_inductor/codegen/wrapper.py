@@ -794,5 +794,5 @@ class CppWrapperCodeGen(WrapperCodeGen):
         .typed<{cpp_op_schema}>();
         """
         )
-        self.writeline("torch::List<c10::optional<at::Scalar>> scalars;")
+        # self.writeline("torch::List<c10::optional<at::Scalar>> scalars;")
         self.writeline(f"auto {name} = op.call({', '.join(codegen_args)});")

@@ -3560,7 +3560,7 @@ class ConvolutionUnary(ExternKernelAlloc):
         constant_args = constant_args + [attr, scalars, algorithm]
         cpp_constant_args = cpp_constant_args + [
             f'"{attr}"',
-            _string(scalars) if scalars else "scalars",
+            _string(scalars) if scalars else "{-1}",
             f'"{algorithm}"',
         ]
         return ConvolutionUnary(
