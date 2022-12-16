@@ -447,7 +447,9 @@ class WrapperCodeGen(CodeGen):
             args.append(f"out={codegen_reference}")
         self.writeline(f"{kernel}({', '.join(args)})")
 
-    def generate_fusion_ops_code(self, name, kernel, cpp_kernel, codegen_args):
+    def generate_fusion_ops_code(
+        self, name, kernel, cpp_kernel, codegen_args, generate_fusion_ops_code
+    ):
         return f"{name} = {kernel}({', '.join(codegen_args)})"
 
     @dynamo_utils.dynamo_timed
@@ -778,5 +780,19 @@ class CppWrapperCodeGen(WrapperCodeGen):
             args.insert(0, f"{codegen_reference}")
         self.writeline(f"{cpp_kernel}({', '.join(args)});")
 
-    def generate_fusion_ops_code(self, name, kernel, cpp_kernel, codegen_args):
-        return f"auto {name} = {cpp_kernel}({', '.join(codegen_args)});"
+    def generate_fusion_ops_code(
+        self, name, kernel, cpp_kernel, codegen_args, cpp_op_schema
+    ):
+        # TODO: auto op will duplictes
+        self.writeline(
+            f"""
+    static auto op =
+    c10::Dispatcher::singleton()
+        .findSchemaOrThrow(
+            \"{cpp_kernel}\",
+            \"\")
+        .typed<{cpp_op_schema}>();
+        """
+        )
+        self.writeline("torch::List<c10::optional<at::Scalar>> scalars;")
+        self.writeline(f"auto {name} = op.call({', '.join(codegen_args)});")

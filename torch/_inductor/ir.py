@@ -3486,7 +3486,7 @@ def _prepare_convolution_fusion_create(
         inputs.append(bias)
     else:
         constant_args.insert(0, bias)
-        cpp_constant_args.insert(0, "at::Tensor")
+        cpp_constant_args.insert(0, "at::Tensor()")
     return inputs, constant_args, kernel_layout, req_stride_order, cpp_constant_args
 
 
@@ -3503,7 +3503,19 @@ class ConvolutionUnary(ExternKernelAlloc):
     ):
         super().__init__(layout, inputs, constant_args)
         self.kernel = kernel
-        self.cpp_kernel = "at::_convolution_pointwise"
+        self.cpp_kernel = "mkldnn::_convolution_pointwise"
+        self.cpp_op_schema = """
+            at::Tensor(
+                const at::Tensor& input_t,
+                const at::Tensor& weight_t,
+                const c10::optional<at::Tensor>& bias_opt,
+                at::IntArrayRef padding,
+                at::IntArrayRef stride,
+                at::IntArrayRef dilation,
+                int64_t groups,
+                c10::string_view attr,
+                torch::List<c10::optional<at::Scalar>> scalars,
+                c10::optional<c10::string_view> algorithm)"""
         self.cpp_constant_args = cpp_constant_args
 
     def codegen(self, wrapper):
@@ -3514,14 +3526,12 @@ class ConvolutionUnary(ExternKernelAlloc):
         else:
             args = self.codegen_args()
 
-        wrapper.writeline(
-            wrapper.generate_fusion_ops_code(
-                self.get_name(), self.kernel, self.cpp_kernel, args
-            )
+        wrapper.generate_fusion_ops_code(
+            self.get_name(), self.kernel, self.cpp_kernel, args, self.cpp_op_schema
         )
 
-        if isinstance(self.layout, Layout):
-            self.codegen_size_asserts(wrapper)
+        # if isinstance(self.layout, Layout):
+        #     self.codegen_size_asserts(wrapper)
 
     @classmethod
     def create(
@@ -3550,7 +3560,7 @@ class ConvolutionUnary(ExternKernelAlloc):
         constant_args = constant_args + [attr, scalars, algorithm]
         cpp_constant_args = cpp_constant_args + [
             f'"{attr}"',
-            _string(scalars),
+            _string(scalars) if scalars else "scalars",
             f'"{algorithm}"',
         ]
         return ConvolutionUnary(
@@ -3710,10 +3720,8 @@ class MKLPackedLinear(ExternKernelAlloc):
         else:
             args = self.codegen_args()
 
-        wrapper.writeline(
-            wrapper.generate_fusion_ops_code(
-                self.get_name(), self.kernel, self.cpp_kernel, args
-            )
+        wrapper.generate_fusion_ops_code(
+            self.get_name(), self.kernel, self.cpp_kernel, args
         )
 
     @classmethod
