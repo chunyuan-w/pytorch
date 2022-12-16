@@ -1833,15 +1833,6 @@
   dispatch:
     CPU, CUDA: cumprod_out
 
-- func: _mkl_linear(Tensor X, Tensor MKL_W, Tensor ORI_W, Tensor? B, int batch_size) -> Tensor
-  dispatch:
-    MkldnnCPU, CPU: mkl_linear
-
-# TODO: Scalars?[] unsupported in python args parser
-# - func: _convolution_pointwise(Tensor X, Tensor W, Tensor? B, int[] padding, int[] stride, int[] dilation, int groups, str attr, Scalar?[] scalars, str? algorithm) -> Tensor
-#   dispatch:
-#     MkldnnCPU, CPU: mkldnn_convolution_pointwise
-
 - func: cumprod.dimname(Tensor self, Dimname dim, *, ScalarType? dtype=None) -> Tensor
   device_check: NoCheck   # TensorIterator
   variants: function, method
