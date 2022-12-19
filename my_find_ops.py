@@ -41,6 +41,24 @@ wrapper = (
 #include <dlfcn.h>
 #include <assert.h>
 
+void assert_size_stride(at::Tensor tensor, std::vector<int64_t> size, std::vector<int64_t> stride) {
+  int64_t ndim = tensor.ndimension();
+  if (size.size() != ndim || stride.size() != ndim) {
+    TORCH_CHECK(false, "wrong number of dimensions");
+  }
+  for (auto i : c10::irange(ndim)) {
+    int64_t want_size = size[i];
+    int64_t want_stride = stride[i];
+    int64_t actual_size = tensor.size(i);
+    int64_t actual_stride = tensor.stride(i);
+    if (want_size != actual_size ||
+        // ignore stride differences when size is 1
+        (want_stride != actual_stride && actual_size > 1)) {
+     TORCH_CHECK(false,  "expected size ", actual_size, "==", want_size, ", stride ", actual_stride, "==", want_stride, " at dim=", i );
+    }      
+  }
+}
+
 class LoadKernel_call0{
   public:
     LoadKernel_call0() {
@@ -81,7 +99,7 @@ void (*kernel_cpp_0)(const float*,float*);
 
     torch::List<c10::optional<at::Scalar>> scalars;
     auto buf1 = op.call(buf0, arg0_1, arg1_1, {0, 0}, {1, 1}, {1, 1}, 1, "relu", scalars, "");
-    //assert_size_stride(buf1, {1, 32, 112, 112}, {401408, 1, 3584, 32})
+    assert_size_stride(buf1, {1, 32, 112, 112}, {401408, 1, 3584, 32});
     arg0_1.reset();
     arg1_1.reset();
     return buf1; }''' )
