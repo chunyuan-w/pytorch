@@ -55,7 +55,7 @@ void assert_size_stride(at::Tensor tensor, std::vector<int64_t> size, std::vecto
         // ignore stride differences when size is 1
         (want_stride != actual_stride && actual_size > 1)) {
      TORCH_CHECK(false,  "expected size ", actual_size, "==", want_size, ", stride ", actual_stride, "==", want_stride, " at dim=", i );
-    }      
+    }
   }
 }
 
@@ -76,7 +76,7 @@ void (*kernel_cpp_0)(const float*,float*);
     arg1_1 = args[1];
     arg2_1 = args[2];
     static LoadKernel_call0 load_kernel_;
-    auto buf0 = at::empty_strided({1, 3, 112, 112}, {37632, 1, 336, 3}, at::ScalarType::Float); 
+    auto buf0 = at::empty_strided({1, 3, 112, 112}, {37632, 1, 336, 3}, at::ScalarType::Float);
     load_kernel_.kernel_cpp_0((float*)(arg2_1.data_ptr()), (float*)(buf0.data_ptr()));
     arg2_1.reset();
 

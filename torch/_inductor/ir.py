@@ -2601,7 +2601,7 @@ class ExternKernel(InputsKernel):
             size = V.graph.sizevars.codegen_shape_tuple(self.get_size())
             stride = V.graph.sizevars.codegen_shape_tuple(self.get_stride())
             wrapper.writeline(
-                f"assert_size_stride({self.get_name()}, {size}, {stride})"
+                wrapper.generate_size_asserts(self.get_name(), size, stride)
             )
 
     def get_group_stride(self):
@@ -3536,8 +3536,8 @@ class ConvolutionUnary(ExternKernelAlloc):
             self.cpp_kernel_key,
         )
 
-        # if isinstance(self.layout, Layout):
-        #     self.codegen_size_asserts(wrapper)
+        if isinstance(self.layout, Layout):
+            self.codegen_size_asserts(wrapper)
 
     @classmethod
     def create(
@@ -3629,8 +3629,8 @@ class ConvolutionBinary(ExternKernelAlloc):
             self.cpp_kernel_overlad_name,
         )
 
-        # if isinstance(self.layout, Layout):
-        #     self.codegen_size_asserts(wrapper)
+        if isinstance(self.layout, Layout):
+            self.codegen_size_asserts(wrapper)
 
     @classmethod
     def create(

@@ -570,6 +570,9 @@ class WrapperCodeGen(CodeGen):
     def generate_kernel_class_def_ending(self, result):
         return
 
+    def generate_size_asserts(self, name, size, stride):
+        return f"assert_size_stride({name}, {size}, {stride})"
+
     def generate_kernel_call(self, name, call_args):
         self.writeline(
             self.wrap_kernel_call(name, call_args),
@@ -623,6 +626,24 @@ class CppWrapperCodeGen(WrapperCodeGen):
             '''
             #include <dlfcn.h>
             #include <assert.h>
+
+            void assert_size_stride(at::Tensor tensor, std::vector<int64_t> size, std::vector<int64_t> stride) {
+                int64_t ndim = tensor.ndimension();
+                if (size.size() != ndim || stride.size() != ndim) {
+                    TORCH_CHECK(false, "wrong number of dimensions");
+                }
+                for (auto i : c10::irange(ndim)) {
+                    int64_t want_size = size[i];
+                    int64_t want_stride = stride[i];
+                    int64_t actual_size = tensor.size(i);
+                    int64_t actual_stride = tensor.stride(i);
+                    if (want_size != actual_size ||
+                        // ignore stride differences when size is 1
+                        (want_stride != actual_stride && actual_size > 1)) {
+                    TORCH_CHECK(false,  "expected size ", actual_size, "==", want_size, ", stride ", actual_stride, "==", want_stride, " at dim=", i );
+                    }
+                }
+            }
             """
         )
         self.prefix.splice(
@@ -731,6 +752,9 @@ class CppWrapperCodeGen(WrapperCodeGen):
             };
             """
         )
+
+    def generate_size_asserts(self, name, size, stride):
+        return f"assert_size_stride({name}, {size}, {stride});"
 
     def generate_return(self, output_refs):
         if output_refs:
