@@ -2844,14 +2844,16 @@ class CommonTemplate:
                 return torch.cat([x1, y1], 1)
 
         mod = M()
+        opt_mod = torch._dynamo.optimize("inductor")(mod)
         memory_format = torch.channels_last
-        self.common(
-            mod,
-            (
-                torch.randn([1, 3, 16, 16]).to(memory_format=memory_format),
-                torch.randn([1, 3, 32, 32]).to(memory_format=memory_format),
-            ),
+        inputs = (
+            torch.randn([1, 3, 16, 16]).to(memory_format=memory_format),
+            torch.randn([1, 3, 32, 32]).to(memory_format=memory_format),
         )
+        y = mod(*inputs)
+        opt_y = opt_mod(*inputs)
+        self.assertEqual(y, opt_y)
+        self.assertEqual(y.stride(), opt_y.stride())
 
     def test_stack(self):
         def fn(a, b):
