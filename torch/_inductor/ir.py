@@ -1631,6 +1631,17 @@ class Layout(IRNode):
                 return False
         return True
 
+    def is_channels_last_contiguous(self):
+        ndim = len(self.size)
+        if ndim not in [4, 5]:
+            return False
+        for left, right, size in zip(
+            self.stride, make_channels_last_strides_for(self.size), self.size
+        ):
+            if size != 1 and left != right:
+                return False
+        return True
+
     def is_transposed(self):
         for left, right, size in zip(
             self.stride,
@@ -2308,20 +2319,15 @@ class ConcatKernel(NopKernel):
             offsets_end.append(new_size[dim])
 
         output_stride = FlexibleLayout.contiguous_strides(new_size)
+        # If any of the inputs is in CL format, use CL format for the output
         for i in range(len(inputs)):
             x = inputs[i]
             if is_storage_and_layout(x):
                 if isinstance(x.get_layout(), FixedLayout):
-                    actual_size = x.get_layout().size
-                    actual_stride = x.get_layout().stride
-                    if len(actual_size) in [4, 5]:
-                        channels_last_stride = make_channels_last_strides_for(
-                            actual_size
-                        )
-                        if actual_stride == channels_last_stride:
-                            # use CL stride for the output
-                            output_stride = make_channels_last_strides_for(new_size)
-                            break
+                    if x.get_layout().is_channels_last_contiguous:
+                        # use CL stride for the output
+                        output_stride = make_channels_last_strides_for(new_size)
+                        break
 
         kernel = ConcatKernel(
             name=None,
