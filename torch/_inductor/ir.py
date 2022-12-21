@@ -2319,7 +2319,8 @@ class ConcatKernel(NopKernel):
                             actual_size
                         )
                         if actual_stride == channels_last_stride:
-                            output_stride = channels_last_stride
+                            # use CL stride for the output
+                            output_stride = make_channels_last_strides_for(new_size)
                             break
 
         kernel = ConcatKernel(
