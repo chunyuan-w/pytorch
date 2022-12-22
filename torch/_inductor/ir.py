@@ -2260,13 +2260,40 @@ class ConcatKernel(NopKernel):
                     )
             offsets_end.append(new_size[dim])
 
+        # output_stride = FlexibleLayout.contiguous_strides(new_size)
+
+
+
+        # with torch._subclasses.FakeTensorMode():
+        #     x_fake = [ir_node_to_tensor(x, guard_shape=True) for x in inputs]
+        #     output = torch.ops.aten.cat(x_fake, dim)
+        # output_stride = output.stride()
+
+
+        output_stride = FlexibleLayout.contiguous_strides(new_size)
+        for i in range(len(inputs)):
+            x = inputs[i]
+            if is_storage_and_layout(x):
+                if isinstance(x.get_layout(), FixedLayout):
+                    actual_size = x.get_layout().size
+                    actual_stride = x.get_layout().stride
+                    if len(actual_size) in [4, 5]:
+                        channels_last_stride = make_channels_last_strides_for(actual_size)
+                        if actual_stride == channels_last_stride:
+                            # output_stride = channels_last_stride
+                            # use CL stride for the output
+                            output_stride = make_channels_last_strides_for(new_size)
+                            break
+
+
+
         kernel = ConcatKernel(
             name=None,
             layout=FixedLayout(
                 device=device,
                 dtype=dtype,
                 size=new_size,
-                stride=FlexibleLayout.contiguous_strides(new_size),
+                stride=output_stride,
             ),
             inputs=[],
         )
@@ -2483,9 +2510,17 @@ class ExternKernel(InputsKernel):
 
         # require x to have the layout as strided_ordered as order
         if is_storage_and_layout(x):
+            # if isinstance(
+            #     x.get_layout(), FlexibleLayout
+            # ) and is_stride_order_storage_and_layout(x, order):
+
+
             if isinstance(
                 x.get_layout(), FlexibleLayout
-            ) and is_stride_order_storage_and_layout(x, order):
+            ) :
+
+
+
                 # fix flexiblelayout to be FixedLayout with stride_order
                 as_storage_and_layout(
                     x, freeze=True, want_contiguous=False, stride_order=order
