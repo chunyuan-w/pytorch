@@ -454,9 +454,12 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
             maybe_mark_step(args)
 
             # interleave the runs to handle frequency scaling and load changes
-            timings[rep, 0], expected_output = timed(
-                model, model_iter_fn, inputs, return_result=True
-            )
+            if not args.skip_eager:
+                timings[rep, 0], expected_output = timed(
+                    model, model_iter_fn, inputs, return_result=True
+                )
+            else:
+                timings[rep, 0] = 0
 
             # call mark_step between the 2 calls to make the comparison fair.
             maybe_mark_step(args)
@@ -470,7 +473,8 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
     if args.export_profiler_trace:
         name = args.profiler_trace_name + "_" + model.name + ".json"
         name = os.path.join(torch._dynamo.config.base_dir, name)
-        p.export_chrome_trace(name)
+        print(p.key_averages().table(sort_by="self_cpu_time_total"))
+        # p.export_chrome_trace(name)
     pvalue = ttest_ind(timings[:, 0], timings[:, 1]).pvalue
     median = np.median(timings, axis=0)
     speedup = median[0] / median[1]
@@ -1206,10 +1210,13 @@ class BenchmarkRunner:
             ok, total = Stats.reset_counters()
             experiment_kwargs = {}
             results = []
-
-            eager_latency, eager_peak_mem = warmup(
-                self.model_iter_fn, model, example_inputs, "eager"
-            )
+            if not self.args.skip_eager:
+                eager_latency, eager_peak_mem = warmup(
+                    self.model_iter_fn, model, example_inputs, "eager"
+                )
+            else:
+                eager_latency = 100
+                eager_peak_mem = 100                  
             optimized_model_iter_fn = optimize_ctx(self.model_iter_fn)
             dynamo_latency, dynamo_peak_mem = warmup(
                 optimized_model_iter_fn, model, example_inputs, "dynamo"
@@ -1359,6 +1366,9 @@ def parse_args(args=None):
     parser.add_argument(
         "--exclude", "-x", action="append", help="filter benchmarks with regexp"
     )
+    parser.add_argument(
+        "--skip_eager", action="store_true", help="do not run eager mode"
+    )        
     parser.add_argument(
         "--total-partitions",
         type=int,
