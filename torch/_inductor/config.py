@@ -2,7 +2,7 @@ import os
 import sys
 
 # add some debug printouts
-debug = False
+debug = True
 
 # dead code elimination
 dce = False
@@ -111,6 +111,7 @@ class cpp:
         "g++.par",
     )
     # Allow kernel performance profiling via PyTorch profiler
+    # enable_kernel_profile = True
     enable_kernel_profile = False
 
 
