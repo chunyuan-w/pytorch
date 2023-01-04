@@ -277,7 +277,7 @@ class CppVecOverrides(OpOverrides):
 
     @staticmethod
     def tanh(a):
-        return f"{a}.tanh()"
+        return f"at::vec::Vectorized<float>(2.0) / (at::vec::Vectorized<float>(1.0) + (at::vec::Vectorized<float>(-2.0) * {a}).exp()) - at::vec::Vectorized<float>(1.0)"
 
     @staticmethod
     def reciprocal(a):
