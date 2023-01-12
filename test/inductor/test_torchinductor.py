@@ -4575,6 +4575,39 @@ class CommonTemplate:
                 ],
             )        
 
+    def test_view_replacement(self):
+        class M(torch.nn.Module):
+            def __init__(
+                self,
+                in_channels,
+                out_channels,
+                **kwargs,
+            ):
+                super(M, self).__init__()
+                self.conv = torch.nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    **kwargs,
+                )
+                self.relu = torch.nn.ReLU()
+
+            def forward(self, x):
+                x = self.conv(x)
+                x = self.relu(x)
+                y = x.view(x.size(0), -1)
+                y.sigmoid_()
+                return x, y
+        
+        # TODO: in this case, could not replace view with reshape
+        # will raise error in view OP
+        with torch.no_grad():
+            self.common(
+                M(3, 3, kernel_size=1).eval(),
+                [
+                    torch.randn([1, 3, 5, 5]),
+                ],
+            )  
+
     def test_mm_views(self):
         def fn(a, b):
             return torch.mm(a.view(32, 32), b.view(32, 32))

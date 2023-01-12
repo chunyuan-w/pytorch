@@ -529,16 +529,22 @@ def create_unary_module(node: torch.fx.node):
     return unary_map[node.target](*(node.args[1:]), **(node.kwargs))
 
 
+def could_replace_view_with_reshape(node):
+    for user in node.users:
+        # TODO: call_function? modules?
+        if user.op == "call_method":
+            if user.target.endswith("_"):
+                return False
+    return True  
+
+
 def replace_view_with_reshape(gm: torch.fx.GraphModule):
     for node in gm.graph.nodes:
+        # TODO: call_function?
         if node.op == 'call_method':
             if node.target == 'view':
-                for user in node.users:
-                    if user.op == "call_method":
-                        if user.target.endswith("_"):
-                            continue
-                # TODO: check user target: should not end with "_" (not inplace OP)
-                node.target = 'reshape'
+                if could_replace_view_with_reshape(node):
+                    node.target = 'reshape'
     gm.graph.lint()
     gm.recompile()
     return gm
