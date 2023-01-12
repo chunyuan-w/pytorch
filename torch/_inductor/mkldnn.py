@@ -502,6 +502,7 @@ def mkldnn_fuse_fx(gm: torch.fx.GraphModule, example_inputs):
 
     fake_mode = fake_mode_from_tensors(example_inputs)
     ShapeProp(gm, fake_mode=fake_mode).propagate(*example_inputs)
+    gm = replace_view_with_reshape(gm)
     gm = fuse_unary(gm)
     gm = fuse_binary_inplace(gm)
     gm = fuse_binary(gm)
@@ -526,6 +527,21 @@ def create_unary_module(node: torch.fx.node):
         F.silu: nn.SiLU,
     }
     return unary_map[node.target](*(node.args[1:]), **(node.kwargs))
+
+
+def replace_view_with_reshape(gm: torch.fx.GraphModule):
+    for node in gm.graph.nodes:
+        if node.op == 'call_method':
+            if node.target == 'view':
+                for user in node.users:
+                    if user.op == "call_method":
+                        if user.target.endswith("_"):
+                            continue
+                # TODO: check user target: should not end with "_" (not inplace OP)
+                node.target = 'reshape'
+    gm.graph.lint()
+    gm.recompile()
+    return gm
 
 
 def fuse_unary(gm: torch.fx.GraphModule):
