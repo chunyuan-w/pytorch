@@ -3237,7 +3237,30 @@ def make_reduction(reduction_type: str, override_return_dtype=None):
             assert len(reduction_index) == len(reduced_idx)
             if keepdims:
                 assert len(index) == len(size)
-                assert all(index[i] == 0 for i in reduced_idx)
+
+                # assert all(V.graph.sizevars.maybe_guard_equals(index[i], 0) for i in reduced_idx)
+                # assert all(index[i] == 0 for i in reduced_idx)
+                from .sizevars import SimplifyIndexing
+
+                if isinstance(V.get_ops_handler(), SimplifyIndexing):
+                    ranges = V.get_ops_handler()._var_ranges
+                else:
+                    ranges = V.get_ops_handler().parent_handler._var_ranges
+                # ranges = V.get_ops_handler()._var_ranges
+                from .utils import sympy_subs
+
+                for i in reduced_idx:
+                    if index[i] == 0:
+                        break
+                    # TODO: get var instead of free_symbols
+                    for item in index[i].free_symbols:
+                        ranges_for_item = ranges[item]
+                        for val in range(ranges_for_item):
+                            replacement = {item: val}
+                            range_val = sympy_subs(index[i], replacement)
+                            if range_val == 0:
+                                print("possible to be 0")
+
                 index = [index[i] for i in kept_idx]
             assert len(index) == len(kept_idx)
             new_index = [None] * (len(index) + len(reduction_index))
