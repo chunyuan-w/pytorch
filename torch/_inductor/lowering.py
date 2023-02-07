@@ -3251,12 +3251,13 @@ def make_reduction(reduction_type: str, override_return_dtype=None):
             for i in reduced_idx:
                 idx = index[i]
                 # TODO: get var instead of free_symbols
-                for item in idx.free_symbols:
-                    ranges_for_item = ranges[item]
-                    return any(
-                        sympy_subs(idx, {item: val}) == 0
-                        for val in range(ranges_for_item)
-                    )
+                assert len(idx.free_symbols) == 1
+                symbol = list(idx.free_symbols)[0]
+                ranges_for_symbol = ranges[symbol]
+                return any(
+                    sympy_subs(idx, {symbol: val}) == 0
+                    for val in range(ranges_for_symbol)
+                )
 
         def loader(index, reduction_index):
             assert len(reduction_index) == len(reduced_idx)
