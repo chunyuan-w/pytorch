@@ -3254,10 +3254,12 @@ def make_reduction(reduction_type: str, override_return_dtype=None):
                 assert len(idx.free_symbols) == 1
                 symbol = list(idx.free_symbols)[0]
                 ranges_for_symbol = ranges[symbol]
-                return any(
+                if not any(
                     sympy_subs(idx, {symbol: val}) == 0
                     for val in range(ranges_for_symbol)
-                )
+                ):
+                    return False
+            return True
 
         def loader(index, reduction_index):
             assert len(reduction_index) == len(reduced_idx)
