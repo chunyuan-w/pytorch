@@ -3237,39 +3237,39 @@ def make_reduction(reduction_type: str, override_return_dtype=None):
                 kept_idx.append(i)
                 kept_sizes.append(size[i])
 
-        def inferred_index_equals_zero(idx, ranges):
+        def get_var_ranges():
+            if isinstance(V.get_ops_handler(), SimplifyIndexing):
+                return V.get_ops_handler()._var_ranges
+            elif isinstance(V.get_ops_handler(), RecordLoadStore):
+                return V.get_ops_handler().parent_handler._var_ranges
+            else:
+                raise AssertionError("unsupported ops handler type")
+
+        def inferred_index_equals(idx, ranges, value):
             assert all(key in ranges for key in idx.free_symbols)
 
             free_symbols_dict = OrderedDict(
                 [(symbol, ranges[symbol]) for symbol in idx.free_symbols]
             )
 
-            ranges_values = [list(range(i)) for i in free_symbols_dict.values()]
-            free_symbols_values = list(itertools.product(*ranges_values))
+            free_symbols_ranges = [list(range(i)) for i in free_symbols_dict.values()]
+            free_symbols_values = list(itertools.product(*free_symbols_ranges))
 
             replacements = [
                 dict(zip(free_symbols_dict.keys(), row)) for row in free_symbols_values
             ]
-            if not any(
-                sympy_subs(idx, replacement) == 0 for replacement in replacements
-            ):
-                return False
-            return True
+            return any(
+                sympy_subs(idx, replacement) == value for replacement in replacements
+            )
 
         def check_index(index, reduced_idx):
             if all(index[i] == 0 for i in reduced_idx):
                 return True
 
             # Infer index value based on var_ranges
-            if isinstance(V.get_ops_handler(), SimplifyIndexing):
-                ranges = V.get_ops_handler()._var_ranges
-            elif isinstance(V.get_ops_handler(), RecordLoadStore):
-                ranges = V.get_ops_handler().parent_handler._var_ranges
-            else:
-                raise AssertionError("unsupported ops handler type")
-
+            ranges = get_var_ranges()
             return all(
-                inferred_index_equals_zero(index[i], ranges) for i in reduced_idx
+                inferred_index_equals(index[i], ranges, value=0) for i in reduced_idx
             )
 
         def loader(index, reduction_index):
