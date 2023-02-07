@@ -25,8 +25,10 @@ from torch.fx.experimental.symbolic_shapes import sym_sqrt
 from .._dynamo.utils import import_submodule
 
 from . import config, ir, overrides, test_operators  # NOQA: F401
+
 from .cuda_properties import current_device
 from .decomposition import decompositions, get_decompositions
+from .dependencies import RecordLoadStore
 from .ir import (
     ExpandView,
     FloorDiv,
@@ -38,7 +40,8 @@ from .ir import (
     TensorBox,
     View,
 )
-from .utils import ceildiv, sympy_product
+from .sizevars import SimplifyIndexing
+from .utils import ceildiv, sympy_product, sympy_subs
 from .virtualized import ops, V
 
 log = logging.getLogger(__name__)
@@ -3233,34 +3236,33 @@ def make_reduction(reduction_type: str, override_return_dtype=None):
                 kept_idx.append(i)
                 kept_sizes.append(size[i])
 
+        def check_index(index, reduced_idx):
+            if all(index[i] == 0 for i in reduced_idx):
+                return True
+
+            # Infer index value based on var_ranges
+            if isinstance(V.get_ops_handler(), SimplifyIndexing):
+                ranges = V.get_ops_handler()._var_ranges
+            elif isinstance(V.get_ops_handler(), RecordLoadStore):
+                ranges = V.get_ops_handler().parent_handler._var_ranges
+            else:
+                raise AssertionError("unsupported ops handler type")
+
+            for i in reduced_idx:
+                idx = index[i]
+                # TODO: get var instead of free_symbols
+                for item in idx.free_symbols:
+                    ranges_for_item = ranges[item]
+                    return any(
+                        sympy_subs(idx, {item: val}) == 0
+                        for val in range(ranges_for_item)
+                    )
+
         def loader(index, reduction_index):
             assert len(reduction_index) == len(reduced_idx)
             if keepdims:
                 assert len(index) == len(size)
-
-                # assert all(V.graph.sizevars.maybe_guard_equals(index[i], 0) for i in reduced_idx)
-                # assert all(index[i] == 0 for i in reduced_idx)
-                from .sizevars import SimplifyIndexing
-
-                if isinstance(V.get_ops_handler(), SimplifyIndexing):
-                    ranges = V.get_ops_handler()._var_ranges
-                else:
-                    ranges = V.get_ops_handler().parent_handler._var_ranges
-                # ranges = V.get_ops_handler()._var_ranges
-                from .utils import sympy_subs
-
-                for i in reduced_idx:
-                    if index[i] == 0:
-                        break
-                    # TODO: get var instead of free_symbols
-                    for item in index[i].free_symbols:
-                        ranges_for_item = ranges[item]
-                        for val in range(ranges_for_item):
-                            replacement = {item: val}
-                            range_val = sympy_subs(index[i], replacement)
-                            if range_val == 0:
-                                print("possible to be 0")
-
+                assert check_index(index, reduced_idx)
                 index = [index[i] for i in kept_idx]
             assert len(index) == len(kept_idx)
             new_index = [None] * (len(index) + len(reduction_index))
