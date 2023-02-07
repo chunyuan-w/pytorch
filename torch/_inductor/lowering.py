@@ -3,6 +3,7 @@ import itertools
 import logging
 import math
 import operator
+from collections import OrderedDict
 from collections.abc import Iterable
 from typing import List, Optional, Tuple
 
@@ -3236,6 +3237,25 @@ def make_reduction(reduction_type: str, override_return_dtype=None):
                 kept_idx.append(i)
                 kept_sizes.append(size[i])
 
+        def inferred_index_equals_zero(idx, ranges):
+            assert all(key in ranges for key in idx.free_symbols)
+
+            free_symbols_dict = OrderedDict(
+                [(symbol, ranges[symbol]) for symbol in idx.free_symbols]
+            )
+
+            ranges_values = [list(range(i)) for i in free_symbols_dict.values()]
+            free_symbols_values = list(itertools.product(*ranges_values))
+
+            replacements = [
+                dict(zip(free_symbols_dict.keys(), row)) for row in free_symbols_values
+            ]
+            if not any(
+                sympy_subs(idx, replacement) == 0 for replacement in replacements
+            ):
+                return False
+            return True
+
         def check_index(index, reduced_idx):
             if all(index[i] == 0 for i in reduced_idx):
                 return True
@@ -3248,18 +3268,9 @@ def make_reduction(reduction_type: str, override_return_dtype=None):
             else:
                 raise AssertionError("unsupported ops handler type")
 
-            for i in reduced_idx:
-                idx = index[i]
-                # TODO: get var instead of free_symbols
-                assert len(idx.free_symbols) == 1
-                symbol = list(idx.free_symbols)[0]
-                ranges_for_symbol = ranges[symbol]
-                if not any(
-                    sympy_subs(idx, {symbol: val}) == 0
-                    for val in range(ranges_for_symbol)
-                ):
-                    return False
-            return True
+            return all(
+                inferred_index_equals_zero(index[i], ranges) for i in reduced_idx
+            )
 
         def loader(index, reduction_index):
             assert len(reduction_index) == len(reduced_idx)
