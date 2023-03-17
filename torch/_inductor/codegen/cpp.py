@@ -903,7 +903,7 @@ class CppKernel(Kernel):
     def load(self, name: str, index: sympy.Expr):
         var = self.args.input(name)
         index = self.rename_indexing(index)
-        line = f"{var}[{cexpr(index)}]"
+        line = f"{var}[static_cast<int>({cexpr(index)})]"
         if V.graph.get_dtype(name) in [torch.float16]:
             line = f"static_cast<float>({line})"
         return self.cse.generate(self.loads, line)
@@ -913,7 +913,7 @@ class CppKernel(Kernel):
         var = self.args.output(name)
         index = self.rename_indexing(index)
         if mode is None:
-            line = f"{var}[{cexpr(index)}] = {value};"
+            line = f"{var}[static_cast<int>({cexpr(index)})] = {value};"
         elif mode == "atomic_add":
             if not config.cpp.dynamic_threads and self.num_threads == 1:
                 line = f"{var}[{cexpr(index)}] += {value};"
@@ -2490,7 +2490,7 @@ class LoopLevel:
             line1 = "#pragma GCC ivdep"
         else:
             line1 = ""
-        line2 = f"for({INDEX_TYPE} {self.var}={cexpr(self.offset)}; {self.var}<{cexpr(self.size)}; {self.var}+={cexpr(self.steps)})"
+        line2 = f"for({INDEX_TYPE} {self.var}=static_cast<int>({cexpr(self.offset)}); {self.var}<static_cast<int>({cexpr(self.size)}); {self.var}+=static_cast<int>({cexpr(self.steps)}))"
         if self.collapsed or not line1:
             return [line2]
         return [line1, line2]
