@@ -198,6 +198,10 @@ class CppPrinter(ExprPrinter):
         return f"{expr.p}.0/{expr.q}.0"
 
 
+    def _print_ceiling(self, expr):
+        assert len(expr.args) == 1
+        return f"std::ceil({self.paren(self._print(expr.args[0]))})"
+
 cexpr = CppPrinter().doprint
 
 
