@@ -1355,7 +1355,15 @@ class Graph:
                             raise RuntimeError(f'Node {node} target {node.target} references nonexistent attribute '
                                                f'{atom} of {seen_qualname}')
                         if (node.op == "call_module"
-                                and not isinstance(new_m_itr, torch.nn.Module)):
+                                and (not isinstance(new_m_itr, torch.nn.Module) and node.target not in ['get_index'] and not node.target.startswith(('set_indirect', 'masked_subblock')))):
+                            
+                        # if (node.op == "call_module"
+                                # and not isinstance(new_m_itr, torch.nn.Module)):                            
+                            
+                            
+                            print("new_m_itr", new_m_itr)
+                            print("node.target", node.target)
+                            print(node.target.startswith('set_indirect'))
                             raise RuntimeError(f'Node {node} target {node.target} {atom} of {seen_qualname} does '
                                                'not reference an nn.Module')
                         elif (node.op == "get_attr"

@@ -198,6 +198,11 @@ class CppPrinter(ExprPrinter):
         return f"{expr.p}.0/{expr.q}.0"
 
 
+    def _print_ceiling(self, expr):
+        assert len(expr.args) == 1
+        return f"std::ceil({self.paren(self._print(expr.args[0]))})"
+
+
 cexpr = CppPrinter().doprint
 
 
@@ -903,7 +908,8 @@ class CppKernel(Kernel):
     def load(self, name: str, index: sympy.Expr):
         var = self.args.input(name)
         index = self.rename_indexing(index)
-        line = f"{var}[{cexpr(index)}]"
+        # line = f"{var}[{cexpr(index)}]"
+        line = f"{var}[static_cast<int>({cexpr(index)})]"
         if V.graph.get_dtype(name) in [torch.float16]:
             line = f"static_cast<float>({line})"
         return self.cse.generate(self.loads, line)
@@ -913,7 +919,8 @@ class CppKernel(Kernel):
         var = self.args.output(name)
         index = self.rename_indexing(index)
         if mode is None:
-            line = f"{var}[{cexpr(index)}] = {value};"
+            # line = f"{var}[{cexpr(index)}] = {value};"
+            line = f"{var}[static_cast<int>({cexpr(index)})] = {value};"
         elif mode == "atomic_add":
             if not config.cpp.dynamic_threads and self.num_threads == 1:
                 line = f"{var}[{cexpr(index)}] += {value};"
@@ -1997,6 +2004,9 @@ class CppKernelProxy(CppKernel):
             for node in sub_graph.nodes:
                 _node: torch.fx.Node = node
                 if _node.target in ["load", "constant"]:
+                    print("before fail lint")
+                    print(sub_graph)
+                    sub_graph.lint()
                     assert len(_node.args) == 3
                     ops = _node.args[0]
                     # If the node is constant, the last arg is dtype
@@ -2014,6 +2024,9 @@ class CppKernelProxy(CppKernel):
                             to_type_node_args = to_type_node.args
                             _node.replace_all_uses_with(to_type_node)
                             to_type_node.args = to_type_node_args
+                    print("after fail lint")
+                    print(sub_graph)
+                    sub_graph.lint()
                 elif _node.target == "store":
                     ops, store_var, _, value_var, _ = _node.args
                     store_dtype = V.graph.get_dtype(store_var)
@@ -2023,6 +2036,7 @@ class CppKernelProxy(CppKernel):
                                 "to_dtype", args=(ops, value_var, torch.bfloat16)
                             )
                             _node.replace_input_with(value_var, to_type_node)
+                    sub_graph.lint()
                 elif _node.target == "reduction":
                     (
                         ops,
@@ -2047,6 +2061,7 @@ class CppKernelProxy(CppKernel):
                             index,
                             value,
                         )
+                    sub_graph.lint()
                 elif _node.target == "to_dtype" and _node.args[-1] in [torch.bfloat16]:
                     (ops, x, _) = _node.args
                     from_load = _node.all_input_nodes[-1].target == "load"
@@ -2056,11 +2071,16 @@ class CppKernelProxy(CppKernel):
                     # Therefore, we update the to_dtype by replacing the bf16 dtype with fp32.
                     if not (from_load or to_store):
                         _node.args = (ops, x, torch.float)
+                    sub_graph.lint()
                 else:
-                    pass
+                    sub_graph.lint()
+                    # pass
 
             def eliminate_to_dtype(sub_graph: torch.fx.Graph):
                 def _eliminate_duplicate_to_node(sub_graph: torch.fx.Graph):
+                    print("before eliminate")
+                    print(sub_graph)
+                    sub_graph.lint()
                     # Eliminate the redudant to_dtype node. Let's consider a pattern as follows:
                     #   graph():
                     #     %to_dtype1 = call_method[target=to_dtype](args = (%ops, %input, torch.float), kwargs = {})
@@ -2082,7 +2102,8 @@ class CppKernelProxy(CppKernel):
                                 val_node = node.all_input_nodes[-1]
                                 node.replace_all_uses_with(val_node)
                                 sub_graph.erase_node(node)
-
+                    print("after eliminate")
+                    print(sub_graph)
                     sub_graph.lint()
 
                 def _eliminate_redundant_to_node(sub_grah: torch.fx.Graph):
@@ -2098,6 +2119,9 @@ class CppKernelProxy(CppKernel):
         def _legalize_bf16(loop_body: ir.LoopBody):
             sub_blocks = [loop_body.root_block] + list(loop_body.subblocks.values())
             for sub_block in sub_blocks:
+                print("sub_block")
+                print(sub_block.graph)
+                sub_block.graph.lint()
                 add_to_dtype(sub_block.graph)
 
         for _node in nodes:
@@ -2516,7 +2540,8 @@ class LoopLevel:
             line1 = "#pragma GCC ivdep"
         else:
             line1 = ""
-        line2 = f"for({INDEX_TYPE} {self.var}={cexpr(self.offset)}; {self.var}<{cexpr(self.size)}; {self.var}+={cexpr(self.steps)})"
+        # line2 = f"for({INDEX_TYPE} {self.var}={cexpr(self.offset)}; {self.var}<{cexpr(self.size)}; {self.var}+={cexpr(self.steps)})"
+        line2 = f"for({INDEX_TYPE} {self.var}=static_cast<int>({cexpr(self.offset)}); {self.var}<static_cast<int>({cexpr(self.size)}); {self.var}+=static_cast<int>({cexpr(self.steps)}))"
         if self.collapsed or not line1:
             return [line2]
         return [line1, line2]

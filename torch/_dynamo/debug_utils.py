@@ -267,7 +267,7 @@ from torch.fx.experimental.proxy_tensor import make_fx
 
     model_str += NNModuleToString.convert(gm)
 
-    model_str += f"args = {[(tuple(a.shape), tuple(a.stride()), a.dtype, a.device.type) for a in args]!r}\n"
+    # model_str += f"args = {[(tuple(a.shape), tuple(a.stride()), a.dtype, a.device.type) for a in args]!r}\n"
     model_str += (
         "args = [rand_strided(sh, st, dt, dev) for (sh, st, dt, dev) in args]\n"
     )

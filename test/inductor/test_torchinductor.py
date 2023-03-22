@@ -5703,6 +5703,247 @@ class CommonTemplate:
         self.assertTrue("in_out_ptr" in code)
         self.assertEqual(fn_opt(*inps), fn(*inps))
 
+
+
+    @torch._dynamo.config.patch(dynamic_shapes=True)
+    def test_index_sympy_ceiling_dynamic_new(self):
+        import math
+        def fn(arg0_1, z):
+            unsqueeze = torch.ops.aten.unsqueeze.default(arg0_1, 0)
+            sym_size = arg0_1.size(1)
+            mul = sym_size * 1.8735363483428955
+            floor = math.floor(mul);  mul = None
+            sub = floor - 0
+            truediv = sub / 1;  sub = None
+            ceil = math.ceil(truediv);  truediv = None
+            iota = torch.ops.prims.iota.default(ceil, start = 0, step = 1, dtype = torch.int64, device = 'cpu', requires_grad = False);  ceil = None
+            convert_element_type = torch.ops.prims.convert_element_type.default(iota, torch.float64);  iota = None
+            mul_1 = torch.ops.aten.mul.Tensor(convert_element_type, 1);  convert_element_type = None
+            add = torch.ops.aten.add.Tensor(mul_1, 0);  mul_1 = None
+            convert_element_type_1 = torch.ops.prims.convert_element_type.default(add, torch.float32);  add = None
+            sym_size_1 = arg0_1.size(2);  arg0_1 = None
+            mul_2 = sym_size_1 * 1.8735363483428955
+            floor_1 = math.floor(mul_2);  mul_2 = None
+            sub_1 = floor_1 - 0
+            truediv_1 = sub_1 / 1;  sub_1 = None
+            ceil_1 = math.ceil(truediv_1);  truediv_1 = None
+            iota_1 = torch.ops.prims.iota.default(ceil_1, start = 0, step = 1, dtype = torch.int64, device = 'cpu', requires_grad = False);  ceil_1 = None
+            convert_element_type_2 = torch.ops.prims.convert_element_type.default(iota_1, torch.float64);  iota_1 = None
+            mul_3 = torch.ops.aten.mul.Tensor(convert_element_type_2, 1);  convert_element_type_2 = None
+            add_1 = torch.ops.aten.add.Tensor(mul_3, 0);  mul_3 = None
+            convert_element_type_3 = torch.ops.prims.convert_element_type.default(add_1, torch.float32);  add_1 = None
+            add_2 = torch.ops.aten.add.Tensor(convert_element_type_1, 0.5);  convert_element_type_1 = None
+            truediv_2 = sym_size / floor;  floor = None
+            mul_4 = torch.ops.aten.mul.Tensor(add_2, truediv_2);  add_2 = truediv_2 = None
+            sub_2 = torch.ops.aten.sub.Tensor(mul_4, 0.5);  mul_4 = None
+            clamp_min = torch.ops.aten.clamp_min.default(sub_2, 0.0);  sub_2 = None
+            add_3 = torch.ops.aten.add.Tensor(convert_element_type_3, 0.5);  convert_element_type_3 = None
+            truediv_3 = sym_size_1 / floor_1;  floor_1 = None
+            mul_5 = torch.ops.aten.mul.Tensor(add_3, truediv_3);  add_3 = truediv_3 = None
+            sub_3 = torch.ops.aten.sub.Tensor(mul_5, 0.5);  mul_5 = None
+            clamp_min_1 = torch.ops.aten.clamp_min.default(sub_3, 0.0);  sub_3 = None
+            convert_element_type_4 = torch.ops.prims.convert_element_type.default(clamp_min, torch.int64)
+            ceil_2 = torch.ops.aten.ceil.default(clamp_min)
+            sub_4 = sym_size - 1;  sym_size = None
+            clamp_max = torch.ops.aten.clamp_max.default(ceil_2, sub_4);  ceil_2 = sub_4 = None
+            convert_element_type_5 = torch.ops.prims.convert_element_type.default(clamp_max, torch.int64);  clamp_max = None
+            convert_element_type_6 = torch.ops.prims.convert_element_type.default(clamp_min_1, torch.int64)
+            ceil_3 = torch.ops.aten.ceil.default(clamp_min_1)
+            sub_5 = sym_size_1 - 1;  sym_size_1 = None
+            clamp_max_1 = torch.ops.aten.clamp_max.default(ceil_3, sub_5);  ceil_3 = sub_5 = None
+            convert_element_type_7 = torch.ops.prims.convert_element_type.default(clamp_max_1, torch.int64);  clamp_max_1 = None
+            unsqueeze_1 = torch.ops.aten.unsqueeze.default(clamp_min, 1);  clamp_min = None
+            unsqueeze_2 = torch.ops.aten.unsqueeze.default(convert_element_type_4, 1);  convert_element_type_4 = None
+            unsqueeze_3 = torch.ops.aten.unsqueeze.default(convert_element_type_5, 1);  convert_element_type_5 = None
+            slice_1 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807)
+            slice_2 = torch.ops.aten.slice.Tensor(slice_1, 1, 0, 9223372036854775807);  slice_1 = None
+            index = torch.ops.aten.index.Tensor(slice_2, [None, None, unsqueeze_2, convert_element_type_6]);  slice_2 = None
+            slice_3 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807)
+            slice_4 = torch.ops.aten.slice.Tensor(slice_3, 1, 0, 9223372036854775807);  slice_3 = None
+            index_1 = torch.ops.aten.index.Tensor(slice_4, [None, None, unsqueeze_3, convert_element_type_6]);  slice_4 = None
+            slice_5 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807)
+            slice_6 = torch.ops.aten.slice.Tensor(slice_5, 1, 0, 9223372036854775807);  slice_5 = None
+            index_2 = torch.ops.aten.index.Tensor(slice_6, [None, None, unsqueeze_2, convert_element_type_7]);  slice_6 = None
+            slice_7 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807);  unsqueeze = None
+            slice_8 = torch.ops.aten.slice.Tensor(slice_7, 1, 0, 9223372036854775807);  slice_7 = None
+            index_3 = torch.ops.aten.index.Tensor(slice_8, [None, None, unsqueeze_3, convert_element_type_7]);  slice_8 = unsqueeze_3 = convert_element_type_7 = None
+            sub_6 = torch.ops.aten.sub.Tensor(unsqueeze_1, unsqueeze_2);  unsqueeze_1 = unsqueeze_2 = None
+            sub_7 = torch.ops.aten.sub.Tensor(1.0, sub_6)
+            sub_8 = torch.ops.aten.sub.Tensor(clamp_min_1, convert_element_type_6);  clamp_min_1 = convert_element_type_6 = None
+            sub_9 = torch.ops.aten.sub.Tensor(1.0, sub_8)
+            mul_6 = torch.ops.aten.mul.Tensor(index, sub_7);  index = None
+            mul_7 = torch.ops.aten.mul.Tensor(index_1, sub_6);  index_1 = None
+            add_4 = torch.ops.aten.add.Tensor(mul_6, mul_7);  mul_6 = mul_7 = None
+            mul_8 = torch.ops.aten.mul.Tensor(index_2, sub_7);  index_2 = sub_7 = None
+            mul_9 = torch.ops.aten.mul.Tensor(index_3, sub_6);  index_3 = sub_6 = None
+            add_5 = torch.ops.aten.add.Tensor(mul_8, mul_9);  mul_8 = mul_9 = None
+            mul_10 = torch.ops.aten.mul.Tensor(add_4, sub_9);  add_4 = sub_9 = None
+            mul_11 = torch.ops.aten.mul.Tensor(add_5, sub_8);  add_5 = sub_8 = None
+            add_6 = torch.ops.aten.add.Tensor(mul_10, mul_11);  mul_10 = mul_11 = None
+            select = torch.ops.aten.select.int(add_6, 0, 0);  add_6 = None
+            return (select,)
+
+        x = torch.randn(15, 20, 3)
+        z = torch.randn(1, 15, 7)
+        self.common(
+            fn,
+            [x, z],
+        )
+
+
+
+    @torch._dynamo.config.patch(dynamic_shapes=True)
+    def test_index_sympy_ceiling_dynamic_shapes(self):
+        import math
+        class Repro(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+            
+            def forward(self, arg0_1):
+                unsqueeze = torch.ops.aten.unsqueeze.default(arg0_1, 0)
+                sym_size = torch.ops.aten.sym_size(arg0_1, 1)
+                mul = sym_size * 1.8735363483428955
+                floor = math.floor(mul);  mul = None
+                sub = floor - 0
+                truediv = sub / 1;  sub = None
+                ceil = math.ceil(truediv);  truediv = None
+                iota = torch.ops.prims.iota.default(ceil, start = 0, step = 1, dtype = torch.int64, device = 'cpu', requires_grad = False);  ceil = None
+                convert_element_type = torch.ops.prims.convert_element_type.default(iota, torch.float64);  iota = None
+                mul_1 = torch.ops.aten.mul.Tensor(convert_element_type, 1);  convert_element_type = None
+                add = torch.ops.aten.add.Tensor(mul_1, 0);  mul_1 = None
+                convert_element_type_1 = torch.ops.prims.convert_element_type.default(add, torch.float32);  add = None
+                sym_size_1 = torch.ops.aten.sym_size(arg0_1, 2);  arg0_1 = None
+                mul_2 = sym_size_1 * 1.8735363483428955
+                floor_1 = math.floor(mul_2);  mul_2 = None
+                sub_1 = floor_1 - 0
+                truediv_1 = sub_1 / 1;  sub_1 = None
+                ceil_1 = math.ceil(truediv_1);  truediv_1 = None
+                iota_1 = torch.ops.prims.iota.default(ceil_1, start = 0, step = 1, dtype = torch.int64, device = 'cpu', requires_grad = False);  ceil_1 = None
+                convert_element_type_2 = torch.ops.prims.convert_element_type.default(iota_1, torch.float64);  iota_1 = None
+                mul_3 = torch.ops.aten.mul.Tensor(convert_element_type_2, 1);  convert_element_type_2 = None
+                add_1 = torch.ops.aten.add.Tensor(mul_3, 0);  mul_3 = None
+                convert_element_type_3 = torch.ops.prims.convert_element_type.default(add_1, torch.float32);  add_1 = None
+                add_2 = torch.ops.aten.add.Tensor(convert_element_type_1, 0.5);  convert_element_type_1 = None
+                truediv_2 = sym_size / floor;  floor = None
+                mul_4 = torch.ops.aten.mul.Tensor(add_2, truediv_2);  add_2 = truediv_2 = None
+                sub_2 = torch.ops.aten.sub.Tensor(mul_4, 0.5);  mul_4 = None
+                clamp_min = torch.ops.aten.clamp_min.default(sub_2, 0.0);  sub_2 = None
+                add_3 = torch.ops.aten.add.Tensor(convert_element_type_3, 0.5);  convert_element_type_3 = None
+                truediv_3 = sym_size_1 / floor_1;  floor_1 = None
+                mul_5 = torch.ops.aten.mul.Tensor(add_3, truediv_3);  add_3 = truediv_3 = None
+                sub_3 = torch.ops.aten.sub.Tensor(mul_5, 0.5);  mul_5 = None
+                clamp_min_1 = torch.ops.aten.clamp_min.default(sub_3, 0.0);  sub_3 = None
+                convert_element_type_4 = torch.ops.prims.convert_element_type.default(clamp_min, torch.int64)
+                ceil_2 = torch.ops.aten.ceil.default(clamp_min)
+                sub_4 = sym_size - 1;  sym_size = None
+                clamp_max = torch.ops.aten.clamp_max.default(ceil_2, sub_4);  ceil_2 = sub_4 = None
+                convert_element_type_5 = torch.ops.prims.convert_element_type.default(clamp_max, torch.int64);  clamp_max = None
+                convert_element_type_6 = torch.ops.prims.convert_element_type.default(clamp_min_1, torch.int64)
+                ceil_3 = torch.ops.aten.ceil.default(clamp_min_1)
+                sub_5 = sym_size_1 - 1;  sym_size_1 = None
+                clamp_max_1 = torch.ops.aten.clamp_max.default(ceil_3, sub_5);  ceil_3 = sub_5 = None
+                convert_element_type_7 = torch.ops.prims.convert_element_type.default(clamp_max_1, torch.int64);  clamp_max_1 = None
+                unsqueeze_1 = torch.ops.aten.unsqueeze.default(clamp_min, 1);  clamp_min = None
+                unsqueeze_2 = torch.ops.aten.unsqueeze.default(convert_element_type_4, 1);  convert_element_type_4 = None
+                unsqueeze_3 = torch.ops.aten.unsqueeze.default(convert_element_type_5, 1);  convert_element_type_5 = None
+                slice_1 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807)
+                slice_2 = torch.ops.aten.slice.Tensor(slice_1, 1, 0, 9223372036854775807);  slice_1 = None
+                index = torch.ops.aten.index.Tensor(slice_2, [None, None, unsqueeze_2, convert_element_type_6]);  slice_2 = None
+                slice_3 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807)
+                slice_4 = torch.ops.aten.slice.Tensor(slice_3, 1, 0, 9223372036854775807);  slice_3 = None
+                index_1 = torch.ops.aten.index.Tensor(slice_4, [None, None, unsqueeze_3, convert_element_type_6]);  slice_4 = None
+                slice_5 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807)
+                slice_6 = torch.ops.aten.slice.Tensor(slice_5, 1, 0, 9223372036854775807);  slice_5 = None
+                index_2 = torch.ops.aten.index.Tensor(slice_6, [None, None, unsqueeze_2, convert_element_type_7]);  slice_6 = None
+                slice_7 = torch.ops.aten.slice.Tensor(unsqueeze, 0, 0, 9223372036854775807);  unsqueeze = None
+                slice_8 = torch.ops.aten.slice.Tensor(slice_7, 1, 0, 9223372036854775807);  slice_7 = None
+                index_3 = torch.ops.aten.index.Tensor(slice_8, [None, None, unsqueeze_3, convert_element_type_7]);  slice_8 = unsqueeze_3 = convert_element_type_7 = None
+                sub_6 = torch.ops.aten.sub.Tensor(unsqueeze_1, unsqueeze_2);  unsqueeze_1 = unsqueeze_2 = None
+                sub_7 = torch.ops.aten.sub.Tensor(1.0, sub_6)
+                sub_8 = torch.ops.aten.sub.Tensor(clamp_min_1, convert_element_type_6);  clamp_min_1 = convert_element_type_6 = None
+                sub_9 = torch.ops.aten.sub.Tensor(1.0, sub_8)
+                mul_6 = torch.ops.aten.mul.Tensor(index, sub_7);  index = None
+                mul_7 = torch.ops.aten.mul.Tensor(index_1, sub_6);  index_1 = None
+                add_4 = torch.ops.aten.add.Tensor(mul_6, mul_7);  mul_6 = mul_7 = None
+                mul_8 = torch.ops.aten.mul.Tensor(index_2, sub_7);  index_2 = sub_7 = None
+                mul_9 = torch.ops.aten.mul.Tensor(index_3, sub_6);  index_3 = sub_6 = None
+                add_5 = torch.ops.aten.add.Tensor(mul_8, mul_9);  mul_8 = mul_9 = None
+                mul_10 = torch.ops.aten.mul.Tensor(add_4, sub_9);  add_4 = sub_9 = None
+                mul_11 = torch.ops.aten.mul.Tensor(add_5, sub_8);  add_5 = sub_8 = None
+                add_6 = torch.ops.aten.add.Tensor(mul_10, mul_11);  mul_10 = mul_11 = None
+                select = torch.ops.aten.select.int(add_6, 0, 0);  add_6 = None
+                return (select,)
+
+
+        s0 = 5
+        s1 = 10
+        s2 = 20        
+        args = [((s0, s1, s2), (1, s0*s2, s0), torch.float32, 'cpu')]
+        args = [rand_strided(sh, st, dt, dev) for (sh, st, dt, dev) in args]
+        mod = make_fx(Repro(), tracing_mode='symbolic')(*args)
+
+        from torch._inductor.compile_fx import compile_fx_inner
+        from torch._dynamo.debug_utils import same_two_models
+
+        compiled = compile_fx_inner(mod, args)
+        ref = compiled(args)
+
+
+
+    @torch._dynamo.config.patch(dynamic_shapes=True)
+    def test_lint(self):
+
+        # import torch._dynamo.config
+        import torch._inductor.config
+        # import torch._functorch.config
+        # torch._dynamo.config.load_config(b'\x80\x02}q\x00(X\x0b\x00\x00\x00output_codeq\x01\x89X\r\x00\x00\x00log_file_nameq\x02NX\x07\x00\x00\x00verboseq\x03\x89X\x11\x00\x00\x00output_graph_codeq\x04\x89X\x12\x00\x00\x00verify_correctnessq\x05\x89X\x12\x00\x00\x00minimum_call_countq\x06K\x01X\x15\x00\x00\x00dead_code_eliminationq\x07\x88X\x10\x00\x00\x00cache_size_limitq\x08K@X\x0e\x00\x00\x00specialize_intq\t\x89X\x0e\x00\x00\x00dynamic_shapesq\n\x88X\x18\x00\x00\x00assume_static_by_defaultq\x0b\x89X\x10\x00\x00\x00guard_nn_modulesq\x0c\x89X\x1b\x00\x00\x00traceable_tensor_subclassesq\rc__builtin__\nset\nq\x0e]q\x0f\x85q\x10Rq\x11X\x0f\x00\x00\x00suppress_errorsq\x12\x89X\x15\x00\x00\x00replay_record_enabledq\x13\x88X \x00\x00\x00rewrite_assert_with_torch_assertq\x14\x88X\x12\x00\x00\x00print_graph_breaksq\x15\x89X\x0c\x00\x00\x00print_guardsq\x16\x89X\x15\x00\x00\x00print_specializationsq\x17\x89X\x07\x00\x00\x00disableq\x18\x89X*\x00\x00\x00allowed_functions_module_string_ignorelistq\x19h\x0e]q\x1a(X\r\x00\x00\x00torch.testingq\x1bX\r\x00\x00\x00torch._decompq\x1cX\x13\x00\x00\x00torch.distributionsq\x1dX\x0b\x00\x00\x00torch._refsq\x1eX\x0c\x00\x00\x00torch._primsq\x1fe\x85q Rq!X\x12\x00\x00\x00repro_forward_onlyq"\x89X\x0f\x00\x00\x00repro_toleranceq#G?PbM\xd2\xf1\xa9\xfcX\x16\x00\x00\x00capture_scalar_outputsq$\x89X \x00\x00\x00capture_dynamic_output_shape_opsq%\x89X\x19\x00\x00\x00enforce_cond_guards_matchq&\x88X\x0c\x00\x00\x00optimize_ddpq\'\x88X\x1a\x00\x00\x00raise_on_ctx_manager_usageq(\x88X\x1c\x00\x00\x00raise_on_unsafe_aot_autogradq)\x89X\x17\x00\x00\x00raise_on_backend_changeq*\x89X\x18\x00\x00\x00error_on_nested_fx_traceq+\x88X\t\x00\x00\x00allow_rnnq,\x89X\x08\x00\x00\x00base_dirq-X$\x00\x00\x00/home/chunyuan/inductor-ipex/pytorchq.X\x12\x00\x00\x00DEBUG_DIR_VAR_NAMEq/X\x17\x00\x00\x00TORCH_COMPILE_DEBUG_DIRq0X\x0e\x00\x00\x00debug_dir_rootq1X8\x00\x00\x00/home/chunyuan/inductor-ipex/pytorch/torch_compile_debugq2X)\x00\x00\x00DO_NOT_USE_legacy_non_fake_example_inputsq3\x89X\x13\x00\x00\x00_save_config_ignoreq4h\x0e]q5(X!\x00\x00\x00skipfiles_inline_module_allowlistq6X\x12\x00\x00\x00constant_functionsq7X\x0b\x00\x00\x00repro_afterq8X\x0b\x00\x00\x00repro_levelq9e\x85q:Rq;u.')
+        # TODO: error is only trigerred when TORCH_COMPILE_DEBUG=1
+        torch._inductor.config.load_config(b'\x80\x02}q\x00(X\x05\x00\x00\x00debugq\x01\x88X\x10\x00\x00\x00disable_progressq\x02\x88X\x10\x00\x00\x00verbose_progressq\x03\x89X\x19\x00\x00\x00aot_codegen_output_prefixq\x04NX\x0b\x00\x00\x00cpp_wrapperq\x05\x89X\x03\x00\x00\x00dceq\x06\x89X\x14\x00\x00\x00static_weight_shapesq\x07\x88X\x0c\x00\x00\x00size_assertsq\x08\x88X\x10\x00\x00\x00pick_loop_ordersq\t\x88X\x0f\x00\x00\x00inplace_buffersq\n\x88X\x11\x00\x00\x00benchmark_harnessq\x0b\x88X\x0f\x00\x00\x00epilogue_fusionq\x0c\x89X\x15\x00\x00\x00epilogue_fusion_firstq\r\x89X\x0f\x00\x00\x00pattern_matcherq\x0e\x88X\n\x00\x00\x00reorderingq\x0f\x89X\x0c\x00\x00\x00max_autotuneq\x10\x89X\x16\x00\x00\x00max_autotune_pointwiseq\x11\x89X\x11\x00\x00\x00max_autotune_gemmq\x12\x89X\x15\x00\x00\x00search_autotune_cacheq\x13\x89X\x17\x00\x00\x00realize_reads_thresholdq\x14K\x04X\x17\x00\x00\x00realize_bytes_thresholdq\x15M\xd0\x07X\x1b\x00\x00\x00realize_acc_reads_thresholdq\x16K\x08X\x0f\x00\x00\x00fallback_randomq\x17\x88X\x12\x00\x00\x00implicit_fallbacksq\x18\x88X\x0b\x00\x00\x00tune_layoutq\x19\x89X\x11\x00\x00\x00aggressive_fusionq\x1a\x89X\x0f\x00\x00\x00max_fusion_sizeq\x1bK@X\x1b\x00\x00\x00unroll_reductions_thresholdq\x1cK\x08X\x0e\x00\x00\x00comment_originq\x1d\x89X\x10\x00\x00\x00benchmark_kernelq\x1e\x89X\x12\x00\x00\x00developer_warningsq\x1f\x88X\x0f\x00\x00\x00compile_threadsq K X\x11\x00\x00\x00global_cache_pathq!NX\x13\x00\x00\x00kernel_name_max_opsq"K\nX\r\x00\x00\x00shape_paddingq#\x89X\x0e\x00\x00\x00permute_fusionq$\x89X\x1a\x00\x00\x00profiler_mark_wrapper_callq%\x89X\x18\x00\x00\x00_raise_error_for_testingq&\x89X\x0c\x00\x00\x00_profile_varq\'X\x00\x00\x00\x00q(X\x11\x00\x00\x00profile_bandwidthq)\x89X\x17\x00\x00\x00profile_bandwidth_regexq*h(X\x0b\x00\x00\x00cpp.threadsq+J\xff\xff\xff\xffX\x13\x00\x00\x00cpp.dynamic_threadsq,\x89X\x0b\x00\x00\x00cpp.simdlenq-NX\x12\x00\x00\x00cpp.min_chunk_sizeq.M\x00\x10X\x07\x00\x00\x00cpp.cxxq/NX\x03\x00\x00\x00g++q0\x86q1X\x19\x00\x00\x00cpp.enable_kernel_profileq2\x89X\x12\x00\x00\x00cpp.weight_prepackq3\x88X\x11\x00\x00\x00triton.cudagraphsq4\x88X\x16\x00\x00\x00triton.cudagraph_treesq5\x89X\x1c\x00\x00\x00triton.debug_cudagraph_treesq6\x88X\x1c\x00\x00\x00triton.skip_cudagraph_warmupq7\x89X\x17\x00\x00\x00triton.debug_sync_graphq8\x89X\x18\x00\x00\x00triton.debug_sync_kernelq9\x89X\x15\x00\x00\x00triton.dense_indexingq:\x89X\x10\x00\x00\x00triton.max_tilesq;K\x02X\x19\x00\x00\x00triton.autotune_pointwiseq<\x88X\'\x00\x00\x00triton.tiling_prevents_pointwise_fusionq=\x88X\'\x00\x00\x00triton.tiling_prevents_reduction_fusionq>\x88X\x1a\x00\x00\x00triton.unique_kernel_namesq?\x89X\x18\x00\x00\x00triton.descriptive_namesq@X\r\x00\x00\x00original_atenqAX\x1c\x00\x00\x00triton.persistent_reductionsqB\x88X\x10\x00\x00\x00triton.max_blockqC}qD(X\x01\x00\x00\x00XqEM\x00\x08X\x01\x00\x00\x00YqFM\x00\x04X\x01\x00\x00\x00ZqGM\x00\x04uX\r\x00\x00\x00trace.enabledqH\x88X\x0f\x00\x00\x00trace.debug_logqI\x88X\x0e\x00\x00\x00trace.info_logqJ\x89X\x0e\x00\x00\x00trace.fx_graphqK\x88X\x1a\x00\x00\x00trace.fx_graph_transformedqL\x88X\x13\x00\x00\x00trace.ir_pre_fusionqM\x88X\x14\x00\x00\x00trace.ir_post_fusionqN\x88X\x11\x00\x00\x00trace.output_codeqO\x88X\x13\x00\x00\x00trace.graph_diagramqP\x89X\x15\x00\x00\x00trace.compile_profileqQ\x89X\x13\x00\x00\x00_save_config_ignoreqRc__builtin__\nset\nqS]qTX\x10\x00\x00\x00trace.upload_tarqUa\x85qVRqWu.')
+        # import pickle
+        # print(pickle.loads(b'\x80\x02}q\x00(X\x05\x00\x00\x00debugq\x01\x88X\x10\x00\x00\x00disable_progressq\x02\x88X\x10\x00\x00\x00verbose_progressq\x03\x89X\x19\x00\x00\x00aot_codegen_output_prefixq\x04NX\x0b\x00\x00\x00cpp_wrapperq\x05\x89X\x03\x00\x00\x00dceq\x06\x89X\x14\x00\x00\x00static_weight_shapesq\x07\x88X\x0c\x00\x00\x00size_assertsq\x08\x88X\x10\x00\x00\x00pick_loop_ordersq\t\x88X\x0f\x00\x00\x00inplace_buffersq\n\x88X\x11\x00\x00\x00benchmark_harnessq\x0b\x88X\x0f\x00\x00\x00epilogue_fusionq\x0c\x89X\x15\x00\x00\x00epilogue_fusion_firstq\r\x89X\x0f\x00\x00\x00pattern_matcherq\x0e\x88X\n\x00\x00\x00reorderingq\x0f\x89X\x0c\x00\x00\x00max_autotuneq\x10\x89X\x16\x00\x00\x00max_autotune_pointwiseq\x11\x89X\x11\x00\x00\x00max_autotune_gemmq\x12\x89X\x15\x00\x00\x00search_autotune_cacheq\x13\x89X\x17\x00\x00\x00realize_reads_thresholdq\x14K\x04X\x17\x00\x00\x00realize_bytes_thresholdq\x15M\xd0\x07X\x1b\x00\x00\x00realize_acc_reads_thresholdq\x16K\x08X\x0f\x00\x00\x00fallback_randomq\x17\x88X\x12\x00\x00\x00implicit_fallbacksq\x18\x88X\x0b\x00\x00\x00tune_layoutq\x19\x89X\x11\x00\x00\x00aggressive_fusionq\x1a\x89X\x0f\x00\x00\x00max_fusion_sizeq\x1bK@X\x1b\x00\x00\x00unroll_reductions_thresholdq\x1cK\x08X\x0e\x00\x00\x00comment_originq\x1d\x89X\x10\x00\x00\x00benchmark_kernelq\x1e\x89X\x12\x00\x00\x00developer_warningsq\x1f\x88X\x0f\x00\x00\x00compile_threadsq K X\x11\x00\x00\x00global_cache_pathq!NX\x13\x00\x00\x00kernel_name_max_opsq"K\nX\r\x00\x00\x00shape_paddingq#\x89X\x0e\x00\x00\x00permute_fusionq$\x89X\x1a\x00\x00\x00profiler_mark_wrapper_callq%\x89X\x18\x00\x00\x00_raise_error_for_testingq&\x89X\x0c\x00\x00\x00_profile_varq\'X\x00\x00\x00\x00q(X\x11\x00\x00\x00profile_bandwidthq)\x89X\x17\x00\x00\x00profile_bandwidth_regexq*h(X\x0b\x00\x00\x00cpp.threadsq+J\xff\xff\xff\xffX\x13\x00\x00\x00cpp.dynamic_threadsq,\x89X\x0b\x00\x00\x00cpp.simdlenq-NX\x12\x00\x00\x00cpp.min_chunk_sizeq.M\x00\x10X\x07\x00\x00\x00cpp.cxxq/NX\x03\x00\x00\x00g++q0\x86q1X\x19\x00\x00\x00cpp.enable_kernel_profileq2\x89X\x12\x00\x00\x00cpp.weight_prepackq3\x88X\x11\x00\x00\x00triton.cudagraphsq4\x88X\x16\x00\x00\x00triton.cudagraph_treesq5\x89X\x1c\x00\x00\x00triton.debug_cudagraph_treesq6\x88X\x1c\x00\x00\x00triton.skip_cudagraph_warmupq7\x89X\x17\x00\x00\x00triton.debug_sync_graphq8\x89X\x18\x00\x00\x00triton.debug_sync_kernelq9\x89X\x15\x00\x00\x00triton.dense_indexingq:\x89X\x10\x00\x00\x00triton.max_tilesq;K\x02X\x19\x00\x00\x00triton.autotune_pointwiseq<\x88X\'\x00\x00\x00triton.tiling_prevents_pointwise_fusionq=\x88X\'\x00\x00\x00triton.tiling_prevents_reduction_fusionq>\x88X\x1a\x00\x00\x00triton.unique_kernel_namesq?\x89X\x18\x00\x00\x00triton.descriptive_namesq@X\r\x00\x00\x00original_atenqAX\x1c\x00\x00\x00triton.persistent_reductionsqB\x88X\x10\x00\x00\x00triton.max_blockqC}qD(X\x01\x00\x00\x00XqEM\x00\x08X\x01\x00\x00\x00YqFM\x00\x04X\x01\x00\x00\x00ZqGM\x00\x04uX\r\x00\x00\x00trace.enabledqH\x88X\x0f\x00\x00\x00trace.debug_logqI\x88X\x0e\x00\x00\x00trace.info_logqJ\x89X\x0e\x00\x00\x00trace.fx_graphqK\x88X\x1a\x00\x00\x00trace.fx_graph_transformedqL\x88X\x13\x00\x00\x00trace.ir_pre_fusionqM\x88X\x14\x00\x00\x00trace.ir_post_fusionqN\x88X\x11\x00\x00\x00trace.output_codeqO\x88X\x13\x00\x00\x00trace.graph_diagramqP\x89X\x15\x00\x00\x00trace.compile_profileqQ\x89X\x13\x00\x00\x00_save_config_ignoreqRc__builtin__\nset\nqS]qTX\x10\x00\x00\x00trace.upload_tarqUa\x85qVRqWu.'))
+        # torch._functorch.config.load_config(b'\x80\x02}q\x00(X\x11\x00\x00\x00use_functionalizeq\x01\x88X\x0f\x00\x00\x00use_fake_tensorq\x02\x88X\x16\x00\x00\x00fake_tensor_allow_metaq\x03\x88X\x0c\x00\x00\x00debug_assertq\x04\x89X\x14\x00\x00\x00debug_fake_cross_refq\x05\x89X\x11\x00\x00\x00debug_partitionerq\x06\x88X\x0c\x00\x00\x00debug_graphsq\x07\x88X\x0b\x00\x00\x00debug_jointq\x08\x88X\x14\x00\x00\x00static_weight_shapesq\t\x88X\x03\x00\x00\x00cseq\n\x88X\x10\x00\x00\x00max_dist_from_bwq\x0bK\x03X\t\x00\x00\x00log_levelq\x0cK\nu.')
+        torch._inductor.config.debug = True
+        torch._inductor.config.fallback_random = True
+        torch._inductor.config.developer_warnings = True
+        torch._inductor.config.compile_threads = 32
+
+
+        class Repro(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.register_buffer('_tensor_constant0', torch.randn([3], dtype=torch.float32))
+                self.register_buffer('_tensor_constant1', torch.randn([3], dtype=torch.float32))
+
+            
+            
+            def forward(self, arg0_1):
+                _tensor_constant0 = self._tensor_constant0
+                lift_fresh_copy = torch.ops.aten.lift_fresh_copy.default(_tensor_constant0);  _tensor_constant0 = None
+                _tensor_constant1 = self._tensor_constant1
+                lift_fresh_copy_1 = torch.ops.aten.lift_fresh_copy.default(_tensor_constant1);  _tensor_constant1 = None
+                slice_1 = torch.ops.aten.slice.Tensor(lift_fresh_copy, 0, 0, 9223372036854775807);  lift_fresh_copy = None
+                unsqueeze = torch.ops.aten.unsqueeze.default(slice_1, 1);  slice_1 = None
+                unsqueeze_1 = torch.ops.aten.unsqueeze.default(unsqueeze, 2);  unsqueeze = None
+                sub = torch.ops.aten.sub.Tensor(arg0_1, unsqueeze_1);  arg0_1 = unsqueeze_1 = None
+                slice_2 = torch.ops.aten.slice.Tensor(lift_fresh_copy_1, 0, 0, 9223372036854775807);  lift_fresh_copy_1 = None
+                unsqueeze_2 = torch.ops.aten.unsqueeze.default(slice_2, 1);  slice_2 = None
+                unsqueeze_3 = torch.ops.aten.unsqueeze.default(unsqueeze_2, 2);  unsqueeze_2 = None
+                div = torch.ops.aten.div.Tensor(sub, unsqueeze_3);  sub = unsqueeze_3 = None
+                return (div,)
+
+        s1 = 10
+        s2 = 20                
+        args = [((3, s1, s2), (1, 3*s2, 3), torch.float32, 'cpu')]
+        args = [rand_strided(sh, st, dt, dev) for (sh, st, dt, dev) in args]
+        mod = make_fx(Repro(), tracing_mode='symbolic')(*args)
+
+        from torch._inductor.compile_fx import compile_fx_inner
+        from torch._dynamo.debug_utils import same_two_models
+
+        compiled = compile_fx_inner(mod, args)
+        ref = compiled(args)
+
+
     @config.patch(profiler_mark_wrapper_call=True)
     def test_profiler_mark_wrapper_call(self):
         from torch.profiler import profile
