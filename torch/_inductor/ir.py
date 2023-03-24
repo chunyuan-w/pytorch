@@ -2669,6 +2669,18 @@ class ExternKernel(InputsKernel):
                 kwargs.append(repr(v))
         return kwargs
 
+    # TODO: fix duplicated code here with cpp_wrapper_codegen_kwargs
+    def conv_cpp_wrapper_codegen_kwargs(self):
+        kwargs = []
+        if self.kwargs:
+            for arg_name in self.ordered_kwargs_for_cpp_kernel:
+                assert arg_name in self.kwargs, (
+                    "arg %s not found in self.kwargs" % arg_name
+                )
+                v = self.kwargs.get(arg_name)
+                kwargs.append(_string_conv(v))
+        return kwargs
+
     def codegen_size_asserts(self, wrapper):
         if config.size_asserts:
             size = V.graph.wrapper_code.codegen_shape_tuple(self.get_size())
@@ -2775,8 +2787,26 @@ class ExternKernelOut(ExternKernel):
 
 class ExternKernelAlloc(ExternKernel):
     def codegen(self, wrapper):
-        args = [*self.codegen_args(), *self.codegen_kwargs()]
-        wrapper.writeline(f"{self.get_name()} = {self.kernel}({', '.join(args)})")
+        # TODO: put the below codegen inside wrapper
+        # args = [*self.codegen_args(), *self.codegen_kwargs()]
+        # wrapper.writeline(f"{self.get_name()} = {self.kernel}({', '.join(args)})")
+
+        from torch._inductor.codegen.wrapper import CppWrapperCodeGen
+
+        if isinstance(wrapper, CppWrapperCodeGen):
+            args = self.cpp_wrapper_codegen_args()
+            kwargs = self.conv_cpp_wrapper_codegen_kwargs()
+        else:
+            args = self.codegen_args()
+            kwargs = self.codegen_kwargs()
+        if kwargs:
+            args.extend(kwargs)
+        
+        if isinstance(wrapper, CppWrapperCodeGen):
+            wrapper.writeline(f"auto {self.get_name()} = {self.cpp_kernel}({', '.join(args)});")
+        else:
+            wrapper.writeline(f"{self.get_name()} = {self.kernel}({', '.join(args)})")
+
         if isinstance(self.layout, Layout):
             self.codegen_size_asserts(wrapper)
 
@@ -2789,12 +2819,14 @@ class ExternKernelAlloc(ExternKernel):
         kernel=None,
         cpp_kernel=None,
         ordered_kwargs_for_cpp_kernel=(),
+        cpp_constant_args=[],
     ):
         super().__init__(
             None, layout, self.unwrap_storage(inputs), constant_args, kwargs or {}
         )
         self.cpp_kernel = cpp_kernel
         self.ordered_kwargs_for_cpp_kernel = ordered_kwargs_for_cpp_kernel
+        self.cpp_constant_args = cpp_constant_args
         self.name = V.graph.register_buffer(self)
         if kernel is not None:
             self.kernel = kernel
@@ -3052,6 +3084,21 @@ def _string(shape: tuple):
 
     cpp_wrapper_codegen = CppWrapperCodeGen()
     return cpp_wrapper_codegen.codegen_shape_tuple(shape)
+
+
+# TODO: fix duplicated code with _string
+def _string_conv(shape: tuple):
+    from .codegen.wrapper import CppWrapperCodeGen
+
+    cpp_wrapper_codegen = CppWrapperCodeGen()
+    if isinstance(shape, tuple):
+        return cpp_wrapper_codegen.codegen_shape_tuple(shape)
+    elif isinstance(shape, bool):
+        return repr(shape).lower()    
+    elif isinstance(shape, int):
+        return repr(shape)
+    else:
+        raise AssertionError("unsupported string type")
 
 
 def _prepare_convolution_fusion_create(

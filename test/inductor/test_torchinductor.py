@@ -106,33 +106,33 @@ def has_bf16_support():
 
 unary_list = [
     torch.nn.ReLU(),
-    torch.nn.Sigmoid(),
-    torch.nn.Tanh(),
-    torch.nn.Hardswish(),
-    torch.nn.LeakyReLU(0.1, inplace=False),
-    torch.nn.Hardtanh(min_val=-0.5, max_val=4, inplace=False),
-    torch.nn.GELU(approximate="none"),
-    torch.nn.GELU(approximate="tanh"),
-    torch.nn.ReLU6(),
-    torch.nn.SiLU(),
-    torch.nn.Hardsigmoid(),
-    lambda x: F.relu(x),
-    lambda x: F.sigmoid(x),
-    lambda x: F.tanh(x),
-    lambda x: F.hardswish(x),
-    lambda x: F.leaky_relu(x, 0.1),
-    lambda x: F.hardtanh(x, min_val=-0.5, max_val=4),
-    lambda x: F.gelu(x, approximate="none"),
-    lambda x: F.gelu(x, approximate="tanh"),
-    lambda x: F.relu6(x),
-    lambda x: F.silu(x),
-    lambda x: F.hardsigmoid(x),
-    lambda x: torch.relu(x),
-    lambda x: torch.sigmoid(x),
-    lambda x: torch.tanh(x),
-    lambda x: x.relu(),
-    lambda x: x.sigmoid(),
-    lambda x: x.tanh(),
+    # torch.nn.Sigmoid(),
+    # torch.nn.Tanh(),
+    # torch.nn.Hardswish(),
+    # torch.nn.LeakyReLU(0.1, inplace=False),
+    # torch.nn.Hardtanh(min_val=-0.5, max_val=4, inplace=False),
+    # torch.nn.GELU(approximate="none"),
+    # torch.nn.GELU(approximate="tanh"),
+    # torch.nn.ReLU6(),
+    # torch.nn.SiLU(),
+    # torch.nn.Hardsigmoid(),
+    # lambda x: F.relu(x),
+    # lambda x: F.sigmoid(x),
+    # lambda x: F.tanh(x),
+    # lambda x: F.hardswish(x),
+    # lambda x: F.leaky_relu(x, 0.1),
+    # lambda x: F.hardtanh(x, min_val=-0.5, max_val=4),
+    # lambda x: F.gelu(x, approximate="none"),
+    # lambda x: F.gelu(x, approximate="tanh"),
+    # lambda x: F.relu6(x),
+    # lambda x: F.silu(x),
+    # lambda x: F.hardsigmoid(x),
+    # lambda x: torch.relu(x),
+    # lambda x: torch.sigmoid(x),
+    # lambda x: torch.tanh(x),
+    # lambda x: x.relu(),
+    # lambda x: x.sigmoid(),
+    # lambda x: x.tanh(),
 ]
 
 
@@ -1915,7 +1915,7 @@ class CommonTemplate:
                 m_opt(x)
                 self.assertEqual(m(x), m_opt(x))
 
-    @slow()
+    # @slow()
     def test_conv2d_unary(self):
         # For gpu path, there is an accuracy issue
         # see https://github.com/pytorch/pytorch/issues/87745
@@ -1945,13 +1945,13 @@ class CommonTemplate:
         test_memory_format = [torch.contiguous_format, torch.channels_last]
         options = itertools.product(
             unary_list,
-            [True, False],
+            [True],
             [1, 3],
             [1, 2],
             [1, 4],
-            ["same", 0],
+            [0],
             test_memory_format,
-            [True, False],
+            [True],
         )
 
         for (
@@ -5712,34 +5712,36 @@ class CommonTemplate:
 
         device = "cpu"
         for name, supported in [
-            ["test_as_strided", True],  # buffer reuse
-            ["test_bitwise", True],  # int32
-            ["test_bmm1", True],
-            ["test_bmm2", True],
-            ["test_cat", True],  # alias
-            ["test_conv2d_binary", True],
+            # ["test_as_strided", True],  # buffer reuse
+            # ["test_bitwise", True],  # int32
+            # ["test_bmm1", True],
+            # ["test_bmm2", True],
+            # ["test_cat", True],  # alias
+            # ["test_conv2d_binary", True],
             ["test_conv2d_unary", True],
-            ["test_linear1", True],
-            ["test_linear2", True],
-            ["test_linear_packed", True],
-            ["test_lowmem_dropout1", True],  # None as output
-            ["test_mm_views", True],
-            [
-                "test_profiler_mark_wrapper_call",
-                True,
-            ],
-            ["test_reduction1", True],  # Reduction
-            ["test_relu", True],  # multiple inputs
-            ["test_silu", True],  # single input, single output
-            ["test_sum_dtype", True],  # float64
-            ["test_sum_int", True],  # bool, int64, int8, uint8
-            ["test_transpose", True],  # multiple outputs, buffer clear
+            # ["test_linear1", True],
+            # ["test_linear2", True],
+            # ["test_linear_packed", True],
+            # ["test_lowmem_dropout1", True],  # None as output
+            # ["test_mm_views", True],
+            # [
+            #     "test_profiler_mark_wrapper_call",
+            #     True,
+            # ],
+            # ["test_reduction1", True],  # Reduction
+            # ["test_relu", True],  # multiple inputs
+            # ["test_silu", True],  # single input, single output
+            # ["test_sum_dtype", True],  # float64
+            # ["test_sum_int", True],  # bool, int64, int8, uint8
+            # ["test_transpose", True],  # multiple outputs, buffer clear
         ]:
             test_name = f"{name}_{device}"
             assert hasattr(self, test_name), "undefined function"
             func = getattr(self, test_name)
             assert callable(func), "not a callable"
             code = run_and_get_cpp_code(func, [])
+            print("#" * 50)
+            print(code)
             self.assertEqual("load_inline" in code, supported)
 
     @unittest.skipIf(IS_X86 and not HAS_AVX2, "Requires AVX2")

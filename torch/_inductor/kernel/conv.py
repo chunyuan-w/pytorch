@@ -172,9 +172,7 @@ conv2d_template = TritonTemplate(
 
 # TODO: fix at::convolution codegen
 aten_convolution = ExternKernelChoice(
-    # torch.convolution, "at::convolution", has_out_variant=False
-    torch.convolution,
-    has_out_variant=False,
+    torch.convolution, "at::convolution", has_out_variant=False, ordered_kwargs_for_cpp_kernel=("stride", "padding", "dilation", "transposed", "output_padding", "groups")
 )
 
 
@@ -325,13 +323,15 @@ def convolution(
     if bias is None:
         args = (x, weight)
         kwargs["bias"] = None
+        cpp_constant_args = ["at::Tensor()"]
     else:
         args = (x, weight, bias)
         bias.realize()
         bias.freeze_layout()
         V.graph.sizevars.guard_static_shapes(bias.get_size())
+        cpp_constant_args = []
 
-    choices = [aten_convolution.bind(args, layout, **kwargs)]
+    choices = [aten_convolution.bind(args, layout, cpp_constant_args, **kwargs)]
     if (
         use_triton_template(layout)
         # templates only support these:
