@@ -405,6 +405,8 @@ def compile_fx(
     decompositions: Optional[Dict[OpOverload, Callable]] = None,
     aot_mode=False,
 ):
+    #import pdb 
+    #pdb.set_trace()
     """Main entrypoint to a compile given FX graph"""
     if config_patches:
         with config.patch(config_patches):
@@ -446,6 +448,8 @@ def compile_fx(
 
     if isinstance(model_, torch.fx.GraphModule):
         with overrides.patch_functions():
+            #import pdb 
+            #pdb.set_trace()
             model_ = overrides.replace_fx(model_)
             model_ = overrides.fuse_fx(model_, example_inputs_)
 
