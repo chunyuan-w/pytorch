@@ -498,6 +498,18 @@ class WrapperCodeGen(CodeGen):
             args.append(f"out={codegen_reference}")
         self.writeline(f"{kernel}({', '.join(args)})")
 
+    def generate_fusion_ops_code(
+        self,
+        name,
+        kernel,
+        cpp_kernel,
+        codegen_args,
+        cpp_op_schema,
+        cpp_kernel_key,
+        cpp_kernel_overlad_name="",
+    ):
+        self.writeline(f"{name} = {kernel}({', '.join(codegen_args)})")
+
     @dynamo_timed
     def generate(self):
         result = IndentedBuffer()
@@ -758,6 +770,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.as_strided = "at::as_strided"
         self.size = "sizes()"
         self.stride = "strides()"
+        self.extern_call_ops = dict()
 
     def seed(self):
         """
@@ -964,6 +977,35 @@ class CppWrapperCodeGen(WrapperCodeGen):
         if len(parts) == 1:
             return f"{{{parts[0]}, }}"
         return f"{{{', '.join(parts)}}}"
+
+
+    def generate_fusion_ops_code(
+        self,
+        name,
+        kernel,
+        cpp_kernel,
+        codegen_args,
+        cpp_op_schema,
+        cpp_kernel_key,
+        cpp_kernel_overlad_name="",
+    ):
+        if cpp_kernel_key not in self.extern_call_ops:
+            self.writeline(
+                f"""
+    static auto op_{cpp_kernel_key} =
+    c10::Dispatcher::singleton()
+        .findSchemaOrThrow(
+            \"{cpp_kernel}\",
+            \"{cpp_kernel_overlad_name}\")
+        .typed<{cpp_op_schema}>();
+            """
+            )
+            self.extern_call_ops[cpp_kernel_key] = True
+
+        # self.writeline("torch::List<c10::optional<at::Scalar>> scalars;")
+        self.writeline(
+            f"auto {name} = op_{cpp_kernel_key}.call({', '.join(codegen_args)});"
+        )
 
 
 class CppAotWrapperCodeGen(CppWrapperCodeGen):
