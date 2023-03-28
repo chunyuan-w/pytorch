@@ -282,6 +282,8 @@ class WrapperCodeGen(CodeGen):
         self.declare = ""
         self.ending = ""
         self.as_strided = "as_strided"
+        self.size = "size()"
+        self.stride = "stride()"
 
         self.set_header()
         self.write_prefix()
@@ -568,13 +570,13 @@ class WrapperCodeGen(CodeGen):
 
         @functools.lru_cache(None)
         def sizeof(name):
-            code.writeline(f"{self.declare}{name}_size = {name}.size(){self.ending}")
+            code.writeline(f"{self.declare}{name}_size = {name}.{self.size}{self.ending}")
             return f"{name}_size"
 
         @functools.lru_cache(None)
         def strideof(name):
             code.writeline(
-                f"{self.declare}{name}_stride = {name}.stride(){self.ending}"
+                f"{self.declare}{name}_stride = {name}.{self.stride}{self.ending}"
             )
             return f"{name}_stride"
 
@@ -754,6 +756,8 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.declare = "auto "
         self.ending = ";"
         self.as_strided = "at::as_strided"
+        self.size = "sizes()"
+        self.stride = "strides()"
 
     def seed(self):
         """
