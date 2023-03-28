@@ -2838,12 +2838,14 @@ class ExternKernelAlloc(ExternKernel):
         kernel=None,
         cpp_kernel=None,
         ordered_kwargs_for_cpp_kernel=(),
+        cpp_constant_args=(),
     ):
         super().__init__(
             None, layout, self.unwrap_storage(inputs), constant_args, kwargs or {}
         )
         self.cpp_kernel = cpp_kernel
         self.ordered_kwargs_for_cpp_kernel = ordered_kwargs_for_cpp_kernel
+        self.cpp_constant_args = cpp_constant_args
         self.name = V.graph.register_buffer(self)
         if kernel is not None:
             self.kernel = kernel
@@ -3367,6 +3369,13 @@ class Convolution(ExternKernelAlloc):
             c,
             sympy.Integer(1),
         )
+
+
+def _string(shape: tuple):
+    from .codegen.wrapper import CppWrapperCodeGen
+
+    cpp_wrapper_codegen = CppWrapperCodeGen()
+    return cpp_wrapper_codegen.codegen_shape_tuple(shape)
 
 
 def _prepare_convolution_fusion_create(
