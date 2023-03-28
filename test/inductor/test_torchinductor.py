@@ -5690,6 +5690,15 @@ class CommonTemplate:
             [torch.randn((4, 2)), torch.randn((4))],
         )
 
+    # no more this issue using commit 08766b2
+    @torch._dynamo.config.patch(dynamic_shapes=True)
+    def test_int_div_dynamic_shapes(self):
+        def fn(x, y):
+            a = torch.div(x, y.shape[0], rounding_mode="floor")
+            return a
+
+        self.common(fn, [torch.randint(5, (1, 8)), torch.randn(5)])
+
     @torch._dynamo.config.patch(dynamic_shapes=True)
     def test_int_input_dynamic_shapes(self):
         @torch.compile(dynamic=True)
