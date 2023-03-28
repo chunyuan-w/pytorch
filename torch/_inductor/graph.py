@@ -531,6 +531,7 @@ class GraphLowering(torch.fx.Interpreter):
         self.disable_cpp_wrapper("device not CPU")
 
     def check_input_for_cpp_buffer(self):
+        return
         for _, value in self.graph_inputs.items():
             if not supported_dtype_of_cpp_wrapper(value.get_dtype()):
                 self.disable_cpp_wrapper("unsupported inputs dtype")
