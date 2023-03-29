@@ -840,10 +840,13 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.prefix.splice(f"{CppWrapperCodeGen.decl_str} {{")
         with self.wrapper_call.indent():
             if inputs_len != 0:
-                inputs_keys_str = ", ".join(V.graph.graph_inputs.keys())
-                self.wrapper_call.writeline(f"at::Tensor {inputs_keys_str};")
                 for idx, input_key in enumerate(V.graph.graph_inputs.keys()):
-                    self.wrapper_call.writeline(f"{input_key} = args[{idx}];")
+                    if isinstance(V.graph.graph_inputs[input_key], sympy.Expr):
+                        self.wrapper_call.writeline(f"long int {input_key};")
+                        self.wrapper_call.writeline(f"{input_key} = args[{idx}].item<long int>();")
+                    else:
+                        self.wrapper_call.writeline(f"at::Tensor {input_key};")
+                        self.wrapper_call.writeline(f"{input_key} = args[{idx}];")
 
             for name in V.graph.randomness_seeds:
                 self.wrapper_call.writeline(f"at::Tensor {name};")
@@ -951,7 +954,8 @@ class CppWrapperCodeGen(WrapperCodeGen):
             f"""
             def _wrap_func(f):
                 def g(args):
-                    return f(args)
+                    args_tensor = [arg if isinstance(arg, torch.Tensor) else torch.tensor(arg) for arg in args]
+                    return f(args_tensor)
                 return g
             call = _wrap_func(module.call_{self._call_func_id})
             """
