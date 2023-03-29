@@ -974,6 +974,10 @@ class CppWrapperCodeGen(WrapperCodeGen):
             args.insert(0, f"{codegen_reference}")
         self.writeline(f"{cpp_kernel}({', '.join(args)});")
 
+    def codegen_sizevar(self, x: Expr) -> str:
+        from .cpp import cexpr
+        return cexpr(V.graph.sizevars.simplify(x))
+
     def codegen_shape_tuple(self, shape: Tuple[Expr, ...]) -> str:
         parts = list(map(self.codegen_sizevar, shape))
         if len(parts) == 0:

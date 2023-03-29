@@ -5701,6 +5701,16 @@ class CommonTemplate:
         self.common(fn, [torch.randint(5, (1, 8)), 5400])
 
     @torch._dynamo.config.patch(dynamic_shapes=True)
+    @config.patch(cpp_wrapper=True)
+    def test_shape_div_floor_dynamic_shapes(self):
+        def fn(x, y):
+            s3 = x.size(1)
+            a = torch.zeros((1+s3) // 2)
+            return a
+
+        self.common(fn, [torch.randint(5, (1, 8)), 5400])
+
+    @torch._dynamo.config.patch(dynamic_shapes=True)
     def test_int_input_dynamic_shapes(self):
         @torch.compile(dynamic=True)
         def fn(x, i):
