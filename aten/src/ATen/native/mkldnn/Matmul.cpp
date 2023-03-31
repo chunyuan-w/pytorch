@@ -177,7 +177,16 @@ void mkldnn_matmul(
   // Will remove this "contiguous" after mkldnn have fully supported
   Tensor mat1_ = is_mkldnn_optimized_format(mat1_unsqueezed) ? mat1_unsqueezed : mat1_unsqueezed.contiguous();
   Tensor mat2_ = is_mkldnn_optimized_format(mat2_unsqueezed) ? mat2_unsqueezed : mat2_unsqueezed.contiguous();
-
+  auto mat1_sizes = mat1_.sizes();
+  IntArrayRef mat1_default_contiguous_strides = c10::contiguous_strides(mat1_sizes);
+  if (mat1_.is_contiguous() && mat1_.strides() != mat1_default_contiguous_strides) {
+	  mat1_ = mat1_.as_strided(mat1_sizes, mat1_default_contiguous_strides); 
+  }
+  auto mat2_sizes = mat2_.sizes();
+  IntArrayRef mat2_default_contiguous_strides = c10::contiguous_strides(mat2_sizes); 
+  if (mat2_.is_contiguous() && mat2_.strides() != mat2_default_contiguous_strides) { 
+	  mat2_ = mat2_.as_strided(mat2_sizes, mat2_default_contiguous_strides); 
+  }
   // mkldnn_matmul only proceed CPU tensor
   const ideep::tensor x = itensor_view_from_dense(mat1_);
   const ideep::tensor w = itensor_view_from_dense(mat2_);
