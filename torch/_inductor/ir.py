@@ -3137,7 +3137,7 @@ class MultiOutputLayout(IRNode):
 class MultiOutput(ExternKernel):
     def codegen(self, wrapper):
         wrapper.writeline(
-            f"{self.get_name()} = {self.inputs[0].get_name()}{self.index}"
+            f"{wrapper.declare}{self.get_name()} = {self.inputs[0].get_name()}{self.index}{wrapper.ending}"
         )
         self.codegen_size_asserts(wrapper)
 
