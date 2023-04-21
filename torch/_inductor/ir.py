@@ -3024,6 +3024,7 @@ class FallbackKernel(ExternKernelAlloc):
         self,
         layout,
         kernel,
+        cpp_kernel,
         tensor_args,
         nontensor_args,
         unflatten_args,
@@ -3040,6 +3041,8 @@ class FallbackKernel(ExternKernelAlloc):
             self.kernel = (
                 f"{kernel.__module__.replace('._ops.', '.ops.')}.{kernel.__name__}"
             )
+        if V.graph.cpp_wrapper:
+            self.kernel = cpp_kernel
         self.unflatten_args = unflatten_args
         self.kwargs = {} if kwargs is None else kwargs
         V.graph.warn_fallback(self.kernel)
@@ -3061,7 +3064,7 @@ class FallbackKernel(ExternKernelAlloc):
         return list(map(repr, args)) + [gen_kwarg(k, v) for k, v in kwargs.items()]
 
     @classmethod
-    def create(cls, kernel, *args, **kwargs):
+    def create(cls, kernel, cpp_kernel, *args, **kwargs):
         fake_incorrect_kernels = (
             aten._fft_r2c.default,
             aten._fft_r2c.out,
@@ -3091,6 +3094,7 @@ class FallbackKernel(ExternKernelAlloc):
                 tensor_args[0].get_device() if tensor_args else example_output.device
             ),
             kernel,
+            cpp_kernel,
             tensor_args,
             non_tensor_args,
             unflatten_args,

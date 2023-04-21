@@ -1039,13 +1039,13 @@ def register_onednn_fusion_ops():
 register_onednn_fusion_ops()
 
 
-def fallback_handler(kernel, add_to_fallback_set=True):
+def fallback_handler(kernel, cpp_kernel=None, add_to_fallback_set=True):
     if add_to_fallback_set:
         fallbacks.add(kernel)
 
     def handler(*args, **kwargs):
         return pytree.tree_map(
-            TensorBox.create, ir.FallbackKernel.create(kernel, *args, **kwargs)
+            TensorBox.create, ir.FallbackKernel.create(kernel, cpp_kernel, *args, **kwargs)
         )
 
     return handler
@@ -1104,7 +1104,7 @@ def fallback_node_due_to_unsupported_type(node: torch.fx.Node, allow_cpu_inputs=
     return check_skip_condition(node, is_output=True)
 
 
-def make_fallback(kernel, layout_constraint=None, warn=True):
+def make_fallback(kernel, layout_constraint=None, warn=True, cpp_kernel=None):
     assert (
         kernel not in decompositions
     ), f"both a fallback and a decomp for same kernel: {kernel}"
@@ -1129,7 +1129,7 @@ def make_fallback(kernel, layout_constraint=None, warn=True):
     add_needs_realized_inputs(kernel)
     if layout_constraint is not None:
         add_layout_constraint(kernel, layout_constraint)
-    return register_lowering(kernel, type_promotion_kind=None)(fallback_handler(kernel))
+    return register_lowering(kernel, type_promotion_kind=None)(fallback_handler(kernel, cpp_kernel))
 
 
 @register_lowering(aten.native_dropout, type_promotion_kind=None)
@@ -1326,7 +1326,7 @@ make_fallback(aten._adaptive_avg_pool2d_backward, require_dense)
 make_fallback(aten.convolution_backward, constrain_to_fx_strides)
 make_fallback(aten._cudnn_rnn, require_dense)
 make_fallback(aten._cudnn_rnn_backward, require_contiguous)
-make_fallback(aten.cumsum, require_dense, warn=False)
+make_fallback(aten.cumsum, require_dense, warn=False, cpp_kernel="at::cumsum")
 make_fallback(aten.cumprod, require_dense, warn=False)
 make_fallback(aten._embedding_bag, require_contiguous)
 make_fallback(aten._embedding_bag_forward_only, require_contiguous)
