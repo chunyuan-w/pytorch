@@ -348,7 +348,8 @@ class GraphLowering(torch.fx.Interpreter):
         )
         self.graph_inputs[target] = tensor
         self.graph_inputs_original[target] = tensor.data.data
-        self.device_types.add(example.device.type)
+        if not isinstance(example, sympy.core.numbers.Integer):
+            self.device_types.add(example.device.type)
         self.add_device_idx(example.device.index)
         return tensor
 
@@ -582,6 +583,8 @@ class GraphLowering(torch.fx.Interpreter):
                 dtype = value.get_dtype()
             elif isinstance(value, sympy.Symbol):
                 dtype = may_get_constant_buffer_dtype(value)
+            elif isinstance(value, sympy.core.numbers.Integer):
+                dtype = torch.int64
 
             if not supported_dtype_of_cpp_wrapper(dtype, cuda):
                 self.disable_cpp_wrapper("unsupported inputs dtype")
@@ -599,7 +602,12 @@ class GraphLowering(torch.fx.Interpreter):
     def init_wrapper_code(self):
         if self.cpp_wrapper:
             device = self.get_single_device()
-            assert device == "cpu" or device == "cuda"
+            # One single input which is a sympy.core.numbers.Integer, no device info
+            if device and (not device == "cpu" or device == "cuda"):
+                print("device is: ", device)
+                self.disable_cpp_wrapper("Unknown device")
+
+            # assert device == "cpu" or device == "cuda"
             cuda = device == "cuda"
             self.check_cpp_wrapper(cuda)
             # Re-check self.cpp_wrapper because it might be disabled due to failed checking
