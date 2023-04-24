@@ -253,6 +253,18 @@ class CPUReproTests(TestCase):
         compiled_out = opt_fn(a)
         assert same(real_out, compiled_out)        
 
+    @config.patch(implicit_fallbacks=True)
+    def test_repeat_interleave(self):
+        def fn(expand_3):
+            return expand_3.repeat_interleave(1, dim=0)
+        
+        a = torch.tensor([2])
+        opt_fn = torch._dynamo.optimize("inductor")(fn)
+        opt_fn(a)
+        real_out = fn(a)
+        compiled_out = opt_fn(a)
+        assert same(real_out, compiled_out)  
+
     @unittest.skipIf(
         not codecache.valid_vec_isa_list(), "Does not support vectorization"
     )
