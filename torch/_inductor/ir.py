@@ -2819,6 +2819,14 @@ class ExternKernelOut(ExternKernel):
 
 class ExternKernelAlloc(ExternKernel):
     def codegen(self, wrapper):
+        # TODO: fix me: need to add cpp_kernel for all fallback kernels
+        if V.graph.cpp_wrapper:
+            print("codegen kernel in cpp_wrapper: ", self.kernel)
+            # print("codegen cpp_kernel in cpp_wrapper: ", self.cpp_kernel)
+            if hasattr(self, "cpp_kernel"):
+                self.kernel = self.cpp_kernel
+            else:
+                print("cpp_kernel missing for: ", self.kernel)
         args = [*self.codegen_args(), *self.codegen_kwargs()]
         V.graph.wrapper_code.generate_extern_kernel_alloc(
             self.get_name(), self.kernel, args
@@ -3041,8 +3049,9 @@ class FallbackKernel(ExternKernelAlloc):
             self.kernel = (
                 f"{kernel.__module__.replace('._ops.', '.ops.')}.{kernel.__name__}"
             )
-        if V.graph.cpp_wrapper:
-            self.kernel = cpp_kernel
+        # TODO: during __init__ here, whether we could use cpp_wrapper or not has not been decided yet
+        # if V.graph.cpp_wrapper:
+        self.cpp_kernel = cpp_kernel
         self.unflatten_args = unflatten_args
         self.kwargs = {} if kwargs is None else kwargs
         V.graph.warn_fallback(self.kernel)
