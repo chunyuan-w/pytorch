@@ -3053,6 +3053,10 @@ class FallbackKernel(ExternKernelAlloc):
         # if V.graph.cpp_wrapper:
         self.cpp_kernel = cpp_kernel
         self.unflatten_args = unflatten_args
+        if self.kernel in ["aten.repeat_interleave.Tensor", "torch.ops.aten.repeat_interleave.Tensor"]:
+            print("hit ordered_kwargs_for_cpp_kernel")
+            self.ordered_kwargs_for_cpp_kernel = ("output_size")
+            self.cpp_kernel = "at::repeat_interleave"
         self.kwargs = {} if kwargs is None else kwargs
         V.graph.warn_fallback(self.kernel)
 
@@ -3069,8 +3073,12 @@ class FallbackKernel(ExternKernelAlloc):
 
         tensor_args = [Shim(x.codegen_reference()) for x in self.inputs]
         constant_args = [Shim(repr(x)) for x in self.constant_args]
-        args, kwargs = self.unflatten_args(tensor_args, constant_args)
-        return list(map(repr, args)) + [gen_kwarg(k, v) for k, v in kwargs.items()]
+        if V.graph.cpp_wrapper:
+            args, kwargs = self.unflatten_args(tensor_args, constant_args)
+            return list(map(repr, args)) + [repr(v) for k, v in kwargs.items()]
+        else:
+            args, kwargs = self.unflatten_args(tensor_args, constant_args)
+            return list(map(repr, args)) + [gen_kwarg(k, v) for k, v in kwargs.items()]
 
     @classmethod
     def create(cls, kernel, cpp_kernel, *args, **kwargs):
