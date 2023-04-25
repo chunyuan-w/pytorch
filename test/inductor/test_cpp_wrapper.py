@@ -75,27 +75,28 @@ if RUN_CPU:
         tests: TorchTestCase = test_torchinductor.CpuTests()
 
     for item in [
-        # BaseTest("test_as_strided"),  # buffer reuse
-        # BaseTest("test_bitwise"),  # int32
-        # BaseTest("test_bmm1"),
-        # BaseTest("test_bmm2"),
-        # BaseTest("test_cat"),  # alias
+        BaseTest("test_as_strided"),  # buffer reuse
+        BaseTest("test_bitwise"),  # int32
+        BaseTest("test_bmm1"),
+        BaseTest("test_bmm2"),
+        BaseTest("test_cat"),  # alias
         BaseTest("test_cumsum", "", test_cpu_repro.CPUReproTests()),
-        # BaseTest("test_index_put_deterministic_fallback"),
-        # BaseTest("test_int_div", "", test_cpu_repro.CPUReproTests()),
-        # BaseTest("test_linear1"),
-        # BaseTest("test_linear2"),
-        # BaseTest("test_linear_packed", "", test_cpu_repro.CPUReproTests()),
-        # BaseTest("test_lowmem_dropout1"),  # None as output
-        # BaseTest("test_mm_views"),
-        # BaseTest("test_profiler_mark_wrapper_call"),
-        # BaseTest("test_reduction1"),  # Reduction
-        # BaseTest("test_relu"),  # multiple inputs
-        # BaseTest("test_scalar_input"),
-        # BaseTest("test_silu"),  # single input, single output
-        # BaseTest("test_sum_dtype"),  # float64
-        # BaseTest("test_sum_int"),  # bool, int64, int8, uint8
-        # BaseTest("test_transpose"),  # multiple outputs, buffer clear
+        BaseTest("test_repeat_interleave", "", test_cpu_repro.CPUReproTests()),
+        BaseTest("test_index_put_deterministic_fallback"),
+        BaseTest("test_int_div", "", test_cpu_repro.CPUReproTests()),
+        BaseTest("test_linear1"),
+        BaseTest("test_linear2"),
+        BaseTest("test_linear_packed", "", test_cpu_repro.CPUReproTests()),
+        BaseTest("test_lowmem_dropout1"),  # None as output
+        BaseTest("test_mm_views"),
+        BaseTest("test_profiler_mark_wrapper_call"),
+        BaseTest("test_reduction1"),  # Reduction
+        BaseTest("test_relu"),  # multiple inputs
+        BaseTest("test_scalar_input"),
+        BaseTest("test_silu"),  # single input, single output
+        BaseTest("test_sum_dtype"),  # float64
+        BaseTest("test_sum_int"),  # bool, int64, int8, uint8
+        BaseTest("test_transpose"),  # multiple outputs, buffer clear
     ]:
         make_test_case(item.name, item.device, item.tests)
 
