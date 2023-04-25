@@ -2727,11 +2727,11 @@ class ExternKernel(InputsKernel):
         return kwargs
 
     def codegen_size_asserts(self, wrapper):
-        if config.size_asserts and not V.graph.cpp_wrapper:
+        if config.size_asserts:
             size = V.graph.wrapper_code.codegen_shape_tuple(self.get_size())
             stride = V.graph.wrapper_code.codegen_shape_tuple(self.get_stride())
             wrapper.writeline(
-                f"assert_size_stride({self.get_name()}, {size}, {stride})"
+                wrapper.generate_size_asserts(self.get_name(), size, stride)
             )
 
     def get_group_stride(self):
@@ -3056,7 +3056,7 @@ class FallbackKernel(ExternKernelAlloc):
         if self.kernel in ["aten.repeat_interleave.Tensor", "torch.ops.aten.repeat_interleave.Tensor"]:
             print("hit ordered_kwargs_for_cpp_kernel")
             self.ordered_kwargs_for_cpp_kernel = ("output_size")
-            self.cpp_kernel = "at::repeat_interleave"
+            self.cpp_kernel = "at::native::repeat_interleave_cpu"
         self.kwargs = {} if kwargs is None else kwargs
         V.graph.warn_fallback(self.kernel)
 
