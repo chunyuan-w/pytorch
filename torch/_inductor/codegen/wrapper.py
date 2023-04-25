@@ -577,6 +577,12 @@ class WrapperCodeGen(CodeGen):
     def generate_kernel_call(self, name, call_args, device_index=None):
         self.writeline(self.wrap_kernel_call(name, call_args))
 
+    def generate_assert_name(self, name):
+        return f"print('assertion on {name}')"
+
+    def generate_size_asserts(self, name, size, stride):
+        return f"assert_size_stride({name}, {size}, {stride}){self.ending}"
+
     def call_kernel(self, name: str, kernel: Kernel):
         tmp = IndentedBuffer()
         kernel.call_kernel(self, tmp, name)
@@ -746,6 +752,24 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
                 cpp_wrapper_src = (
                 '''
+                void assert_size_stride(at::Tensor tensor, std::vector<int64_t> size, std::vector<int64_t> stride) {
+                    int64_t ndim = tensor.ndimension();
+                    if (static_cast<int64_t>(size.size()) != ndim || static_cast<int64_t>(stride.size()) != ndim) {
+                        TORCH_CHECK(false, "wrong number of dimensions");
+                    }
+                    for (auto i : c10::irange(ndim)) {
+                        int64_t want_size = size[i];
+                        int64_t want_stride = stride[i];
+                        int64_t actual_size = tensor.size(i);
+                        int64_t actual_stride = tensor.stride(i);
+                        if (want_size != actual_size ||
+                            // ignore stride differences when size is 1
+                            (want_stride != actual_stride && actual_size > 1)) {
+                            TORCH_CHECK(false,  "expected size ", actual_size, "==", want_size,
+                            ", stride ", actual_stride, "==", want_stride, " at dim=", i );
+                        }
+                    }
+                }                
                 """
             )
 
@@ -764,6 +788,9 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
     def write_prefix(self):
         return
+
+    def generate_assert_name(self, name):
+        return f"printf(\"assertion on {name}\");"
 
     def write_wrapper_decl(self):
         inputs_len = len(V.graph.graph_inputs.keys())
