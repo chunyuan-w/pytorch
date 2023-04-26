@@ -2544,6 +2544,22 @@ class CommonTemplate:
             (torch.randn([2, 4, 4, 8]),),
         )
 
+    @torch._dynamo.config.patch(dynamic_shapes=True)
+    def test_sympy_integers(self):
+        class Repro(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.register_buffer('_tensor_constant0', torch.randint(1, size=[1], dtype=torch.bool))
+
+            def forward(self, arg0_1):
+                floordiv = arg0_1 // 1;  arg0_1 = None
+                return floordiv
+
+        self.common(
+            Repro(),
+            (4,),
+        )
+
     def test_embedding_bag(self):
         def fn(w, i, o):
             return aten._embedding_bag(w, i, o, False, 0, False, None)
