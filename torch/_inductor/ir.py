@@ -3043,6 +3043,21 @@ class DynamicScalar(IRNode):
         return ()
 
 
+def convert_arg_type(python_type):
+    if python_type == 'Tensor':
+        # TODO: const&
+        return f"at::{python_type} const&"
+    elif re.match(r"Optional\[[a-zA-Z_]+]", python_type):
+        # TODO: only match 1 time
+        optional_type = python_type[python_type.find("[")+1:python_type.find("]")]
+        assert optional_type == "int", "only support convert int to cpp long for now"
+        # TODO: int -> long
+        cpp_optional_type = "long"
+        return f"c10::optional<{cpp_optional_type}>"
+    else:
+        assert False, f"unsupport python_type: {python_type}"
+
+
 @dataclasses.dataclass
 class FallbackKernel(ExternKernelAlloc):
     def __init__(
@@ -3066,12 +3081,33 @@ class FallbackKernel(ExternKernelAlloc):
                 else f"aten.{kernel.__name__}"
             )
         else:
-            assert (
-                not V.graph.cpp_wrapper
-            ), f"{kernel.__name__} is not supported with cpp wrapper"
-            self.kernel = (
-                f"{kernel.__module__.replace('._ops.', '.ops.')}.{kernel.__name__}"
-            )
+            if V.graph.cpp_wrapper:
+                self.kernel = kernel._schema.name
+                self.cpp_kernel_overlad_name = kernel._schema.overload_name
+                self.cpp_kernel_key = f"{self.kernel.replace('::', '_')}_{self.cpp_kernel_overlad_name}"
+
+                arg_types = [repr(x.type) for x in kernel._schema.arguments]
+                arg_names = [x.name for x in kernel._schema.arguments]
+                # TODO: only support len(returns) == 1 for now. Add assertion
+                returns = [repr(x.type) for x in kernel._schema.returns]
+                assert len(returns) == 1, f"only support 1 single output for cpp_wrapper, but {kernel.__name__} has multiplt outputs"
+                return_value = returns[0]
+                assert return_value == 'Tensor'
+                
+                cpp_arg_type = [f"{convert_arg_type(arg_type)} {arg_name}" for arg_type, arg_name in zip(arg_types, arg_names)]
+                self.cpp_op_schema = f"at::{return_value}({', '.join(cpp_arg_type)})"
+
+
+            # if kernel.__name__ in ["repeat_interleave.Tensor"]:
+                # self.kernel = "at::native::repeat_interleave_cpu"
+            else:
+                # print("kernel is: ", kernel)
+                assert (
+                    not V.graph.cpp_wrapper
+                ), f"{kernel.__name__} is not supported with cpp wrapper"
+                self.kernel = (
+                    f"{kernel.__module__.replace('._ops.', '.ops.')}.{kernel.__name__}"
+                )
         self.unflatten_args = unflatten_args
         self.kwargs = {} if kwargs is None else kwargs
         V.graph.warn_fallback(self.kernel)
@@ -3089,8 +3125,26 @@ class FallbackKernel(ExternKernelAlloc):
 
         tensor_args = [Shim(x.codegen_reference()) for x in self.inputs]
         constant_args = [Shim(repr(x)) for x in self.constant_args]
-        args, kwargs = self.unflatten_args(tensor_args, constant_args)
-        return list(map(repr, args)) + [gen_kwarg(k, v) for k, v in kwargs.items()]
+        if V.graph.cpp_wrapper:
+            args, kwargs = self.unflatten_args(tensor_args, constant_args)
+            return list(map(repr, args)) + [repr(v) for k, v in kwargs.items()]
+        else:
+            args, kwargs = self.unflatten_args(tensor_args, constant_args)
+            return list(map(repr, args)) + [gen_kwarg(k, v) for k, v in kwargs.items()]
+
+    def codegen(self, wrapper):
+        if V.graph.cpp_wrapper:
+            wrapper.generate_fusion_ops_code(
+                self.get_name(),
+                self.kernel,
+                self.codegen_args(),
+                self.cpp_op_schema,
+                self.cpp_kernel_key,
+                self.cpp_kernel_overlad_name,
+            )            
+        else:
+            super().codegen(wrapper)
+
 
     @classmethod
     def create(cls, kernel, *args, **kwargs):
