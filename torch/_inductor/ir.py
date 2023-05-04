@@ -3044,18 +3044,23 @@ class DynamicScalar(IRNode):
 
 
 def convert_arg_type(python_type):
+    # Conversions rules follow https://github.com/pytorch/pytorch/tree/main/aten/src/ATen/native#func
     if python_type == 'Tensor':
-        # TODO: const&
         return f"at::{python_type} const&"
     elif re.match(r"Optional\[[a-zA-Z_]+]", python_type):
         # TODO: only match 1 time
         optional_type = python_type[python_type.find("[")+1:python_type.find("]")]
-        assert optional_type == "int", "only support convert int to cpp long for now"
+        assert optional_type == "int", f"only support convert int to cpp long for now but met {optional_type}"
         # TODO: int -> long
         cpp_optional_type = "long"
         return f"c10::optional<{cpp_optional_type}>"
     else:
         assert False, f"unsupport python_type: {python_type}"
+
+
+def convert_return_type(python_type):
+    assert python_type == 'Tensor', f"only support tensor output for cpp_wrapper, but receive type {python_type}"
+    return f"at::{python_type}"
 
 
 @dataclasses.dataclass
@@ -3090,12 +3095,12 @@ class FallbackKernel(ExternKernelAlloc):
                 arg_names = [x.name for x in kernel._schema.arguments]
                 # TODO: only support len(returns) == 1 for now. Add assertion
                 returns = [repr(x.type) for x in kernel._schema.returns]
-                assert len(returns) == 1, f"only support 1 single output for cpp_wrapper, but {kernel.__name__} has multiplt outputs"
+                assert len(returns) == 1, f"only support 1 single output for cpp_wrapper, but {kernel.__name__} has {len(returns)} outputs"
                 return_value = returns[0]
-                assert return_value == 'Tensor'
-                
+                cpp_return_value = convert_return_type(return_value)
+
                 cpp_arg_type = [f"{convert_arg_type(arg_type)} {arg_name}" for arg_type, arg_name in zip(arg_types, arg_names)]
-                self.cpp_op_schema = f"at::{return_value}({', '.join(cpp_arg_type)})"
+                self.cpp_op_schema = f"{cpp_return_value}({', '.join(cpp_arg_type)})"
 
 
             # if kernel.__name__ in ["repeat_interleave.Tensor"]:
