@@ -85,8 +85,9 @@ RTYPE_TO_CPP = {
 }
 
 PYTHON_TO_CPP = {
-    'int': "long",
-    'float': "double",
+    "int": "long",
+    "float": "double",
+    "bool": "bool",
 }
 
 def reduction_init(reduction_type, dtype):

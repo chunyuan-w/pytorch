@@ -3096,6 +3096,33 @@ def convert_arg_type(python_type):
     assert False, f"unsupport python_type: {python_type}"
 
 
+
+# def convert_arg_type(python_type):
+#     from .codegen.cpp import PYTHON_TO_CPP
+
+#     if python_type in PYTHON_TO_CPP:
+#         cpp_type = PYTHON_TO_CPP[python_type]
+#         if cpp_type == "at::Tensor":
+#             # Conversions rules follow https://github.com/pytorch/pytorch/tree/main/aten/src/ATen/native#func
+#             return f"at::{python_type} const&"
+#         else:
+#             return cpp_type
+    
+#     # re.findall(r'Optional\[(.*?)]', 'Optional[int]')
+#     # Convert arg of type Optional[*]
+#     optional_match = re.findall(r'Optional\[([a-zA-Z_]+)]', python_type)
+#     if len(optional_match) == 1:
+#         optional_type = optional_match[0]
+#         assert optional_type in PYTHON_TO_CPP, f"unsupported optional type in convert_arg_type: {optional_type}"
+#         cpp_optional_type = PYTHON_TO_CPP[optional_type]
+#         if cpp_optional_type == "Tensor":
+#             return f"c10::optional<{cpp_optional_type}>&"
+#         else:    
+#             return f"c10::optional<{cpp_optional_type}>"
+    
+#     assert False, f"unsupport python_type: {python_type}"
+
+
 def convert_return_type(python_type):
     # TODO: only support Tensor as func return type
     assert python_type == 'Tensor', f"only support tensor output for cpp_wrapper, but receive type {python_type}"
@@ -3177,7 +3204,7 @@ class FallbackKernel(ExternKernelAlloc):
         if V.graph.cpp_wrapper:
             args, kwargs = self.unflatten_args(tensor_args, constant_args)
             assert all([v in kwargs for v in self.kwarg_only]), "kwargs not found"
-            return list(map(repr, args)) + [repr(kwargs[v]) for v in self.kwarg_only]
+            return list(map(repr, args)) + [V.graph.wrapper_code.val_to_str(kwargs[v]) for v in self.kwarg_only]
         else:
             args, kwargs = self.unflatten_args(tensor_args, constant_args)
             return list(map(repr, args)) + [gen_kwarg(k, v) for k, v in kwargs.items()]

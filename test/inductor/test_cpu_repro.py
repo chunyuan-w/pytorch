@@ -223,6 +223,21 @@ class CPUReproTests(TestCase):
         compiled_out = opt_fn(a)
         assert same(real_out, compiled_out)  
 
+    # @config.patch(implicit_fallbacks=True)
+    # def test_repeat_interleave(self):
+    #     def fn(y, z):
+    #         # return torch.repeat_interleave(y, 2, output_size=8)
+    #         # return torch.linalg.pinv(z)
+    #         return torch.linalg.pinv(z, rcond=0.2, hermitian=True, out=z)
+
+    #     a = torch.tensor([[1, 2], [3, 4]])
+    #     b = torch.randn([2, 2])
+    #     opt_fn = torch._dynamo.optimize("inductor")(fn)
+    #     opt_fn(a, b)
+    #     real_out = fn(a, b)
+    #     compiled_out = opt_fn(a, b)
+    #     assert same(real_out, compiled_out)  
+
     def test_inplace_squeeze_needed(self):
         mod = torch.nn.Sequential(
             torch.nn.Linear(10, 10),
