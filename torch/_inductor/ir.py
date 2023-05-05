@@ -3126,6 +3126,9 @@ class FallbackKernel(ExternKernelAlloc):
             )
         else:
             if V.graph.cpp_wrapper:
+                assert not kernel.is_view, f"view kernel {kernel.__name__} is not supported with cpp_wrapper"
+                assert all([x.alias_info is None for x in kernel._schema.arguments]), f"{kernel.__name__} with alias_info arguments is not supported with cpp_wrapper"
+                
                 self.kernel = kernel._schema.name
                 self.cpp_kernel_overlad_name = kernel._schema.overload_name
                 self.cpp_kernel_key = f"{self.kernel.replace('::', '_')}_{self.cpp_kernel_overlad_name}"
