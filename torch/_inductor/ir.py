@@ -3141,6 +3141,8 @@ class FallbackKernel(ExternKernelAlloc):
                 cpp_arg_type = [f"{convert_arg_type(arg_type)} {arg_name}" for arg_type, arg_name in zip(arg_types, arg_names)]
                 self.cpp_op_schema = f"{cpp_return_value}({', '.join(cpp_arg_type)})"
 
+                # TODO: what if both kwarg and positional arg is possible?
+                self.kwarg_only = [x.name for x in kernel._schema.arguments if x.kwarg_only]
 
             # if kernel.__name__ in ["repeat_interleave.Tensor"]:
                 # self.kernel = "at::native::repeat_interleave_cpu"
@@ -3171,7 +3173,8 @@ class FallbackKernel(ExternKernelAlloc):
         constant_args = [Shim(repr(x)) for x in self.constant_args]
         if V.graph.cpp_wrapper:
             args, kwargs = self.unflatten_args(tensor_args, constant_args)
-            return list(map(repr, args)) + [repr(v) for k, v in kwargs.items()]
+            assert all([v in kwargs for v in self.kwarg_only]), "kwargs not found"
+            return list(map(repr, args)) + [repr(kwargs[v]) for v in self.kwarg_only]
         else:
             args, kwargs = self.unflatten_args(tensor_args, constant_args)
             return list(map(repr, args)) + [gen_kwarg(k, v) for k, v in kwargs.items()]
