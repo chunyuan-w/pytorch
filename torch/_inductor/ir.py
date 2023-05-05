@@ -3079,21 +3079,25 @@ class DynamicScalar(IRNode):
 
 
 def convert_arg_type(python_type):
-    # Conversions rules follow https://github.com/pytorch/pytorch/tree/main/aten/src/ATen/native#func
+    from .codegen.cpp import PYTHON_TO_CPP
     if python_type == 'Tensor':
+        # Conversions rules follow https://github.com/pytorch/pytorch/tree/main/aten/src/ATen/native#func
         return f"at::{python_type} const&"
-    elif re.match(r"Optional\[[a-zA-Z_]+]", python_type):
-        # TODO: only match 1 time
-        optional_type = python_type[python_type.find("[")+1:python_type.find("]")]
-        assert optional_type == "int", f"only support convert int to cpp long for now but met {optional_type}"
-        # TODO: int -> long
-        cpp_optional_type = "long"
+    
+    # re.findall(r'Optional\[(.*?)]', 'Optional[int]')
+    # Convert arg of type Optional[*]
+    optional_match = re.findall(r'Optional\[([a-zA-Z_]+)]', python_type)
+    if len(optional_match) == 1:
+        optional_type = optional_match[0]
+        assert optional_type in PYTHON_TO_CPP, f"unsupported optional type in convert_arg_type: {optional_type}"
+        cpp_optional_type = PYTHON_TO_CPP[optional_type]
         return f"c10::optional<{cpp_optional_type}>"
-    else:
-        assert False, f"unsupport python_type: {python_type}"
+    
+    assert False, f"unsupport python_type: {python_type}"
 
 
 def convert_return_type(python_type):
+    # TODO: only support Tensor as func return type
     assert python_type == 'Tensor', f"only support tensor output for cpp_wrapper, but receive type {python_type}"
     return f"at::{python_type}"
 
@@ -3128,7 +3132,7 @@ class FallbackKernel(ExternKernelAlloc):
 
                 arg_types = [repr(x.type) for x in kernel._schema.arguments]
                 arg_names = [x.name for x in kernel._schema.arguments]
-                # TODO: only support len(returns) == 1 for now. Add assertion
+                # TODO: only support len(returns) == 1 for now.
                 returns = [repr(x.type) for x in kernel._schema.returns]
                 assert len(returns) == 1, f"only support 1 single output for cpp_wrapper, but {kernel.__name__} has {len(returns)} outputs"
                 return_value = returns[0]
