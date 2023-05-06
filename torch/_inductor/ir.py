@@ -2929,12 +2929,15 @@ class InplaceBernoulliFallback(ExternKernel):
     This needs to be a custom class to handle mutation properly
     """
 
-    kernel = "aten.bernoulli_"
-
     def codegen(self, wrapper):
         (x,) = [t.codegen_reference() for t in self.inputs]
+        # wrapper.writeline(
+        #     f"{self.kernel}({x}, {', '.join(map(repr, self.constant_args))})"
+        # )
+        constant_args = ', '.join(map(repr, self.constant_args))
+        args = [x, constant_args]
         wrapper.writeline(
-            f"{self.kernel}({x}, {', '.join(map(repr, self.constant_args))})"
+            wrapper.wrap_kernel_call(self.kernel, args)
         )
 
     def should_allocate(self):
@@ -2952,6 +2955,7 @@ class InplaceBernoulliFallback(ExternKernel):
             constant_args,
         )
         self.name = V.graph.register_buffer(self)
+        self.kernel = "at::bernoulli_" if V.graph.cpp_wrapper else "aten.bernoulli_"
 
 
 class ScatterFallback(ExternKernel):
