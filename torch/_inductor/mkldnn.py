@@ -3,9 +3,11 @@ from functools import reduce
 from typing import Optional
 
 import torch
+from torch import _VF
 import torch._dynamo.config as dynamo_config
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils.rnn import PackedSequence
 
 from torch._dynamo.utils import detect_fake_mode
 from torch.fx.experimental.optimization import replace_node_module
@@ -221,6 +223,32 @@ class PackedConvTranspose2d(nn.ConvTranspose2d):
         return self._conv_transpose_forward(input, self.weight, self.bias)
 
 
+class PackedLSTM(nn.LSTM):
+    def __init__(
+        self,
+        lstm: nn.Module,
+        input_size: Optional[list],
+    ):
+        super().__init__(
+            lstm.input_size,
+            lstm.hidden_size,
+            lstm.num_layers,
+            lstm.bias,
+            lstm.batch_first,
+            lstm.dropout,
+            lstm.bidirectional,
+            lstm.proj_size,
+            lstm.weight_ih_l0.device,
+            lstm.weight_ih_l0.dtype
+        )
+        self._update_module_params(lstm, input_size)
+        print("in inductor fwd")
+        self.forward_op = _VF.lstm
+
+    def _update_module_params(self, lstm, input_size):
+        self.__dict__ = copy.deepcopy(lstm.__dict__)
+
+
 def packed_conv_eval(conv: nn.Module, input_size: Optional[list]):
     assert not (conv.training), "Fusion only for eval!"
     return PackedConv2d(
@@ -239,6 +267,11 @@ def packed_linear_eval(linear: nn.Module, input_size: Optional[list]):
     if linear.weight.dtype == torch.bfloat16:
         return PackedLinearBF16(linear, input_size)
     return PackedLinearFP32(linear, input_size)
+
+
+def packed_lstm_eval(lstm: nn.Module, input_size: Optional[list]):
+    assert not (lstm.training), "Fusion only for eval!"
+    return PackedLSTM(lstm, input_size)
 
 
 def mkldnn_fuse_fx(gm: torch.fx.GraphModule, example_inputs):
@@ -270,14 +303,21 @@ def pack_module(gm: torch.fx.GraphModule):
             assert isinstance(node.target, str)
             cur_module = modules[node.target]
             if type(cur_module) in computation_op_packed_map:
-                if cur_module.weight.device != torch.device(
+                if isinstance(cur_module, nn.LSTM):
+                    device = cur_module.weight_ih_l0.device
+                    dtype = cur_module.weight_ih_l0.dtype
+                else:
+                    device = cur_module.weight.device
+                    dtype = cur_module.weight.dtype
+                
+                if device != torch.device(
                     "cpu"
-                ) or cur_module.weight.dtype not in [torch.bfloat16, torch.float32]:
+                ) or dtype not in [torch.bfloat16, torch.float32]:
                     continue
                 if cur_module.training:
                     continue
                 if (
-                    cur_module.weight.dtype == torch.bfloat16
+                    dtype == torch.bfloat16
                     and not torch.ops.mkldnn._is_mkldnn_bf16_supported()
                 ):
                     continue
@@ -285,9 +325,10 @@ def pack_module(gm: torch.fx.GraphModule):
                     computation_node_input_size = None
                     # Conv2d and ConvTranspose2d weight format are dependent on input size,
                     # but ShapeProp may be failed to get the input size, so we skip them.
+                    # TODO: lstm is allowed as well, for both fp32 & bf16
                     if not (
                         type(cur_module) in [torch.nn.Linear]
-                        and cur_module.weight.dtype == torch.bfloat16
+                        and dtype == torch.bfloat16
                     ):
                         continue
                 else:
@@ -297,13 +338,17 @@ def pack_module(gm: torch.fx.GraphModule):
                     if type(cur_module) in [torch.nn.Linear]:
                         # for fp32 linear, only packed when has mkl.
                         if (
-                            cur_module.weight.dtype == torch.float32
+                            dtype == torch.float32
                             and (not torch._C.has_mkl)
                         ) or len(computation_node_input_size) < 2:
+                            continue
+                    elif type(cur_module) in [nn.LSTM]:
+                        if len(computation_node_input_size) != 3:
                             continue
                     else:
                         if len(computation_node_input_size) != 4:
                             continue
+                # TODO: for lstm, don't replace if input is PackedSequence
                 if type(cur_module) in [nn.Conv2d] and isinstance(
                     cur_module.padding, str
                 ):
@@ -338,4 +383,5 @@ computation_op_packed_map = {
     nn.Linear: packed_linear_eval,
     nn.Conv2d: packed_conv_eval,
     nn.ConvTranspose2d: packed_conv_transpose_eval,
+    nn.LSTM: packed_lstm_eval,
 }
