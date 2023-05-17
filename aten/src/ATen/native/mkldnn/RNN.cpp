@@ -7,6 +7,7 @@
 #include <ATen/TensorUtils.h>
 #include <ATen/Dispatch.h>
 #include <c10/util/Exception.h>
+#include <torch/library.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/NativeFunctions.h>
@@ -577,6 +578,19 @@ void lstm_mkldnn(Tensor& output, Tensor& hy, Tensor& cy,
 }
 
 REGISTER_ALL_CPU_DISPATCH(lstm_mkldnn_stub, &lstm_mkldnn);
+
+
+std::tuple<Tensor, Tensor, Tensor> lstm_mkldnn_inductor(const Tensor& input, TensorList hx, TensorList params, bool has_biases,
+    int64_t num_layers, double dropout_p, bool train, bool bidirectional, bool batch_first) {
+  return std::make_tuple(Tensor(), Tensor(), Tensor());
+
+}
+
+TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
+      TORCH_FN(lstm_mkldnn_inductor));
+}
 
 } // namespace at::native
 
