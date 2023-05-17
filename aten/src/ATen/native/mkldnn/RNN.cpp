@@ -9,6 +9,7 @@
 #include <c10/core/GradMode.h>
 #include <c10/macros/Macros.h>
 #include <c10/util/Exception.h>
+#include <torch/library.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/NativeFunctions.h>
@@ -266,12 +267,14 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn_layer(const Tensor& input,
   auto weight_ih = _shuffle_weight(w0, rnn.mode);
   auto weight_hh = _shuffle_weight(w1, rnn.mode);
 
+  // TODO: bias is not packed
   auto bias = has_biases
       ? _shuffle_bias(w2, w3, rnn.mode)
-      : at::zeros({rnn.num_bias_gates * rnn.hidden_size}, weight_ih.options());
+      : at::zeros({rnn.num_bias_gates * rnn.hidden_size}, weight_ih.options().layout(at::Layout::Strided));
 
   // per layer input size
   int64_t input_size = input.size(2);
+  ideep::tensor w1_, w2_;
   auto x = get_mkldnn_tensor(
       input,
       rnn.src_layer_desc(input_size, get_mkldnn_dtype(input)));
@@ -287,8 +290,8 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn_layer(const Tensor& input,
       hy_, rnn.dst_iter_desc(get_mkldnn_dtype(hy_)));
   auto cy = get_mkldnn_tensor(
       cy_, rnn.dst_iter_c_desc(get_mkldnn_dtype(cy_)));
-  auto w1_ = get_mkldnn_tensor(weight_ih, rnn.weights_layer_desc(input_size, get_mkldnn_dtype(weight_ih)));
-  auto w2_ = get_mkldnn_tensor(weight_hh, rnn.weights_iter_desc(get_mkldnn_dtype(weight_hh)));
+  w1_ = weight_ih.is_mkldnn() ? itensor_from_tensor(weight_ih) : get_mkldnn_tensor(weight_ih, rnn.weights_layer_desc(input_size, get_mkldnn_dtype(weight_ih)));
+  w2_ = weight_hh.is_mkldnn() ? itensor_from_tensor(weight_hh) : get_mkldnn_tensor(weight_hh, rnn.weights_iter_desc(get_mkldnn_dtype(weight_hh)));
 
   if (at::GradMode::is_enabled()) {
     Tensor workspace = Tensor();
@@ -579,6 +582,26 @@ void lstm_mkldnn(Tensor& output, Tensor& hy, Tensor& cy,
 }
 
 REGISTER_ALL_CPU_DISPATCH(lstm_mkldnn_stub, &lstm_mkldnn);
+
+
+std::tuple<Tensor, Tensor, Tensor> lstm_mkldnn_inductor(const Tensor& input, TensorList hx, TensorList params, bool has_biases,
+    int64_t num_layers, double dropout_p, bool train, bool bidirectional, bool batch_first) {
+  Tensor output, hy, cy;
+  lstm_mkldnn(output, hy, cy, input, hx, params, has_biases, num_layers, dropout_p, train, bidirectional, batch_first);
+  return std::make_tuple(output, hy, cy);
+}
+
+TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
+      TORCH_FN(lstm_mkldnn_inductor));
+}
+
+TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
+      TORCH_FN(lstm_mkldnn_inductor));
+}
 
 } // namespace at::native
 
