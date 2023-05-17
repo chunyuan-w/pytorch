@@ -2589,26 +2589,14 @@ def one_layer_lstm_data(inp, hidden, params, has_biases, batch_sizes, reverse=Fa
     return out, hidden_out
 
 
-@register_decomposition(aten.lstm.input)
-@aten.lstm.input.py_impl(DispatchKey.CompositeImplicitAutograd)
-@aten.lstm.input.py_impl(DispatchKey.Autograd)
-def lstm_impl(
-    input,
-    hx,
-    params,
-    has_biases,
-    num_layers,
-    dropout,
-    train,
-    bidirectional,
-    batch_first,
-):
-    assert len(hx) == 2, "lstm expects two hidden states"
-    params = gather_params(params, has_biases, hx[0].size(2) != hx[1].size(2))
-    hidden = list(zip(hx[0], hx[1]))
-    out, final_hiddens = _rnn_helper(
+# TODO: if IS_LINUX
+if not torch._C.has_mkldnn:
+    @register_decomposition(aten.lstm.input)
+    @aten.lstm.input.py_impl(DispatchKey.CompositeImplicitAutograd)
+    @aten.lstm.input.py_impl(DispatchKey.Autograd)
+    def lstm_impl(
         input,
-        hidden,
+        hx,
         params,
         has_biases,
         num_layers,
@@ -2616,10 +2604,25 @@ def lstm_impl(
         train,
         bidirectional,
         batch_first,
-        one_layer_lstm,
-    )
-    final_hiddens = list(zip(*final_hiddens))
-    return out, torch.stack(final_hiddens[0], 0), torch.stack(final_hiddens[1], 0)
+    ):  
+        print("decompose lstm.input")
+        assert len(hx) == 2, "lstm expects two hidden states"
+        params = gather_params(params, has_biases, hx[0].size(2) != hx[1].size(2))
+        hidden = list(zip(hx[0], hx[1]))
+        out, final_hiddens = _rnn_helper(
+            input,
+            hidden,
+            params,
+            has_biases,
+            num_layers,
+            dropout,
+            train,
+            bidirectional,
+            batch_first,
+            one_layer_lstm,
+        )
+        final_hiddens = list(zip(*final_hiddens))
+        return out, torch.stack(final_hiddens[0], 0), torch.stack(final_hiddens[1], 0)
 
 
 @register_decomposition(aten.lstm.data)
