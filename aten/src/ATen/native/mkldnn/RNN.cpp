@@ -582,8 +582,9 @@ REGISTER_ALL_CPU_DISPATCH(lstm_mkldnn_stub, &lstm_mkldnn);
 
 std::tuple<Tensor, Tensor, Tensor> lstm_mkldnn_inductor(const Tensor& input, TensorList hx, TensorList params, bool has_biases,
     int64_t num_layers, double dropout_p, bool train, bool bidirectional, bool batch_first) {
-  return std::make_tuple(Tensor(), Tensor(), Tensor());
-
+  Tensor output, hy, cy;
+  lstm_mkldnn(output, hy, cy, input, hx, params, has_biases, num_layers, dropout_p, train, bidirectional, batch_first);
+  return std::make_tuple(output, hy, cy);
 }
 
 TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
