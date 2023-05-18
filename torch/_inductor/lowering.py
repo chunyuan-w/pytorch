@@ -867,6 +867,7 @@ def register_onednn_fusion_ops():
             torch.ops.mkldnn._convolution_pointwise_,
             torch.ops.mkldnn._convolution_transpose_pointwise,
             torch.ops.mkldnn._linear_pointwise,
+            torch.ops.mkldnn._lstm,
         ]
 
         @register_lowering(torch.ops.mkldnn._convolution_pointwise)
@@ -1006,6 +1007,45 @@ def register_onednn_fusion_ops():
                     algorithm,
                 )
             )
+
+        @register_lowering(torch.ops.mkldnn._lstm)
+        def lstm(
+            x: TensorBox,
+            hx: List[TensorBox],
+            params: List[TensorBox],
+            has_biases: bool,
+            num_layers: int,
+            dropout: float,
+            train: bool,
+            bidirectional: bool,
+            batch_first: bool,
+        ):  
+            return pytree.tree_map(
+                TensorBox.create, ir.LSTM.create(
+                        x,
+                        hx,
+                        params,
+                        has_biases,
+                        num_layers,
+                        dropout,
+                        train,
+                        bidirectional,
+                        batch_first,
+                    )
+            )            
+            # return TensorBox.create(
+            #     ir.LSTM.create(
+            #         x,
+            #         hx,
+            #         params,
+            #         has_biases,
+            #         num_layers,
+            #         dropout,
+            #         train,
+            #         bidirectional,
+            #         batch_first,
+            #     )
+            # )
 
         if torch._C.has_mkl:
             cpu_needs_realized_inputs.append(torch.ops.mkl._mkl_linear)

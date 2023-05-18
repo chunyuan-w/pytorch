@@ -2458,27 +2458,53 @@ class TemplateBuffer(Buffer):
 class InputsKernel(Buffer):
     inputs: List[Buffer]
 
+    # TODO: refactor to handle input of TensorList
+    def get_read_writes_input(self, x):
+        return dependencies.StarDep(x.get_name())
+
     def get_read_writes(self):
+        star_dep = []
+        for input in self.inputs:
+            if isinstance(input, list):
+                star_dep.extend([self.get_read_writes_input(x) for x in input])
+            else:
+                star_dep.append(self.get_read_writes_input(input))
+
         return dependencies.ReadWrites(
-            {dependencies.StarDep(x.get_name()) for x in self.inputs},
+            set(star_dep),
             {dependencies.StarDep(self.get_name())},
             set(),
             [],
             None,
             op_counts=collections.Counter(),
         )
+    
+    @staticmethod
+    def unwrap_storage_for_input(x):
+        if isinstance(x, TensorBox):
+            x = x.data
+        if isinstance(x, StorageBox):
+            x = x.data
+        if isinstance(x, BaseView) and not isinstance(x, ReinterpretView):
+            x = ExternKernel.realize_input(x)
+        assert isinstance(x, (Buffer, ReinterpretView)), x
+        return x      
 
     @staticmethod
     def unwrap_storage(inputs):
         inputs_new = []
         for x in inputs:
-            if isinstance(x, TensorBox):
-                x = x.data
-            if isinstance(x, StorageBox):
-                x = x.data
-            if isinstance(x, BaseView) and not isinstance(x, ReinterpretView):
-                x = ExternKernel.realize_input(x)
-            assert isinstance(x, (Buffer, ReinterpretView)), x
+            if isinstance(x, list):
+                x = [InputsKernel.unwrap_storage_for_input(i) for i in x]
+            else:
+                x = InputsKernel.unwrap_storage_for_input(x)
+            # if isinstance(x, TensorBox):
+            #     x = x.data
+            # if isinstance(x, StorageBox):
+            #     x = x.data
+            # if isinstance(x, BaseView) and not isinstance(x, ReinterpretView):
+            #     x = ExternKernel.realize_input(x)
+            # assert isinstance(x, (Buffer, ReinterpretView)), x
             inputs_new.append(x)
         return inputs_new
 
@@ -3882,6 +3908,83 @@ class ConvolutionTransposeUnary(ExternKernelAlloc):
             kernel=kernel,
         )
 
+
+
+class LSTM(ExternKernelAlloc):
+    def __init__(
+        self,
+        layout,
+        inputs,
+        constant_args=(),
+        kernel="torch.ops.mkldnn._lstm",
+    ):
+        super().__init__(layout, inputs, constant_args)
+        self.kernel = kernel
+
+    def codegen(self, wrapper):
+        wrapper.writeline(
+            f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
+        )
+
+    @classmethod
+    def create(
+        cls,
+        x: "TensorBox",
+        hx: List["TensorBox"],
+        params: List["TensorBox"],
+        has_biases: bool,
+        num_layers: int,
+        dropout: float,
+        train: bool,
+        bidirectional: bool,
+        batch_first: bool,
+    ):
+        x.realize()
+        hx[0].realize()
+        hx[1].realize()
+        input_size = x.get_size()
+        if batch_first:
+            input_size = input_size.transpose(0, 1)
+
+        seq_length, mini_batch, input_size = input_size
+        num_directions = 2 if bidirectional else 1
+        num_gates = 4
+        hidden_size = hx[0].get_size()[2]
+        output_shape = [num_layers, mini_batch, num_directions * hidden_size]
+        
+        if batch_first:
+            output_shape = output_shape.transpose(0, 1)
+        
+        hy_shape = hx[0].get_size()
+        cy_shape = hx[1].get_size()
+
+        res: List[IRNode] = []
+
+        inputs = [x, hx, params]
+        constant_args = [has_biases, num_layers, dropout, train, bidirectional, batch_first]
+        
+        packed = LSTM(
+            MultiOutputLayout(
+                x.get_device()
+            ),
+            inputs=inputs,
+            constant_args=constant_args,
+        )
+
+        output_sizes = [output_shape, hy_shape, cy_shape]
+        output_ir = [MultiOutput(
+                    FixedLayout(
+                        x.get_device(),
+                        x.get_dtype(),
+                        convert_shape_to_inductor(output_size),
+                        convert_shape_to_inductor(make_contiguous_strides_for(output_size))
+                    ),
+                    packed,
+                    indices,
+            ) for indices, output_size in enumerate(output_sizes)
+        ]
+
+        return output_ir
 
 @dataclasses.dataclass
 class MutableBox(IRNode):
