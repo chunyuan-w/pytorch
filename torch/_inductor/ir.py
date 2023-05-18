@@ -2832,7 +2832,15 @@ class ExternKernel(InputsKernel):
         return map(V.graph.wrapper_code.val_to_str, self.constant_args)
 
     def codegen_args(self):
-        args = [x.codegen_reference() for x in self.inputs]
+        args = []
+        for x in self.inputs:
+            if isinstance(x, list):
+                names = [i.get_name() for i in x]
+                codegen_reference = f'[{", ".join(names)}]'
+                args.append(codegen_reference)
+            else:
+                args.append(x.codegen_reference())
+        # args = [x.codegen_reference() for x in self.inputs]
         args.extend(self.codegen_const_args())
         return args
 
