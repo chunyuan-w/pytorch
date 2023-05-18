@@ -593,6 +593,12 @@ TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
       TORCH_FN(lstm_mkldnn_inductor));
 }
 
+TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
+      TORCH_FN(lstm_mkldnn_inductor));
+}
+
 } // namespace at::native
 
 #endif // AT_MKLDNN_EBABLED

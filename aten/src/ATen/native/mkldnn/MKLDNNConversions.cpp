@@ -285,6 +285,17 @@ Tensor mkldnn_reorder_conv_transpose2d_weight(
                                  self.options().device_opt());
 }
 
+std::vector<Tensor> mkldnn_reorder_lstm_weight(
+    TensorList params,
+    bool has_biases,
+    c10::OptionalArrayRef<int64_t> input_size) {
+    printf("in mkldnn_reorder_lstm_weight\n");
+    
+    // TODO: fill weight value
+    std::vector<Tensor> result(params.size());
+    return result;
+}
+
 TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_convolution_transpose_weight"),
@@ -292,6 +303,9 @@ TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_linear_weight"),
       TORCH_FN(mkldnn_reorder_linear_weight));
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_reorder_lstm_weight"),
+      TORCH_FN(mkldnn_reorder_lstm_weight));      
 }
 
 #else
