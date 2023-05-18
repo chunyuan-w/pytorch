@@ -3958,7 +3958,7 @@ class LSTM(ExternKernelAlloc):
         num_directions = 2 if bidirectional else 1
         num_gates = 4
         hidden_size = hx[0].get_size()[2]
-        output_shape = [num_layers, mini_batch, num_directions * hidden_size]
+        output_shape = [seq_length, mini_batch, num_directions * hidden_size]
         
         if batch_first:
             output_shape = output_shape.transpose(0, 1)
