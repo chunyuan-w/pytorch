@@ -328,8 +328,8 @@ def pack_module(gm: torch.fx.GraphModule):
                     # but ShapeProp may be failed to get the input size, so we skip them.
                     # TODO: lstm is allowed as well, for both fp32 & bf16
                     if not (
-                        type(cur_module) in [torch.nn.Linear]
-                        and dtype == torch.bfloat16
+                        (type(cur_module) in [torch.nn.Linear]
+                        and dtype == torch.bfloat16) or type(cur_module) in [torch.nn.LSTM]
                     ):
                         continue
                 else:
