@@ -3979,6 +3979,7 @@ class LSTM(ExternKernelAlloc):
             constant_args=constant_args,
         )
 
+        indices = []
         output_sizes = [output_shape, hy_shape, cy_shape]
         output_ir = [MultiOutput(
                     FixedLayout(
@@ -3988,8 +3989,8 @@ class LSTM(ExternKernelAlloc):
                         convert_shape_to_inductor(make_contiguous_strides_for(output_size))
                     ),
                     packed,
-                    indices,
-            ) for indices, output_size in enumerate(output_sizes)
+                    indices + [(list, i)],
+            ) for i, output_size in enumerate(output_sizes)
         ]
 
         return output_ir
