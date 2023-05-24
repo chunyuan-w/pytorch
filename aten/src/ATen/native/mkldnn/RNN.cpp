@@ -271,6 +271,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn_layer(const Tensor& input,
 
   // per layer input size
   int64_t input_size = input.size(2);
+  ideep::tensor w1_, w2_;
   auto x = get_mkldnn_tensor(
       input,
       rnn.src_layer_desc(input_size, get_mkldnn_dtype(input)));
@@ -286,8 +287,8 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn_layer(const Tensor& input,
       hy_, rnn.dst_iter_desc(get_mkldnn_dtype(hy_)));
   auto cy = get_mkldnn_tensor(
       cy_, rnn.dst_iter_c_desc(get_mkldnn_dtype(cy_)));
-  auto w1_ = get_mkldnn_tensor(weight_ih, rnn.weights_layer_desc(input_size, get_mkldnn_dtype(weight_ih)));
-  auto w2_ = get_mkldnn_tensor(weight_hh, rnn.weights_iter_desc(get_mkldnn_dtype(weight_hh)));
+  w1_ = weight_ih.is_mkldnn() ? itensor_from_tensor(weight_ih) : get_mkldnn_tensor(weight_ih, rnn.weights_layer_desc(input_size, get_mkldnn_dtype(weight_ih)));
+  w2_ = weight_hh.is_mkldnn() ? itensor_from_tensor(weight_hh) : get_mkldnn_tensor(weight_hh, rnn.weights_iter_desc(get_mkldnn_dtype(weight_hh)));
 
   if (at::GradMode::is_enabled()) {
     Tensor workspace = Tensor();
