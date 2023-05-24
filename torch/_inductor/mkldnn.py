@@ -260,9 +260,9 @@ class PackedLSTM(nn.LSTM):
             input_size,
         )
         print("done _reorder_lstm_weight")
-        # TODO: requires_grad= = packed.requires_grad
-        # TODO: the weight is not actually used. Need to set self._flat_weights = ...
-        self._flat_weights = [torch.nn.Parameter(packed, requires_grad=self._flat_weights[0].requires_grad) for packed in packed_flat_weights]
+        assert len(packed_flat_weights) == len(self._flat_weights_names)
+        for i, (name, tensor) in enumerate(zip(self._flat_weights_names, packed_flat_weights)):
+            setattr(self, name, torch.nn.Parameter(tensor, requires_grad=self._flat_weights[i].requires_grad))
 
 
 def packed_conv_eval(conv: nn.Module, input_size: Optional[list]):
