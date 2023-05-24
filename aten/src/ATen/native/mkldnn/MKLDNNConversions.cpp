@@ -415,7 +415,8 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
   at::MatrixRef<at::Tensor> weights{
       weight, static_cast<size_t>(weight_stride0)};    
   ideep::tensor w1_, w2_;
-  
+  at::Tensor packed_w1, packed_w2;
+
   for (int64_t layer = 0; layer < num_layers; layer++) {
     for (int64_t direction = 0; direction < num_directions; direction++) {
       // for layer == 0, feature_size = input_feature_size
@@ -446,6 +447,18 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
         batch_size,
         reverse);
 
+      packed_w1 = new_with_itensor_mkldnn(std::move(w1_), optTypeMetaToScalarType(layer_weights[0].options().dtype_opt()), layer_weights[0].options().device_opt());
+      packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(layer_weights[1].options().dtype_opt()), layer_weights[1].options().device_opt());
+      
+
+      result[index * weight_stride0] = packed_w1;
+      result[index * weight_stride0+1] = packed_w2;
+
+
+      if (has_biases) {
+        result[index * weight_stride0+2] = layer_weights[2];
+        result[index * weight_stride0+3] = layer_weights[3];
+      }
     }
   }
 
