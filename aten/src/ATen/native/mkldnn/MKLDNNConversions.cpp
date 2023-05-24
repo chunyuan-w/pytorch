@@ -5,6 +5,8 @@
 #include <ATen/native/mkldnn/Utils.h>
 #include <ATen/native/utils/ParamUtils.h>
 #include <torch/library.h>
+#include <ATen/MatrixRef.h>
+#include <ATen/ops/zeros.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -285,15 +287,89 @@ Tensor mkldnn_reorder_conv_transpose2d_weight(
                                  self.options().device_opt());
 }
 
-std::vector<Tensor> mkldnn_reorder_lstm_weight(
-    TensorList params,
+void get_lstm_packed_weights(
+    const at::Tensor& weight0,
+    const at::Tensor& weight1,
+    const at::Tensor& weight2,
+    const at::Tensor& weight3,
+    int64_t layer_feature_size,
+    int64_t hidden_size,
     bool has_biases,
+    int64_t num_layers,
+    bool bidirectional,
+    int64_t time_step,
+    int64_t batch_size) {
+  
+  
+
+}
+
+std::vector<Tensor> mkldnn_reorder_lstm_weight(
+    TensorList weight,
+    int64_t input_feature_size,
+    int64_t hidden_size,
+    bool has_biases,
+    int64_t num_layers,
+    bool bidirectional,
+    bool batch_first,
     c10::OptionalArrayRef<int64_t> input_size) {
-    printf("in mkldnn_reorder_lstm_weight\n");
+  printf("in mkldnn_reorder_lstm_weight\n");
+
+  std::vector<int64_t> input_size_value;
+  int64_t time_step, batch_size;
+  if (input_size.has_value()) {
+    input_size_value = input_size.value().vec();
+    int64_t time_index = batch_first ? 1: 0;
+    int64_t batch_size_index = batch_first ? 0: 1;
     
-    // TODO: fill weight value
-    std::vector<Tensor> result(params.size());
-    return result;
+    time_step = input_size_value[time_index];
+    batch_size = input_size_value[batch_size_index];
+  } else {
+    // no value fed, provide one here
+    time_step = 5;
+    batch_size = 10;
+  }
+  
+  // TODO: fill weight value
+  std::vector<Tensor> result(weight.size());
+  
+  auto num_directions = bidirectional ? 2 : 1;
+  int64_t weight_stride0 = has_biases ? 4 : 2;
+
+  at::MatrixRef<at::Tensor> weights{
+      weight, static_cast<size_t>(weight_stride0)};    
+  
+  for (int64_t layer = 0; layer < num_layers; layer++) {
+    for (int64_t direction = 0; direction < num_directions; direction++) {
+      // for layer == 0, feature_size = input_feature_size
+      // otherwise, feature_size = hidden_size
+
+      int64_t layer_feature_size = layer == 0? input_feature_size : hidden_size;
+      auto index = layer * num_directions + direction;
+      auto layer_weights = weights[index];      
+      TORCH_CHECK(layer_weights.size() == 2 || layer_weights.size() == 4);
+      get_lstm_packed_weights(
+        layer_weights[0],
+        layer_weights[1],
+        has_biases ? layer_weights[2] : at::zeros(
+                           layer_weights[0].sizes(),
+                           layer_weights[0].options()),
+        has_biases ? layer_weights[3]
+                            : at::zeros(
+                                  layer_weights[1].sizes(),
+                                  layer_weights[1].options()),  
+        layer_feature_size,
+        hidden_size,
+        has_biases,
+        num_layers,      
+        bidirectional,
+        time_step,
+        batch_size);
+
+    }
+  }
+
+  return result;
 }
 
 TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {

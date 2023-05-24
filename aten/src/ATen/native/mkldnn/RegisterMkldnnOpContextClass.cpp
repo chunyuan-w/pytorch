@@ -60,7 +60,7 @@ TORCH_LIBRARY(mkldnn, m) {
   m.def(TORCH_SELECTIVE_SCHEMA(
       "mkldnn::_reorder_linear_weight(Tensor self, int? batch_size=None) -> Tensor Y"));
   m.def(TORCH_SELECTIVE_SCHEMA(
-      "mkldnn::_reorder_lstm_weight(Tensor[] params, bool has_biases, int[]? input_size=None) -> Tensor[] Y"));      
+      "mkldnn::_reorder_lstm_weight(Tensor[] params, int input_feature_size, int hidden_size, bool has_biases, int num_layers, bool bidirectional, bool batch_first, int[]? input_size=None) -> Tensor[] Y"));      
   m.def("_is_mkldnn_bf16_supported", &is_mkldnn_bf16_supported);
 }
 
