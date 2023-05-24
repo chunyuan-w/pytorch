@@ -250,7 +250,7 @@ class PackedLSTM(nn.LSTM):
         print("input_size in prepack ", input_size)
         self.__dict__ = copy.deepcopy(lstm.__dict__)
         packed_flat_weights = torch.ops.mkldnn._reorder_lstm_weight(
-            [w.to_mkldnn() for w in self._flat_weights],
+            self._flat_weights,
             self.input_size,
             self.hidden_size,
             self.bias,

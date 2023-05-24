@@ -288,8 +288,8 @@ Tensor mkldnn_reorder_conv_transpose2d_weight(
 }
 
 void get_lstm_packed_weights(
-    const at::Tensor& weight0,
-    const at::Tensor& weight1,
+    const at::Tensor& weight_ih,
+    const at::Tensor& weight_hh,
     const at::Tensor& weight2,
     const at::Tensor& weight3,
     int64_t layer_feature_size,
@@ -300,7 +300,36 @@ void get_lstm_packed_weights(
     int64_t time_step,
     int64_t batch_size) {
   
+  int64_t num_gates = 4;
+  int64_t num_bias_gates = 4;
   
+  // TODO: fix hard-coded dtype here
+  auto dtype =  ideep::tensor::data_type::f32;
+  ideep::tensor::desc src_layer_desc({time_step, batch_size, layer_feature_size}, dtype, ideep::format_tag::tnc);
+  ideep::tensor::desc src_iter_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
+  ideep::tensor::desc src_iter_c_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
+  ideep::tensor::desc bias_desc({1, 1, num_bias_gates, hidden_size}, dtype, ideep::format_tag::ldgo);
+  
+  ideep::tensor::desc dst_layer_desc({time_step, batch_size, hidden_size}, dtype, ideep::format_tag::tnc);
+  ideep::tensor::desc dst_iter_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
+  ideep::tensor::desc dst_iter_c_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
+  printf("before w1 view\n");
+  std::cout <<"layout: " << weight_ih.layout() << "\n";
+  auto w1 = itensor_view_from_dense_with_desc(
+      weight_ih,
+      {{1, 1, layer_feature_size, num_gates, hidden_size},
+        get_mkldnn_dtype(weight_ih.scalar_type()),
+        ideep::format_tag::ldgoi});
+  printf("before w2 view\n");
+  
+  auto w2 = itensor_view_from_dense_with_desc(
+      weight_hh,
+      {{1, 1, hidden_size, num_gates, hidden_size},
+        get_mkldnn_dtype(weight_hh.scalar_type()),
+        ideep::format_tag::ldgoi});  
+  
+
+  printf("after w2 view\n");
 
 }
 
@@ -369,6 +398,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
     }
   }
 
+  printf("before exiting mkldnn_reorder_lstm_weight\n");
   return result;
 }
 
@@ -378,7 +408,10 @@ TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
       TORCH_FN(mkldnn_reorder_conv_transpose2d_weight));
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_linear_weight"),
-      TORCH_FN(mkldnn_reorder_linear_weight));
+      TORCH_FN(mkldnn_reorder_linear_weight));   
+}
+
+TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_lstm_weight"),
       TORCH_FN(mkldnn_reorder_lstm_weight));      
