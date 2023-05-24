@@ -7,6 +7,7 @@
 #include <torch/library.h>
 #include <ATen/MatrixRef.h>
 #include <ATen/ops/zeros.h>
+#include <tuple>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -287,7 +288,7 @@ Tensor mkldnn_reorder_conv_transpose2d_weight(
                                  self.options().device_opt());
 }
 
-void get_lstm_packed_weights(
+std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
     const at::Tensor& weight_ih,
     const at::Tensor& weight_hh,
     const at::Tensor& weight2,
@@ -298,11 +299,18 @@ void get_lstm_packed_weights(
     int64_t num_layers,
     bool bidirectional,
     int64_t time_step,
-    int64_t batch_size) {
+    int64_t batch_size,
+    bool reverse) {
   
+  ideep::tensor cached_weight_ih, cached_weight_hh;
+
   int64_t num_gates = 4;
   int64_t num_bias_gates = 4;
   
+
+  std::vector<int64_t> output_sizes = {time_step, batch_size, hidden_size};
+
+
   // TODO: fix hard-coded dtype here
   auto dtype =  ideep::tensor::data_type::f32;
   ideep::tensor::desc src_layer_desc({time_step, batch_size, layer_feature_size}, dtype, ideep::format_tag::tnc);
@@ -313,6 +321,15 @@ void get_lstm_packed_weights(
   ideep::tensor::desc dst_layer_desc({time_step, batch_size, hidden_size}, dtype, ideep::format_tag::tnc);
   ideep::tensor::desc dst_iter_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
   ideep::tensor::desc dst_iter_c_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
+
+
+
+  ideep::tensor src_layer(src_layer_desc);
+  ideep::tensor src_iter(src_iter_desc);
+  ideep::tensor src_iter_c(src_iter_c_desc);
+  ideep::tensor bias(bias_desc);
+
+
   printf("before w1 view\n");
   std::cout <<"layout: " << weight_ih.layout() << "\n";
   auto w1 = itensor_view_from_dense_with_desc(
@@ -330,7 +347,37 @@ void get_lstm_packed_weights(
   
 
   printf("after w2 view\n");
+  ideep::tensor::desc packed_desc_ih, packed_desc_hh;
 
+  std::tie(packed_desc_ih, packed_desc_hh) =
+      ideep::lstm_forward_inference::expected_weights_desc(
+          output_sizes,
+          src_layer,
+          src_iter,
+          src_iter_c,
+          w1,
+          w2,
+          bias,
+          reverse);
+
+  // TODO: use is_opaque() after updating ideep in pytorch
+    // Don't pack when the weight is of rnn_packed format
+    // When the weight is of rnn_packed format, if the seq_lens of
+    // the input changes, the format of weight also changes.
+    // oneDNN does not support reorder from rnn_packed back to public format.
+    // LSTM based on BRGEMM kernel (on AVX512 and newest ISAs) will use blocked
+    // format for weight of LSTM, which won't change when the input seq_lens
+    // changes.  
+  if (packed_desc_ih.is_rnn_packed() || packed_desc_hh.is_rnn_packed()) {
+    return std::make_tuple(w1, w2);
+  }
+  cached_weight_ih.init(packed_desc_ih);
+  cached_weight_hh.init(packed_desc_hh);
+
+  cached_weight_ih.feed_from(w1);
+  cached_weight_hh.feed_from(w2);
+
+  return std::make_tuple(cached_weight_ih, cached_weight_hh);
 }
 
 std::vector<Tensor> mkldnn_reorder_lstm_weight(
@@ -367,6 +414,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
 
   at::MatrixRef<at::Tensor> weights{
       weight, static_cast<size_t>(weight_stride0)};    
+  ideep::tensor w1_, w2_;
   
   for (int64_t layer = 0; layer < num_layers; layer++) {
     for (int64_t direction = 0; direction < num_directions; direction++) {
@@ -377,7 +425,9 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
       auto index = layer * num_directions + direction;
       auto layer_weights = weights[index];      
       TORCH_CHECK(layer_weights.size() == 2 || layer_weights.size() == 4);
-      get_lstm_packed_weights(
+      auto reverse = (direction > 0);
+      
+      std::tie(w1_, w2_) = get_lstm_packed_weights(
         layer_weights[0],
         layer_weights[1],
         has_biases ? layer_weights[2] : at::zeros(
@@ -393,7 +443,8 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
         num_layers,      
         bidirectional,
         time_step,
-        batch_size);
+        batch_size,
+        reverse);
 
     }
   }
