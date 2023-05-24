@@ -999,6 +999,32 @@ if torch._C.has_mkldnn:
     ):
         return input_tensor.new_empty((*input_tensor.shape[:-1], weight.shape[0]))
 
+    @register_meta(torch.ops.mkldnn._lstm.default)
+    def meta_lstm(
+        input_tensor,
+        hx,
+        _flat_weights,
+        has_biases,
+        num_layers,
+        dropout,
+        training,
+        bidirectional,
+        batch_first,
+    ):
+        input_tensor_shape = input_tensor.shape
+        if batch_first:
+            input_tensor_shape = [input_tensor_shape[1], input_tensor_shape[0]] + input_tensor_shape[2:]
+        
+        seq_length, batch_size, input_feature_size = input_tensor_shape
+        hidden_size = hx[0].shape[2]
+        direction = 2 if bidirectional else 1
+        
+        y = input_tensor.new_empty([seq_length, batch_size, direction * hidden_size])
+        hy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])
+        cy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])
+        # TODO: has to return tuple instead of y, (hy, cy) here. Otherwise can't cast (Tensor, Tensor) to Tensor Runtime error
+        return y, hy, cy
+
     if torch._C.has_mkl:
         _meta_lib_dont_use_me_use_register_meta_for_mkl = torch.library.Library(
             "mkl", "IMPL", "Meta"
