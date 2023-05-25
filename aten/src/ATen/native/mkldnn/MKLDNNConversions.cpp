@@ -312,7 +312,8 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
 
 
   // TODO: fix hard-coded dtype here
-  auto dtype =  ideep::tensor::data_type::f32;
+  // TODO: what if weight and data has different dtypes?
+  auto dtype = get_mkldnn_dtype(weight_ih.scalar_type());
   ideep::tensor::desc src_layer_desc({time_step, batch_size, layer_feature_size}, dtype, ideep::format_tag::tnc);
   ideep::tensor::desc src_iter_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
   ideep::tensor::desc src_iter_c_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
@@ -360,17 +361,6 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
           bias,
           reverse);
 
-  // TODO: use is_opaque() after updating ideep in pytorch
-    // Don't pack when the weight is of rnn_packed format
-    // When the weight is of rnn_packed format, if the seq_lens of
-    // the input changes, the format of weight also changes.
-    // oneDNN does not support reorder from rnn_packed back to public format.
-    // LSTM based on BRGEMM kernel (on AVX512 and newest ISAs) will use blocked
-    // format for weight of LSTM, which won't change when the input seq_lens
-    // changes.  
-  if (packed_desc_ih.is_rnn_packed() || packed_desc_hh.is_rnn_packed()) {
-    return std::make_tuple(w1, w2);
-  }
   cached_weight_ih.init(packed_desc_ih);
   cached_weight_hh.init(packed_desc_hh);
 
@@ -422,6 +412,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
       // for layer == 0, feature_size = input_feature_size
       // otherwise, feature_size = hidden_size
 
+      // TODO：bidirectionl, * 2 for layer_feature_size?
       int64_t layer_feature_size = layer == 0? input_feature_size : hidden_size;
       auto index = layer * num_directions + direction;
       auto layer_weights = weights[index];      
@@ -447,8 +438,25 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
         batch_size,
         reverse);
 
-      packed_w1 = new_with_itensor_mkldnn(std::move(w1_), optTypeMetaToScalarType(layer_weights[0].options().dtype_opt()), layer_weights[0].options().device_opt());
-      packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(layer_weights[1].options().dtype_opt()), layer_weights[1].options().device_opt());
+    // TODO: use is_opaque() after updating ideep in pytorch
+      // Don't pack when the weight is of rnn_packed format
+      // When the weight is of rnn_packed format, if the seq_lens of
+      // the input changes, the format of weight also changes.
+      // oneDNN does not support reorder from rnn_packed back to public format.
+      // LSTM based on BRGEMM kernel (on AVX512 and newest ISAs) will use blocked
+      // format for weight of LSTM, which won't change when the input seq_lens
+      // changes.  
+      if (w1_.get_desc().is_rnn_packed()) {
+        packed_w1 = layer_weights[0];
+      } else {
+        packed_w1 = new_with_itensor_mkldnn(std::move(w1_), optTypeMetaToScalarType(layer_weights[0].options().dtype_opt()), layer_weights[0].options().device_opt());
+      }
+
+      if (w2_.get_desc().is_rnn_packed()) {
+        packed_w2 = layer_weights[1];
+      } else {
+        packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(layer_weights[1].options().dtype_opt()), layer_weights[1].options().device_opt());
+      }
       
 
       result[index * weight_stride0] = packed_w1;
