@@ -412,8 +412,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
       // for layer == 0, feature_size = input_feature_size
       // otherwise, feature_size = hidden_size
 
-      // TODO：bidirectionl, * 2 for layer_feature_size?
-      int64_t layer_feature_size = layer == 0? input_feature_size : hidden_size;
+      int64_t layer_feature_size = layer == 0? input_feature_size : num_directions * hidden_size;
       auto index = layer * num_directions + direction;
       auto layer_weights = weights[index];      
       TORCH_CHECK(layer_weights.size() == 2 || layer_weights.size() == 4);
