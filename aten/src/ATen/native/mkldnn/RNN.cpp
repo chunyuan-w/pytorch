@@ -267,7 +267,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn_layer(const Tensor& input,
 
   auto bias = has_biases
       ? _shuffle_bias(w2, w3, rnn.mode)
-      : at::zeros({rnn.num_bias_gates * rnn.hidden_size}, weight_ih.options());
+      : at::zeros({rnn.num_bias_gates * rnn.hidden_size}, weight_ih.options().layout(at::Layout::Strided));
 
   // per layer input size
   int64_t input_size = input.size(2);
