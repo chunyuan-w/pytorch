@@ -29,6 +29,33 @@ def apply_permutation(tensor: Tensor, permutation: Tensor, dim: int = 1) -> Tens
     return _apply_permutation(tensor, permutation, dim)
 
 
+
+def meta_lstm_input(
+    input_tensor,
+    hx,
+    _flat_weights,
+    has_biases,
+    num_layers,
+    dropout,
+    training,
+    bidirectional,
+    batch_first,
+):
+    input_tensor_shape = input_tensor.shape
+    if batch_first:
+        input_tensor_shape = [input_tensor_shape[1], input_tensor_shape[0]] + input_tensor_shape[2:]
+    
+    seq_length, batch_size, input_feature_size = input_tensor_shape
+    hidden_size = hx[0].shape[2]
+    direction = 2 if bidirectional else 1
+    
+    y = input_tensor.new_empty([seq_length, batch_size, direction * hidden_size])
+    hy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])
+    cy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])
+    # TODO: has to return tuple instead of y, (hy, cy) here. Otherwise can't cast (Tensor, Tensor) to Tensor Runtime error
+    return y, hy, cy
+
+
 class RNNBase(Module):
     __constants__ = ['mode', 'input_size', 'hidden_size', 'num_layers', 'bias',
                      'batch_first', 'dropout', 'bidirectional', 'proj_size']
@@ -831,8 +858,15 @@ class LSTM(RNNBase):
                 hx = self.permute_hidden(hx, sorted_indices)
 
         if batch_sizes is None:
-            result = self.forward_op(input, hx, self._flat_weights, self.bias, self.num_layers,
+            print("self.forward_op: ", self.forward_op)
+            from torch._subclasses.fake_tensor import FakeTensor
+            # TODO: check why meta kernel does not work
+            if isinstance(input, FakeTensor):
+                result = meta_lstm_input(input, hx, self._flat_weights, self.bias, self.num_layers,
                               self.dropout, self.training, self.bidirectional, self.batch_first)
+            else:
+                result = self.forward_op(input, hx, self._flat_weights, self.bias, self.num_layers,
+                                self.dropout, self.training, self.bidirectional, self.batch_first)
         else:
             result = self.forward_op(input, batch_sizes, hx, self._flat_weights, self.bias,
                               self.num_layers, self.dropout, self.training, self.bidirectional)
