@@ -298,6 +298,8 @@ class TestPaternMatcher(TestCase):
                     hidden_size=hidden_size,
                     num_layers=num_layers,
                     dropout=dropout,
+                    # bias=False,
+                    # bidirectional=True,
                 )
 
             def forward(self, x, h=None):
@@ -310,12 +312,17 @@ class TestPaternMatcher(TestCase):
         dropout = 0
         time_step = 4
         batch_size = 5
-        mod = LstmDrop(input_size, hidden_size, num_layers, dropout).eval()
-        v = torch.randn(time_step, batch_size, input_size)
-        with torch.no_grad():
-            self._test_common(
-                mod, (v,), 1, 1
-            )
+        # for dtype in [torch.float, torch.bfloat16]:
+        for dtype in [torch.float]:
+        # for dtype in [torch.bfloat16]:
+            mod = LstmDrop(input_size, hidden_size, num_layers, dropout).eval()
+            v = torch.randn(time_step, batch_size, input_size)
+            mod = mod.to(dtype)
+            v = v.to(dtype)
+            with torch.no_grad():
+                self._test_common(
+                    mod, (v,), 1, 1
+                )
 
 
     # https://github.com/pytorch/pytorch/issues/99841.
