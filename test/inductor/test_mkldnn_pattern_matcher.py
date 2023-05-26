@@ -286,7 +286,8 @@ class TestPaternMatcher(TestCase):
                     mod, (v, other), 1, binary_list[binary_fn], rtol=1e-2, atol=1e-2
                 )
 
-    # @torch._dynamo.config.patch(dynamic_shapes=True)
+    @torch._dynamo.config.patch(dynamic_shapes=True)
+    @torch._dynamo.config.patch(assume_static_by_default=False)
     @torch._dynamo.config.patch(allow_rnn=True)
     def test_lstm(self):
         class LstmDrop(torch.nn.Module):

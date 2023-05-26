@@ -3985,8 +3985,8 @@ class LSTM(ExternKernelAlloc):
                     FixedLayout(
                         x.get_device(),
                         x.get_dtype(),
-                        convert_shape_to_inductor(output_size),
-                        convert_shape_to_inductor(make_contiguous_strides_for(output_size))
+                        output_size,
+                        make_contiguous_strides_for(output_size)
                     ),
                     packed,
                     indices + [(list, i)],
