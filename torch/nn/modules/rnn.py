@@ -858,15 +858,20 @@ class LSTM(RNNBase):
                 hx = self.permute_hidden(hx, sorted_indices)
 
         if batch_sizes is None:
-            print("self.forward_op: ", self.forward_op)
             from torch._subclasses.fake_tensor import FakeTensor
             # TODO: check why meta kernel does not work
-            if isinstance(input, FakeTensor):
-                result = meta_lstm_input(input, hx, self._flat_weights, self.bias, self.num_layers,
-                              self.dropout, self.training, self.bidirectional, self.batch_first)
-            else:
-                result = self.forward_op(input, hx, self._flat_weights, self.bias, self.num_layers,
-                                self.dropout, self.training, self.bidirectional, self.batch_first)
+            # if isinstance(input, FakeTensor):
+            #     print("enter rnn FakeTensor kernel")
+            #     breakpoint()
+            #     result = meta_lstm_input(input, hx, self._flat_weights, self.bias, self.num_layers,
+            #                   self.dropout, self.training, self.bidirectional, self.batch_first)
+            # else:
+            #     result = self.forward_op(input, hx, self._flat_weights, self.bias, self.num_layers,
+            #                     self.dropout, self.training, self.bidirectional, self.batch_first)
+                        # _VF.lstm()
+            result = self.forward_op(input, hx, self._flat_weights, self.bias, self.num_layers,
+                            self.dropout, self.training, self.bidirectional, self.batch_first)        
+        
         else:
             result = self.forward_op(input, batch_sizes, hx, self._flat_weights, self.bias,
                               self.num_layers, self.dropout, self.training, self.bidirectional)
