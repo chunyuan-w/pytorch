@@ -3,11 +3,9 @@ from functools import reduce
 from typing import Optional
 
 import torch
-from torch import _VF
 import torch._dynamo.config as dynamo_config
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils.rnn import PackedSequence
 
 from torch._dynamo.utils import detect_fake_mode
 from torch.fx.experimental.optimization import replace_node_module
@@ -242,12 +240,9 @@ class PackedLSTM(nn.LSTM):
             lstm.weight_ih_l0.dtype
         )
         self._update_module_params(lstm, input_size)
-        print("in inductor fwd")
         self.forward_op = torch.ops.mkldnn._lstm
-        # self.forward_op = _VF.lstm
 
     def _update_module_params(self, lstm, input_size):
-        print("input_size in prepack ", input_size)
         self.__dict__ = copy.deepcopy(lstm.__dict__)
         packed_flat_weights = torch.ops.mkldnn._reorder_lstm_weight(
             self._flat_weights,
@@ -259,7 +254,6 @@ class PackedLSTM(nn.LSTM):
             self.batch_first,
             input_size,
         )
-        print("done _reorder_lstm_weight")
         assert len(packed_flat_weights) == len(self._flat_weights_names)
         for i, (name, tensor) in enumerate(zip(self._flat_weights_names, packed_flat_weights)):
             setattr(self, name, torch.nn.Parameter(tensor, requires_grad=self._flat_weights[i].requires_grad))
@@ -341,7 +335,6 @@ def pack_module(gm: torch.fx.GraphModule):
                     computation_node_input_size = None
                     # Conv2d and ConvTranspose2d weight format are dependent on input size,
                     # but ShapeProp may be failed to get the input size, so we skip them.
-                    # TODO: lstm is allowed as well, for both fp32 & bf16
                     if not (
                         (type(cur_module) in [torch.nn.Linear]
                         and dtype == torch.bfloat16) or type(cur_module) in [torch.nn.LSTM]
@@ -359,12 +352,13 @@ def pack_module(gm: torch.fx.GraphModule):
                         ) or len(computation_node_input_size) < 2:
                             continue
                     elif type(cur_module) in [nn.LSTM]:
+                        # pack_padded_sequence input is not supported.
+                        # For pack_padded_sequence input, the len(computation_node_input_size) == 4
                         if len(computation_node_input_size) != 3:
                             continue
                     else:
                         if len(computation_node_input_size) != 4:
                             continue
-                # TODO: for lstm, don't replace if input is PackedSequence
                 if type(cur_module) in [nn.Conv2d] and isinstance(
                     cur_module.padding, str
                 ):

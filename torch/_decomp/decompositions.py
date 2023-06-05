@@ -2312,6 +2312,31 @@ def one_layer_rnn(inp, hidden, params, has_biases, hidden_fn, reverse=False):
     return out, cur_hidden.squeeze(0)
 
 
+def mkldnn_one_layer_lstm(inp, hidden, params, has_biases, reverse=False):
+    w0 = params[0]
+    w1 = params[1]
+    if has_biases:
+        w2 = params[2]
+        w3 = params[3]
+    else:
+        w2 = torch.zeros(w0.sizes())
+        w3 = torch.zeros(w1.sizes())
+    
+    hx = hidden[0].unsqueeze(0)
+    cx = hidden[1].unsqueeze(0)    
+    
+    batch_sizes = []
+    mode = 2 # use MACRO
+    hidden_size = hx.size(2)
+    num_layers = 1
+    bidirectional = False
+    batch_first = False
+    train = False
+    outputs = torch.ops.aten.mkldnn_rnn_layer.default(inp, w0, w1, w2, w3, hx, cx, reverse, batch_sizes, mode, hidden_size, num_layers, has_biases, bidirectional, batch_first, train)
+    y, hy, cy = outputs[0], outputs[1], outputs[2]
+    return y, (hy.squeeze(1), cy.squeeze(1))
+
+
 def _rnn_helper(
     input,
     hidden,
@@ -2588,31 +2613,6 @@ def one_layer_lstm_data(inp, hidden, params, has_biases, batch_sizes, reverse=Fa
     out = torch.cat(step_output, 0)
     return out, hidden_out
 
-def mkldnn_one_layer_lstm(inp, hidden, params, has_biases, reverse=False):
-    w0 = params[0]
-    w1 = params[1]
-    if has_biases:
-        w2 = params[2]
-        w3 = params[3]
-    else:
-        w2 = torch.zeros(w0.sizes())
-        w3 = torch.zeros(w1.sizes())
-    
-    hx = hidden[0].unsqueeze(0)
-    cx = hidden[1].unsqueeze(0)    
-    
-    batch_sizes = []
-    mode = 2 # use MACRO
-    hidden_size = hx.size(2)
-    num_layers = 1
-    bidirectional = False
-    batch_first = False
-    train = False
-    outputs = torch.ops.aten.mkldnn_rnn_layer.default(inp, w0, w1, w2, w3, hx, cx, reverse, batch_sizes, mode, hidden_size, num_layers, has_biases, bidirectional, batch_first, train)
-    y, hy, cy = outputs[0], outputs[1], outputs[2]
-    return y, (hy.squeeze(1), cy.squeeze(1))
-
-
 # TODO: if IS_LINUX
 if not torch._C.has_mkldnn:
     @register_decomposition(aten.lstm.input)
@@ -2629,7 +2629,6 @@ if not torch._C.has_mkldnn:
         bidirectional,
         batch_first,
     ):  
-        print("decompose lstm.input")
         assert len(hx) == 2, "lstm expects two hidden states"
         params = gather_params(params, has_biases, hx[0].size(2) != hx[1].size(2))
         hidden = list(zip(hx[0], hx[1]))
@@ -2662,7 +2661,6 @@ else:
         bidirectional,
         batch_first,
     ):  
-        print("decompose mkldnn lstm.input")
         assert len(hx) == 2, "lstm expects two hidden states"
         params = gather_params(params, has_biases, hx[0].size(2) != hx[1].size(2))
         hidden = list(zip(hx[0], hx[1]))

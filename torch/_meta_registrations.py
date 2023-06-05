@@ -1011,6 +1011,7 @@ if torch._C.has_mkldnn:
         bidirectional,
         batch_first,
     ):
+        # TODO: add size assertion
         input_tensor_shape = input_tensor.shape
         if batch_first:
             input_tensor_shape = [input_tensor_shape[1], input_tensor_shape[0]] + input_tensor_shape[2:]
@@ -1022,7 +1023,6 @@ if torch._C.has_mkldnn:
         y = input_tensor.new_empty([seq_length, batch_size, direction * hidden_size])
         hy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])
         cy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])
-        # TODO: has to return tuple instead of y, (hy, cy) here. Otherwise can't cast (Tensor, Tensor) to Tensor Runtime error
         return y, hy, cy
 
     if torch._C.has_mkl:

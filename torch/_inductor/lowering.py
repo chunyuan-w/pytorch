@@ -1032,20 +1032,7 @@ def register_onednn_fusion_ops():
                         bidirectional,
                         batch_first,
                     )
-            )            
-            # return TensorBox.create(
-            #     ir.LSTM.create(
-            #         x,
-            #         hx,
-            #         params,
-            #         has_biases,
-            #         num_layers,
-            #         dropout,
-            #         train,
-            #         bidirectional,
-            #         batch_first,
-            #     )
-            # )
+            )
 
         if torch._C.has_mkl:
             cpu_needs_realized_inputs.append(torch.ops.mkl._mkl_linear)
