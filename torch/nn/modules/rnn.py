@@ -832,11 +832,11 @@ class LSTM(RNNBase):
 
         if batch_sizes is None:
             result = self.forward_op(input, hx, self._flat_weights, self.bias, self.num_layers,
-                            self.dropout, self.training, self.bidirectional, self.batch_first)        
-        
+                                     self.dropout, self.training, self.bidirectional, self.batch_first)
+
         else:
             result = self.forward_op(input, batch_sizes, hx, self._flat_weights, self.bias,
-                              self.num_layers, self.dropout, self.training, self.bidirectional)
+                                     self.num_layers, self.dropout, self.training, self.bidirectional)
         output = result[0]
         hidden = result[1:]
         # xxx: isinstance check needs to be in conditional for TorchScript to compile

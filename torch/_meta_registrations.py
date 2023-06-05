@@ -1014,12 +1014,15 @@ if torch._C.has_mkldnn:
         # TODO: add size assertion
         input_tensor_shape = input_tensor.shape
         if batch_first:
-            input_tensor_shape = [input_tensor_shape[1], input_tensor_shape[0]] + input_tensor_shape[2:]
-        
+            input_tensor_shape = [
+                input_tensor_shape[1],
+                input_tensor_shape[0],
+            ] + input_tensor_shape[2:]
+
         seq_length, batch_size, input_feature_size = input_tensor_shape
         hidden_size = hx[0].shape[2]
         direction = 2 if bidirectional else 1
-        
+
         y = input_tensor.new_empty([seq_length, batch_size, direction * hidden_size])
         hy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])
         cy = input_tensor.new_empty([direction * num_layers, batch_size, hidden_size])

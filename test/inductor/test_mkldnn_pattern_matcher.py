@@ -87,13 +87,13 @@ class TestPaternMatcher(TestCase):
             print(actual[1][0].shape)
             print(expected[1][0].shape)
             torch.testing.assert_close(actual, expected, atol=atol, rtol=rtol)
-            # self.assertEqual(
-            #     counters["inductor"]["pattern_matcher_count"], matcher_count
-            # )
-            # self.assertEqual(
-            #     counters["inductor"]["pattern_matcher_nodes"],
-            #     matcher_nodes,
-            # )
+            self.assertEqual(
+                counters["inductor"]["pattern_matcher_count"], matcher_count
+            )
+            self.assertEqual(
+                counters["inductor"]["pattern_matcher_nodes"],
+                matcher_nodes,
+            )
 
     def _test_code_common(
         self, mod, inputs, include_ops, exclude_ops, atol=1e-5, rtol=1.3e-6
@@ -286,45 +286,83 @@ class TestPaternMatcher(TestCase):
                     mod, (v, other), 1, binary_list[binary_fn], rtol=1e-2, atol=1e-2
                 )
 
+    # TODO: move to test_cpu_repro.py
     @torch._dynamo.config.patch(dynamic_shapes=True)
     @torch._dynamo.config.patch(assume_static_by_default=False)
     @torch._dynamo.config.patch(allow_rnn=True)
-    def test_lstm(self):
-        class LstmDrop(torch.nn.Module):
-
-            def __init__(self, input_size, hidden_size, num_layers, dropout):
-                super(LstmDrop, self).__init__()
+    def test_pack_padded_sequence_lstm(self):
+        class M(torch.nn.Module):
+            def __init__(
+                self,
+                input_size,
+                hidden_size,
+                num_layers,
+                bidirectional,
+                bias,
+                dropout,
+                batch_first,
+            ):
+                super(M, self).__init__()
                 self.lstm = torch.nn.LSTM(
                     input_size=input_size,
                     hidden_size=hidden_size,
                     num_layers=num_layers,
+                    bidirectional=bidirectional,
+                    bias=bias,
                     dropout=dropout,
-                    # bias=False,
-                    # bidirectional=True,
+                    batch_first=batch_first,
                 )
 
             def forward(self, x, h=None):
                 x, h = self.lstm(x, h)
                 return x, h
 
-        input_size = 2
-        hidden_size = 3
-        num_layers = 2
-        dropout = 0
-        time_step = 4
-        batch_size = 5
+        embedding_dim = 1024
+        hidden_dim = 10
+        batch_size = 24
+        num_layers = 1
+        bidirectional = True
+        num_direc = 2
+        max_lens = 96
+
+        sent = torch.randn(batch_size, max_lens, embedding_dim)
+        hid_0 = torch.rand(num_layers * num_direc, batch_size, hidden_dim)
+        hid_1 = torch.randn(num_layers * num_direc, batch_size, hidden_dim)
+
+        sent_lens = torch.Tensor(
+            [1, 2, 3, 4, 5, 1, 3, 2, 96, 5, 3, 1, 1, 2, 1, 2, 3, 6, 1, 2, 4, 6, 2, 1]
+        )
+
+        assert sent_lens.shape[0] == batch_size
+        assert sent_lens.max().item() == max_lens
+
+        hidden_0 = hid_0.clone().requires_grad_(False)
+        hidden_1 = hid_1.clone().requires_grad_(False)
+        embeds = torch.nn.utils.rnn.pack_padded_sequence(
+            sent, sent_lens, batch_first=True, enforce_sorted=False
+        )
+
+        mod = M(
+            embedding_dim,
+            hidden_dim,
+            num_layers=num_layers,
+            bidirectional=bidirectional,
+            batch_first=True,
+            bias=True,
+            dropout=0.2,
+        )
+
         # for dtype in [torch.float, torch.bfloat16]:
         for dtype in [torch.float]:
-        # for dtype in [torch.bfloat16]:
-            mod = LstmDrop(input_size, hidden_size, num_layers, dropout).eval()
-            v = torch.randn(time_step, batch_size, input_size)
+            # for dtype in [torch.bfloat16]:
+            mod = mod.eval()
             mod = mod.to(dtype)
-            v = v.to(dtype)
-            with torch.no_grad():
-                self._test_common(
-                    mod, (v,), 1, 1
-                )
+            embeds = embeds.to(dtype)
+            hidden_0 = hidden_0.to(dtype)
+            hidden_1 = hidden_1.to(dtype)
 
+            with torch.no_grad():
+                self._test_common(mod, (embeds, (hidden_0, hidden_1)), 0, 0)
 
     # https://github.com/pytorch/pytorch/issues/99841.
     def test_hardtanh_pattern_fallback(self):

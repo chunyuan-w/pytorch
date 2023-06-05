@@ -237,7 +237,7 @@ class PackedLSTM(nn.LSTM):
             lstm.bidirectional,
             lstm.proj_size,
             lstm.weight_ih_l0.device,
-            lstm.weight_ih_l0.dtype
+            lstm.weight_ih_l0.dtype,
         )
         self._update_module_params(lstm, input_size)
         self.forward_op = torch.ops.mkldnn._lstm
@@ -255,8 +255,16 @@ class PackedLSTM(nn.LSTM):
             input_size,
         )
         assert len(packed_flat_weights) == len(self._flat_weights_names)
-        for i, (name, tensor) in enumerate(zip(self._flat_weights_names, packed_flat_weights)):
-            setattr(self, name, torch.nn.Parameter(tensor, requires_grad=self._flat_weights[i].requires_grad))
+        for i, (name, tensor) in enumerate(
+            zip(self._flat_weights_names, packed_flat_weights)
+        ):
+            setattr(
+                self,
+                name,
+                torch.nn.Parameter(
+                    tensor, requires_grad=self._flat_weights[i].requires_grad
+                ),
+            )
 
 
 def packed_conv_eval(conv: nn.Module, input_size: Optional[list]):
@@ -319,10 +327,11 @@ def pack_module(gm: torch.fx.GraphModule):
                 else:
                     device = cur_module.weight.device
                     dtype = cur_module.weight.dtype
-                
-                if device != torch.device(
-                    "cpu"
-                ) or dtype not in [torch.bfloat16, torch.float32]:
+
+                if device != torch.device("cpu") or dtype not in [
+                    torch.bfloat16,
+                    torch.float32,
+                ]:
                     continue
                 if cur_module.training:
                     continue
@@ -336,8 +345,11 @@ def pack_module(gm: torch.fx.GraphModule):
                     # Conv2d and ConvTranspose2d weight format are dependent on input size,
                     # but ShapeProp may be failed to get the input size, so we skip them.
                     if not (
-                        (type(cur_module) in [torch.nn.Linear]
-                        and dtype == torch.bfloat16) or type(cur_module) in [torch.nn.LSTM]
+                        (
+                            type(cur_module) in [torch.nn.Linear]
+                            and dtype == torch.bfloat16
+                        )
+                        or type(cur_module) in [torch.nn.LSTM]
                     ):
                         continue
                 else:
@@ -346,10 +358,9 @@ def pack_module(gm: torch.fx.GraphModule):
                     )
                     if type(cur_module) in [torch.nn.Linear]:
                         # for fp32 linear, only packed when has mkl.
-                        if (
-                            dtype == torch.float32
-                            and (not torch._C.has_mkl)
-                        ) or len(computation_node_input_size) < 2:
+                        if (dtype == torch.float32 and (not torch._C.has_mkl)) or len(
+                            computation_node_input_size
+                        ) < 2:
                             continue
                     elif type(cur_module) in [nn.LSTM]:
                         # pack_padded_sequence input is not supported.

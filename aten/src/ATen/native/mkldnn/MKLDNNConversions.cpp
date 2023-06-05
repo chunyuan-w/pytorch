@@ -301,12 +301,12 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
     int64_t time_step,
     int64_t batch_size,
     bool reverse) {
-  
+
   ideep::tensor cached_weight_ih, cached_weight_hh;
 
   int64_t num_gates = 4;
   int64_t num_bias_gates = 4;
-  
+
 
   std::vector<int64_t> output_sizes = {time_step, batch_size, hidden_size};
 
@@ -318,7 +318,7 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
   ideep::tensor::desc src_iter_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
   ideep::tensor::desc src_iter_c_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
   ideep::tensor::desc bias_desc({1, 1, num_bias_gates, hidden_size}, dtype, ideep::format_tag::ldgo);
-  
+
   ideep::tensor::desc dst_layer_desc({time_step, batch_size, hidden_size}, dtype, ideep::format_tag::tnc);
   ideep::tensor::desc dst_iter_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
   ideep::tensor::desc dst_iter_c_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
@@ -339,13 +339,13 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
         get_mkldnn_dtype(weight_ih.scalar_type()),
         ideep::format_tag::ldgoi});
   printf("before w2 view\n");
-  
+
   auto w2 = itensor_view_from_dense_with_desc(
       weight_hh,
       {{1, 1, hidden_size, num_gates, hidden_size},
         get_mkldnn_dtype(weight_hh.scalar_type()),
-        ideep::format_tag::ldgoi});  
-  
+        ideep::format_tag::ldgoi});
+
 
   printf("after w2 view\n");
   ideep::tensor::desc packed_desc_ih, packed_desc_hh;
@@ -387,7 +387,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
     input_size_value = input_size.value().vec();
     int64_t time_index = batch_first ? 1: 0;
     int64_t batch_size_index = batch_first ? 0: 1;
-    
+
     time_step = input_size_value[time_index];
     batch_size = input_size_value[batch_size_index];
   } else {
@@ -395,15 +395,15 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
     time_step = 5;
     batch_size = 10;
   }
-  
+
   // TODO: fill weight value
   std::vector<Tensor> result(weight.size());
-  
+
   auto num_directions = bidirectional ? 2 : 1;
   int64_t weight_stride0 = has_biases ? 4 : 2;
 
   at::MatrixRef<at::Tensor> weights{
-      weight, static_cast<size_t>(weight_stride0)};    
+      weight, static_cast<size_t>(weight_stride0)};
   ideep::tensor w1_, w2_;
   at::Tensor packed_w1, packed_w2;
 
@@ -414,10 +414,10 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
 
       int64_t layer_feature_size = layer == 0? input_feature_size : num_directions * hidden_size;
       auto index = layer * num_directions + direction;
-      auto layer_weights = weights[index];      
+      auto layer_weights = weights[index];
       TORCH_CHECK(layer_weights.size() == 2 || layer_weights.size() == 4);
       auto reverse = (direction > 0);
-      
+
       std::tie(w1_, w2_) = get_lstm_packed_weights(
         layer_weights[0],
         layer_weights[1],
@@ -427,11 +427,11 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
         has_biases ? layer_weights[3]
                             : at::zeros(
                                   layer_weights[1].sizes(),
-                                  layer_weights[1].options()),  
+                                  layer_weights[1].options()),
         layer_feature_size,
         hidden_size,
         has_biases,
-        num_layers,      
+        num_layers,
         bidirectional,
         time_step,
         batch_size,
@@ -444,7 +444,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
       // oneDNN does not support reorder from rnn_packed back to public format.
       // LSTM based on BRGEMM kernel (on AVX512 and newest ISAs) will use blocked
       // format for weight of LSTM, which won't change when the input seq_lens
-      // changes.  
+      // changes.
       if (w1_.get_desc().is_rnn_packed()) {
         packed_w1 = layer_weights[0];
       } else {
@@ -456,7 +456,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
       } else {
         packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(layer_weights[1].options().dtype_opt()), layer_weights[1].options().device_opt());
       }
-      
+
 
       result[index * weight_stride0] = packed_w1;
       result[index * weight_stride0+1] = packed_w2;
@@ -479,13 +479,13 @@ TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
       TORCH_FN(mkldnn_reorder_conv_transpose2d_weight));
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_linear_weight"),
-      TORCH_FN(mkldnn_reorder_linear_weight));   
+      TORCH_FN(mkldnn_reorder_linear_weight));
 }
 
 TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_lstm_weight"),
-      TORCH_FN(mkldnn_reorder_lstm_weight));      
+      TORCH_FN(mkldnn_reorder_lstm_weight));
 }
 
 #else

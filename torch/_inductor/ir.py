@@ -2478,7 +2478,7 @@ class InputsKernel(Buffer):
             None,
             op_counts=collections.Counter(),
         )
-    
+
     @staticmethod
     def unwrap_storage_for_input(x):
         if isinstance(x, TensorBox):
@@ -2488,7 +2488,7 @@ class InputsKernel(Buffer):
         if isinstance(x, BaseView) and not isinstance(x, ReinterpretView):
             x = ExternKernel.realize_input(x)
         assert isinstance(x, (Buffer, ReinterpretView)), x
-        return x      
+        return x
 
     @staticmethod
     def unwrap_storage(inputs):
@@ -3917,7 +3917,6 @@ class ConvolutionTransposeUnary(ExternKernelAlloc):
         )
 
 
-
 class LSTM(ExternKernelAlloc):
     def __init__(
         self,
@@ -3959,41 +3958,49 @@ class LSTM(ExternKernelAlloc):
         num_gates = 4
         hidden_size = hx[0].get_size()[2]
         output_shape = [seq_length, mini_batch, num_directions * hidden_size]
-        
+
         if batch_first:
             output_shape = output_shape.transpose(0, 1)
-        
+
         hy_shape = hx[0].get_size()
         cy_shape = hx[1].get_size()
 
         res: List[IRNode] = []
 
         inputs = [x, hx, params]
-        constant_args = [has_biases, num_layers, dropout, train, bidirectional, batch_first]
-        
+        constant_args = [
+            has_biases,
+            num_layers,
+            dropout,
+            train,
+            bidirectional,
+            batch_first,
+        ]
+
         packed = LSTM(
-            MultiOutputLayout(
-                x.get_device()
-            ),
+            MultiOutputLayout(x.get_device()),
             inputs=inputs,
             constant_args=constant_args,
         )
 
         indices = []
         output_sizes = [output_shape, hy_shape, cy_shape]
-        output_ir = [MultiOutput(
-                    FixedLayout(
-                        x.get_device(),
-                        x.get_dtype(),
-                        output_size,
-                        make_contiguous_strides_for(output_size)
-                    ),
-                    packed,
-                    indices + [(list, i)],
-            ) for i, output_size in enumerate(output_sizes)
+        output_ir = [
+            MultiOutput(
+                FixedLayout(
+                    x.get_device(),
+                    x.get_dtype(),
+                    output_size,
+                    make_contiguous_strides_for(output_size),
+                ),
+                packed,
+                indices + [(list, i)],
+            )
+            for i, output_size in enumerate(output_sizes)
         ]
 
         return output_ir
+
 
 @dataclasses.dataclass
 class MutableBox(IRNode):

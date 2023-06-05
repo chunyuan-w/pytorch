@@ -1019,19 +1019,20 @@ def register_onednn_fusion_ops():
             train: bool,
             bidirectional: bool,
             batch_first: bool,
-        ):  
+        ):
             return pytree.tree_map(
-                TensorBox.create, ir.LSTM.create(
-                        x,
-                        hx,
-                        params,
-                        has_biases,
-                        num_layers,
-                        dropout,
-                        train,
-                        bidirectional,
-                        batch_first,
-                    )
+                TensorBox.create,
+                ir.LSTM.create(
+                    x,
+                    hx,
+                    params,
+                    has_biases,
+                    num_layers,
+                    dropout,
+                    train,
+                    bidirectional,
+                    batch_first,
+                ),
             )
 
         if torch._C.has_mkl:

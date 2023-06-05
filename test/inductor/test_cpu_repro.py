@@ -247,6 +247,58 @@ class CPUReproTests(TestCase):
                     (v,),
                 )
 
+    @unittest.skipIf(not torch._C.has_mkldnn, "MKLDNN is not enabled")
+    @patch("torch.cuda.is_available", lambda: False)
+    @torch._dynamo.config.patch(dynamic_shapes=True)
+    @torch._dynamo.config.patch(assume_static_by_default=False)
+    @torch._dynamo.config.patch(allow_rnn=True)
+    def test_lstm_packed(self):
+        class LstmDrop(torch.nn.Module):
+            def __init__(
+                self,
+                input_size,
+                hidden_size,
+                num_layers,
+                dropout,
+                bias=True,
+                bidirectional=False,
+                batch_first=False,
+            ):
+                super(LstmDrop, self).__init__()
+                self.lstm = torch.nn.LSTM(
+                    input_size=input_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                    bias=bias,
+                    bidirectional=bidirectional,
+                    batch_first=batch_first,
+                )
+
+            def forward(self, x, h=None):
+                x, h = self.lstm(x, h)
+                return x, h
+
+        input_size = 2
+        hidden_size = 3
+        num_layers = 2
+        dropout = 0
+        time_step = 4
+        batch_size = 5
+        dtypes = [torch.float]
+        if torch.ops.mkldnn._is_mkldnn_bf16_supported():
+            dtypes.append(torch.bfloat16)
+        for dtype in dtypes:
+            mod = LstmDrop(input_size, hidden_size, num_layers, dropout).eval()
+            v = torch.randn(time_step, batch_size, input_size)
+            mod = mod.to(dtype)
+            v = v.to(dtype)
+            with torch.no_grad():
+                self.common(
+                    mod,
+                    (v,),
+                )
+
     @patch("torch.cuda.is_available", lambda: False)
     def test_conv_transpose2d_has_output_size_input(self):
         # https://github.com/pytorch/pytorch/issues/100344.
