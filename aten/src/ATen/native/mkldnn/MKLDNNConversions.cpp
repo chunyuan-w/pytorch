@@ -324,13 +324,13 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
   ideep::tensor src_iter_c(src_iter_c_desc);
   ideep::tensor bias(bias_desc);
 
-  auto w1 = itensor_view_from_dense_with_desc(
+  auto w1 = itensor_view_from_dense(
       weight_ih,
       {{1, 1, layer_feature_size, num_gates, hidden_size},
         get_mkldnn_dtype(weight_ih.scalar_type()),
         ideep::format_tag::ldgoi});
 
-  auto w2 = itensor_view_from_dense_with_desc(
+  auto w2 = itensor_view_from_dense(
       weight_hh,
       {{1, 1, hidden_size, num_gates, hidden_size},
         get_mkldnn_dtype(weight_hh.scalar_type()),

@@ -103,7 +103,7 @@ ideep::tensor itensor_view_from_dense(const Tensor& tensor) {
 }
 
 // TODO: same as get_mkldnn_tensor in RNN.cpp
-ideep::tensor itensor_view_from_dense_with_desc(
+ideep::tensor itensor_view_from_dense(
     const at::Tensor& tensor,
     const ideep::tensor::desc& desc) {
   TORCH_CHECK(

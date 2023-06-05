@@ -26,7 +26,7 @@ TORCH_API ideep::tensor itensor_view_from_dense(const Tensor& tensor);
 
 // Construct an `ideep::tensor` "view" from dense tensor using given desc, note
 // the ideep::tensor will share the underlying buffer
-TORCH_API ideep::tensor itensor_view_from_dense_with_desc(
+TORCH_API ideep::tensor itensor_view_from_dense(
     const at::Tensor& tensor,
     const ideep::tensor::desc& desc);
 
