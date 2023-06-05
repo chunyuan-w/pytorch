@@ -2649,8 +2649,8 @@ def lstm_impl(
     params = gather_params(params, has_biases, hx[0].size(2) != hx[1].size(2))
     hidden = list(zip(hx[0], hx[1]))
 
-    # TODO: if IS_LINUX
-    # mkldnn_one_layer_lstm does not depend on seq_len or batch_size
+    # mkldnn_one_layer_lstm does not depend on seq_len while one_layer_lstm
+    # will expand over the seq_len dim
     layer_fn = mkldnn_one_layer_lstm if torch._C.has_mkldnn else one_layer_lstm
     out, final_hiddens = _rnn_helper(
         input,
