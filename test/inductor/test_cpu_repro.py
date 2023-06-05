@@ -294,10 +294,11 @@ class CPUReproTests(TestCase):
             mod = mod.to(dtype)
             v = v.to(dtype)
             with torch.no_grad():
-                self.common(
-                    mod,
-                    (v,),
-                )
+                inps = [v]
+                fn_opt = torch._dynamo.optimize("inductor")(mod)
+                code = run_and_get_cpp_code(fn_opt, *inps)
+                self.assertTrue("torch.ops.mkldnn._lstm" in code)
+                self.assertEqual(fn_opt(*inps), mod(*inps))
 
     @patch("torch.cuda.is_available", lambda: False)
     def test_conv_transpose2d_has_output_size_input(self):

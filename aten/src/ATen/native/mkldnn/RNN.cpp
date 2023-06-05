@@ -265,6 +265,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn_layer(const Tensor& input,
   auto weight_ih = _shuffle_weight(w0, rnn.mode);
   auto weight_hh = _shuffle_weight(w1, rnn.mode);
 
+  // TODO: bias is not packed
   auto bias = has_biases
       ? _shuffle_bias(w2, w3, rnn.mode)
       : at::zeros({rnn.num_bias_gates * rnn.hidden_size}, weight_ih.options().layout(at::Layout::Strided));

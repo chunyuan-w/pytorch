@@ -1011,8 +1011,8 @@ if torch._C.has_mkldnn:
         bidirectional,
         batch_first,
     ):
-        # TODO: add size assertion
         input_tensor_shape = input_tensor.shape
+        assert len(input_tensor_shape) == 3, "Expect lstm input to be 3D"
         if batch_first:
             input_tensor_shape = [
                 input_tensor_shape[1],
@@ -1020,6 +1020,7 @@ if torch._C.has_mkldnn:
             ] + input_tensor_shape[2:]
 
         seq_length, batch_size, input_feature_size = input_tensor_shape
+        assert len(hx[0].shape) == 3, "Expect lstm hx to be 3D"
         hidden_size = hx[0].shape[2]
         direction = 2 if bidirectional else 1
 

@@ -2458,7 +2458,6 @@ class TemplateBuffer(Buffer):
 class InputsKernel(Buffer):
     inputs: List[Buffer]
 
-    # TODO: refactor to handle input of TensorList
     def get_read_writes_input(self, x):
         return dependencies.StarDep(x.get_name())
 
@@ -2498,13 +2497,6 @@ class InputsKernel(Buffer):
                 x = [InputsKernel.unwrap_storage_for_input(i) for i in x]
             else:
                 x = InputsKernel.unwrap_storage_for_input(x)
-            # if isinstance(x, TensorBox):
-            #     x = x.data
-            # if isinstance(x, StorageBox):
-            #     x = x.data
-            # if isinstance(x, BaseView) and not isinstance(x, ReinterpretView):
-            #     x = ExternKernel.realize_input(x)
-            # assert isinstance(x, (Buffer, ReinterpretView)), x
             inputs_new.append(x)
         return inputs_new
 
@@ -2835,12 +2827,11 @@ class ExternKernel(InputsKernel):
         args = []
         for x in self.inputs:
             if isinstance(x, list):
-                names = [i.get_name() for i in x]
+                names = [i.codegen_reference() for i in x]
                 codegen_reference = f'[{", ".join(names)}]'
                 args.append(codegen_reference)
             else:
                 args.append(x.codegen_reference())
-        # args = [x.codegen_reference() for x in self.inputs]
         args.extend(self.codegen_const_args())
         return args
 

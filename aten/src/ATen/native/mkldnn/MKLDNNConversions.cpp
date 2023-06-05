@@ -306,12 +306,8 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
 
   int64_t num_gates = 4;
   int64_t num_bias_gates = 4;
-
-
   std::vector<int64_t> output_sizes = {time_step, batch_size, hidden_size};
 
-
-  // TODO: fix hard-coded dtype here
   // TODO: what if weight and data has different dtypes?
   auto dtype = get_mkldnn_dtype(weight_ih.scalar_type());
   ideep::tensor::desc src_layer_desc({time_step, batch_size, layer_feature_size}, dtype, ideep::format_tag::tnc);
@@ -323,22 +319,16 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
   ideep::tensor::desc dst_iter_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
   ideep::tensor::desc dst_iter_c_desc({1, 1, batch_size, hidden_size}, dtype, ideep::format_tag::ldnc);
 
-
-
   ideep::tensor src_layer(src_layer_desc);
   ideep::tensor src_iter(src_iter_desc);
   ideep::tensor src_iter_c(src_iter_c_desc);
   ideep::tensor bias(bias_desc);
 
-
-  printf("before w1 view\n");
-  std::cout <<"layout: " << weight_ih.layout() << "\n";
   auto w1 = itensor_view_from_dense_with_desc(
       weight_ih,
       {{1, 1, layer_feature_size, num_gates, hidden_size},
         get_mkldnn_dtype(weight_ih.scalar_type()),
         ideep::format_tag::ldgoi});
-  printf("before w2 view\n");
 
   auto w2 = itensor_view_from_dense_with_desc(
       weight_hh,
@@ -346,8 +336,6 @@ std::tuple<ideep::tensor, ideep::tensor> get_lstm_packed_weights(
         get_mkldnn_dtype(weight_hh.scalar_type()),
         ideep::format_tag::ldgoi});
 
-
-  printf("after w2 view\n");
   ideep::tensor::desc packed_desc_ih, packed_desc_hh;
 
   std::tie(packed_desc_ih, packed_desc_hh) =
@@ -379,8 +367,6 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
     bool bidirectional,
     bool batch_first,
     c10::OptionalArrayRef<int64_t> input_size) {
-  printf("in mkldnn_reorder_lstm_weight\n");
-
   std::vector<int64_t> input_size_value;
   int64_t time_step, batch_size;
   if (input_size.has_value()) {
@@ -396,7 +382,6 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
     batch_size = 10;
   }
 
-  // TODO: fill weight value
   std::vector<Tensor> result(weight.size());
 
   auto num_directions = bidirectional ? 2 : 1;
@@ -411,7 +396,6 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
     for (int64_t direction = 0; direction < num_directions; direction++) {
       // for layer == 0, feature_size = input_feature_size
       // otherwise, feature_size = hidden_size
-
       int64_t layer_feature_size = layer == 0? input_feature_size : num_directions * hidden_size;
       auto index = layer * num_directions + direction;
       auto layer_weights = weights[index];
@@ -437,7 +421,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
         batch_size,
         reverse);
 
-    // TODO: use is_opaque() after updating ideep in pytorch
+      // TODO: use is_opaque() after updating ideep in pytorch
       // Don't pack when the weight is of rnn_packed format
       // When the weight is of rnn_packed format, if the seq_lens of
       // the input changes, the format of weight also changes.
@@ -457,10 +441,8 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
         packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(layer_weights[1].options().dtype_opt()), layer_weights[1].options().device_opt());
       }
 
-
       result[index * weight_stride0] = packed_w1;
       result[index * weight_stride0+1] = packed_w2;
-
 
       if (has_biases) {
         result[index * weight_stride0+2] = layer_weights[2];
@@ -469,6 +451,7 @@ std::vector<Tensor> mkldnn_reorder_lstm_weight(
     }
   }
 
+  // TODO: remove debug print
   printf("before exiting mkldnn_reorder_lstm_weight\n");
   return result;
 }

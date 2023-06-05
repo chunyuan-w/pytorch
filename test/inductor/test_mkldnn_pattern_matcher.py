@@ -83,9 +83,6 @@ class TestPaternMatcher(TestCase):
             clone_inputs = self._clone_inputs(inputs)
             expected = mod(*inputs)
             actual = torch.compile(mod)(*clone_inputs)
-            print("#" * 50)
-            print(actual[1][0].shape)
-            print(expected[1][0].shape)
             torch.testing.assert_close(actual, expected, atol=atol, rtol=rtol)
             self.assertEqual(
                 counters["inductor"]["pattern_matcher_count"], matcher_count
