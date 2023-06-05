@@ -2340,8 +2340,8 @@ def mkldnn_one_layer_lstm(inp, hidden, params, has_biases, reverse=False):
         w2 = params[2]
         w3 = params[3]
     else:
-        w2 = torch.zeros(w0.sizes())
-        w3 = torch.zeros(w1.sizes())
+        w2 = torch.zeros(w0.size())
+        w3 = torch.zeros(w1.size())
 
     hx = hidden[0].unsqueeze(0)
     cx = hidden[1].unsqueeze(0)
