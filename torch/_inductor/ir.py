@@ -4103,8 +4103,9 @@ class LSTM(ExternKernelAlloc):
         hx[0].realize()
         hx[1].realize()
         input_size = x.get_size()
+        assert len(input_size) == 3, "Expect lstm input to be 3D"
         if batch_first:
-            input_size = input_size.transpose(0, 1)
+            input_size = [input_size[1], input_size[0], input_size[2]]
 
         seq_length, mini_batch, input_size = input_size
         num_directions = 2 if bidirectional else 1
@@ -4113,7 +4114,7 @@ class LSTM(ExternKernelAlloc):
         output_shape = [seq_length, mini_batch, num_directions * hidden_size]
 
         if batch_first:
-            output_shape = output_shape.transpose(0, 1)
+            output_shape = [output_shape[1], output_shape[0], output_shape[2]]
 
         hy_shape = hx[0].get_size()
         cy_shape = hx[1].get_size()

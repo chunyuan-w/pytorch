@@ -269,7 +269,6 @@ class CPUReproTests(TestCase):
                 input_size,
                 hidden_size,
                 num_layers,
-                dropout,
                 bias=True,
                 bidirectional=False,
                 batch_first=False,
@@ -296,7 +295,7 @@ class CPUReproTests(TestCase):
                 "bidirectional": [False, True],
                 "bias": [False, True],
                 "empty_state": [False, True],
-                "batch_first": [False, True],
+                "batch_first": [True, False],
                 "batch_size": [1, 2],
                 "seq_len": [1, 3],
             }
@@ -318,7 +317,16 @@ class CPUReproTests(TestCase):
             batch_size,
             seq_len,
         ) in itertools.product(*params_list):
-            
+            print("#" * 50)
+            print(input_size)
+            print(hidden_size)
+            print(num_layers)
+            print(bidirectional)
+            print(bias)
+            print(empty_state)
+            print(batch_first)
+            print(batch_size)
+            print(seq_len)
             dtypes = [torch.float]
             # if torch.ops.mkldnn._is_mkldnn_bf16_supported():
             #     dtypes.append(torch.bfloat16)
