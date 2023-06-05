@@ -279,7 +279,6 @@ class CPUReproTests(TestCase):
                     input_size=input_size,
                     hidden_size=hidden_size,
                     num_layers=num_layers,
-                    dropout=dropout,
                     bias=bias,
                     bidirectional=bidirectional,
                     batch_first=batch_first,
@@ -289,26 +288,64 @@ class CPUReproTests(TestCase):
                 x, h = self.lstm(x, h)
                 return x, h
 
-        input_size = 2
-        hidden_size = 3
-        num_layers = 2
-        dropout = 0
-        time_step = 4
-        batch_size = 5
-        dtypes = [torch.float]
-        if torch.ops.mkldnn._is_mkldnn_bf16_supported():
-            dtypes.append(torch.bfloat16)
-        for dtype in dtypes:
-            mod = LstmDrop(input_size, hidden_size, num_layers, dropout).eval()
-            v = torch.randn(time_step, batch_size, input_size)
-            mod = mod.to(dtype)
-            v = v.to(dtype)
-            with torch.no_grad():
-                inps = [v]
-                fn_opt = torch._dynamo.optimize("inductor")(mod)
-                code = run_and_get_cpp_code(fn_opt, *inps)
-                self.assertTrue("torch.ops.mkldnn._lstm" in code)
-                self.assertEqual(fn_opt(*inps), mod(*inps))
+        def _lstm_params_list():
+            params_dict = {
+                "input_size": [1, 2],
+                "hidden_size": [5, 32],
+                "num_layers": [1, 3],
+                "bidirectional": [False, True],
+                "bias": [False, True],
+                "empty_state": [False, True],
+                "batch_first": [False, True],
+                "batch_size": [1, 2],
+                "seq_len": [1, 3],
+            }
+
+            params_list = []
+            for key, value in params_dict.items():
+                params_list.append(value)
+            return params_list            
+
+        params_list = _lstm_params_list()
+        for (
+            input_size,
+            hidden_size,
+            num_layers,
+            bidirectional,
+            bias,
+            empty_state,
+            batch_first,
+            batch_size,
+            seq_len,
+        ) in itertools.product(*params_list):
+            
+            dtypes = [torch.float]
+            # if torch.ops.mkldnn._is_mkldnn_bf16_supported():
+            #     dtypes.append(torch.bfloat16)
+            for dtype in dtypes:
+                num_directions = 2 if bidirectional else 1
+
+                if batch_first:
+                    v = torch.randn(batch_size, seq_len, input_size)
+                else:
+                    v = torch.randn(seq_len, batch_size, input_size)
+                h = torch.randn(num_layers * num_directions, batch_size, hidden_size)
+                c = torch.randn(num_layers * num_directions, batch_size, hidden_size)
+
+                mod = LstmDrop(input_size, hidden_size, num_layers, bias, bidirectional, batch_first).eval()
+                mod = mod.to(dtype)
+                v = v.to(dtype)
+                h = h.to(dtype)
+                c = c.to(dtype)
+                with torch.no_grad():
+                    inps = [v]
+                    if not empty_state:
+                        inps.append((h, c))
+
+                    fn_opt = torch._dynamo.optimize("inductor")(mod)
+                    code = run_and_get_cpp_code(fn_opt, *inps)
+                    self.assertTrue("torch.ops.mkldnn._lstm" in code)
+                    self.assertEqual(fn_opt(*inps), mod(*inps))
 
     @patch("torch.cuda.is_available", lambda: False)
     def test_conv_transpose2d_has_output_size_input(self):
