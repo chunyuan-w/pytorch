@@ -328,9 +328,10 @@ class CPUReproTests(TestCase):
             print(batch_size)
             print(seq_len)
             dtypes = [torch.float]
-            # if torch.ops.mkldnn._is_mkldnn_bf16_supported():
-            #     dtypes.append(torch.bfloat16)
+            if torch.ops.mkldnn._is_mkldnn_bf16_supported():
+                dtypes.append(torch.bfloat16)
             for dtype in dtypes:
+                print("dtype: ", dtype)
                 num_directions = 2 if bidirectional else 1
 
                 if batch_first:
