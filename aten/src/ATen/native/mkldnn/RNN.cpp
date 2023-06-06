@@ -292,7 +292,6 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> mkldnn_rnn_layer(const Tensor& input,
       cy_, rnn.dst_iter_c_desc(get_mkldnn_dtype(cy_)));
   w1_ = weight_ih.is_mkldnn() ? itensor_from_tensor(weight_ih) : get_mkldnn_tensor(weight_ih, rnn.weights_layer_desc(input_size, get_mkldnn_dtype(weight_ih)));
   w2_ = weight_hh.is_mkldnn() ? itensor_from_tensor(weight_hh) : get_mkldnn_tensor(weight_hh, rnn.weights_iter_desc(get_mkldnn_dtype(weight_hh)));
-
   if (at::GradMode::is_enabled()) {
     Tensor workspace = Tensor();
     auto pd = ideep::lstm_forward_training::prepare(
@@ -507,8 +506,8 @@ std::tuple<Tensor, Tensor, Tensor> mkldnn_rnn(
       auto layer_cx = cx[index];
       auto reverse = (direction > 0);
       auto outputs = at::mkldnn_rnn_layer(layer_input, layer_weights[0], layer_weights[1],
-                                        has_biases ? layer_weights[2] : at::zeros(layer_weights[0].sizes(), layer_weights[0].options()),
-          has_biases ? layer_weights[3] : at::zeros(layer_weights[1].sizes(), layer_weights[1].options()), layer_hx,
+                                        has_biases ? layer_weights[2] : at::zeros(layer_weights[0].sizes(), layer_weights[0].options().layout(at::Layout::Strided)),
+          has_biases ? layer_weights[3] : at::zeros(layer_weights[1].sizes(), layer_weights[1].options().layout(at::Layout::Strided)), layer_hx,
           layer_cx, reverse, batch_sizes, mode, hidden_size, num_layers, has_biases, bidirectional, batch_first, train);
       layer_output[direction] = std::get<0>(outputs);
       layer_hy[index] = std::get<1>(outputs);
@@ -559,12 +558,10 @@ std::pair<Tensor, hidden_type> mkldnn_impl(
   Tensor hx, cx;
   std::tie(hx, cx) = unpack_hidden(hidden);
   int64_t hidden_size = hx.size(2);
-
   auto mkldnn_output = mkldnn_rnn(
       input, params, has_biases ? 4 : 2,
       hx, cx, static_cast<int>(mode), hidden_size, num_layers, has_biases, batch_first, dropout_p,
       train, bidirectional, /*batch_sizes*/{});
-
   return {std::get<0>(mkldnn_output),
           pack_hidden<hidden_type>(std::get<1>(mkldnn_output), std::get<2>(mkldnn_output))};
 }
