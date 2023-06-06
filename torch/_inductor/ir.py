@@ -4137,20 +4137,34 @@ class LSTM(ExternKernelAlloc):
             constant_args=constant_args,
         )
 
+        def get_strides_of_lstm_output(output_shape, batch_first):
+            assert len(output_shape) == 3, "Expect output_shape to be 3D"
+            if batch_first:
+                return [output_shape[2], output_shape[2] * output_shape[0], 1]
+            else:
+                return make_contiguous_strides_for(output_shape)
+
         indices = []
         output_sizes = [output_shape, hy_shape, cy_shape]
+        output_strides = [
+            get_strides_of_lstm_output(output_shape, batch_first),
+            make_contiguous_strides_for(hy_shape),
+            make_contiguous_strides_for(cy_shape),
+        ]
         output_ir = [
             MultiOutput(
                 FixedLayout(
                     x.get_device(),
                     x.get_dtype(),
                     output_size,
-                    make_contiguous_strides_for(output_size),
+                    output_stride,
                 ),
                 packed,
                 indices + [(list, i)],
             )
-            for i, output_size in enumerate(output_sizes)
+            for i, (output_size, output_stride) in enumerate(
+                zip(output_sizes, output_strides)
+            )
         ]
 
         return output_ir

@@ -303,7 +303,7 @@ class CPUReproTests(TestCase):
             params_list = []
             for key, value in params_dict.items():
                 params_list.append(value)
-            return params_list            
+            return params_list
 
         params_list = _lstm_params_list()
         for (
@@ -340,7 +340,14 @@ class CPUReproTests(TestCase):
                 h = torch.randn(num_layers * num_directions, batch_size, hidden_size)
                 c = torch.randn(num_layers * num_directions, batch_size, hidden_size)
 
-                mod = LstmDrop(input_size, hidden_size, num_layers, bias, bidirectional, batch_first).eval()
+                mod = LstmDrop(
+                    input_size,
+                    hidden_size,
+                    num_layers,
+                    bias,
+                    bidirectional,
+                    batch_first,
+                ).eval()
                 mod = mod.to(dtype)
                 v = v.to(dtype)
                 h = h.to(dtype)

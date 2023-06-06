@@ -1259,7 +1259,7 @@ if torch._C.has_mkldnn:
             input_tensor_shape = [
                 input_tensor_shape[1],
                 input_tensor_shape[0],
-                input_tensor_shape[2]
+                input_tensor_shape[2],
             ]
 
         seq_length, batch_size, input_feature_size = input_tensor_shape
