@@ -288,7 +288,7 @@ class WrapperCodeGen(CodeGen):
         for name, value in V.graph.constants.items():
             # include a hash so our code cache gives different constants different files
             hashed = hashlib.sha256(repr(value).encode("utf-8")).hexdigest()
-            self.header.writeline(f"{name} = None  # {hashed}")
+            self.write_constant(name, hashed)
 
         self.allocated = set()
         self.freed = set()
@@ -306,6 +306,9 @@ class WrapperCodeGen(CodeGen):
 
         self.add_import_once = add_import_once
         self._metas = {}
+
+    def write_constant(self, name, hashed):
+        self.header.writeline(f"{name} = None  # {hashed}")
 
     def write_header(self):
         self.header.splice(
@@ -624,6 +627,7 @@ class WrapperCodeGen(CodeGen):
                 strip=True,
             )
 
+            # TODO: what to do for cpp wrapper??
             for name, value in V.graph.constants.items():
                 # all the constants are global variables, that's why we need
                 # these 'global var_name' lines
@@ -879,6 +883,9 @@ class CppWrapperCodeGen(WrapperCodeGen):
         from .cpp import cexpr
 
         self.expr_printer = cexpr
+
+    def write_constant(self, name, hashed):
+        self.header.writeline(f"{name} = None  // {hashed}")
 
     def write_header(self):
         if V.graph.aot_mode:
