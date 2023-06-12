@@ -4076,7 +4076,7 @@ class LSTM(ExternKernelAlloc):
         layout,
         inputs,
         constant_args=(),
-        kernel="torch.ops.mkldnn._lstm",
+        kernel="torch.ops.aten.lstm.input",
     ):
         super().__init__(layout, inputs, constant_args)
         self.kernel = kernel

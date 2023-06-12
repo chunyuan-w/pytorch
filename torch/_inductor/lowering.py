@@ -976,7 +976,7 @@ def register_onednn_fusion_ops():
             torch.ops.mkldnn._convolution_pointwise_,
             torch.ops.mkldnn._convolution_transpose_pointwise,
             torch.ops.mkldnn._linear_pointwise,
-            torch.ops.mkldnn._lstm,
+            torch.ops.aten.lstm.input,
         ]
 
         @register_lowering(torch.ops.mkldnn._convolution_pointwise)
@@ -1117,7 +1117,7 @@ def register_onednn_fusion_ops():
                 )
             )
 
-        @register_lowering(torch.ops.mkldnn._lstm)
+        @register_lowering(torch.ops.aten.lstm.input)
         def lstm(
             x: TensorBox,
             hx: List[TensorBox],

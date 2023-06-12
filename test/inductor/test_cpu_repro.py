@@ -361,7 +361,9 @@ class CPUReproTests(TestCase):
 
                     fn_opt = torch._dynamo.optimize("inductor")(mod)
                     code = run_and_get_cpp_code(fn_opt, *inps)
-                    self.assertTrue("torch.ops.mkldnn._lstm" in code)
+                    print("#" * 50)
+                    print(code)
+                    self.assertTrue("torch.ops.aten.lstm.input" in code)
                     self.assertEqual(fn_opt(*inps), mod(*inps))
 
     @torch._dynamo.config.patch(dynamic_shapes=True)
@@ -407,7 +409,7 @@ class CPUReproTests(TestCase):
             fn_opt = torch._dynamo.optimize("inductor")(mod)
             code = run_and_get_cpp_code(fn_opt, *inps)
             # This case is unsupported
-            self.assertFalse("torch.ops.mkldnn._lstm" in code)
+            self.assertFalse("torch.ops.aten.lstm.input" in code)
             self.assertEqual(fn_opt(*inps), mod(*inps))
 
     @patch("torch.cuda.is_available", lambda: False)

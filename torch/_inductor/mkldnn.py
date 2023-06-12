@@ -241,7 +241,7 @@ class PackedLSTM(nn.LSTM):
             lstm.weight_ih_l0.dtype,
         )
         self._update_module_params(lstm, input_size)
-        self.forward_op = torch.ops.mkldnn._lstm
+        self.forward_op = torch.ops.aten.lstm.input
 
     def _update_module_params(self, lstm, input_size):
         self.__dict__ = copy.deepcopy(lstm.__dict__)

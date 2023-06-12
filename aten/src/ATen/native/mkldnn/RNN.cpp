@@ -574,17 +574,17 @@ std::tuple<Tensor, Tensor, Tensor> lstm_mkldnn_inductor(const Tensor& input, Ten
   return std::make_tuple(output, hy, cy);
 }
 
-TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
-  m.impl(
-      TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
-      TORCH_FN(lstm_mkldnn_inductor));
-}
+// TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
+//   m.impl(
+//       TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
+//       TORCH_FN(lstm_mkldnn_inductor));
+// }
 
-TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
-  m.impl(
-      TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
-      TORCH_FN(lstm_mkldnn_inductor));
-}
+// TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
+//   m.impl(
+//       TORCH_SELECTIVE_NAME("mkldnn::_lstm"),
+//       TORCH_FN(lstm_mkldnn_inductor));
+// }
 
 } // namespace at::native
 

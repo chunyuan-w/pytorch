@@ -1352,7 +1352,7 @@ if torch._C.has_mkldnn:
     ):
         return input_tensor.new_empty((*input_tensor.shape[:-1], weight.shape[0]))
 
-    @register_meta(torch.ops.mkldnn._lstm.default)
+    @register_meta(torch.ops.aten.lstm.input)
     def meta_lstm(
         input_tensor,
         hx,
