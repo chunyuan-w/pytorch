@@ -885,7 +885,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.expr_printer = cexpr
 
     def write_constant(self, name, hashed):
-        self.header.writeline(f"{name} = None  // {hashed}")
+        self.header.writeline(f"// {name} = None  # {hashed}")
 
     def write_header(self):
         if V.graph.aot_mode:
@@ -949,6 +949,12 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     else:
                         self.prefix.writeline(f"at::Tensor {input_key} = args[{idx}];")
 
+            for idx, constants_key in enumerate(V.graph.constants.keys()):
+                constants_idx = inputs_len + idx
+                self.prefix.writeline(
+                    f"at::Tensor {constants_key} = args[{constants_idx}];"
+                )
+
             self.codegen_inputs(self.prefix, V.graph.graph_inputs)
 
             self.wrapper_call.splice(
@@ -999,11 +1005,14 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     return {outputs_str}
             """
         # Wrap the func to support setting result._boxed_call = True
+        constants_str = f"[{', '.join(V.graph.constants.keys())}]"
         result.splice(
             f"""
             def _wrap_func(f):
                 def g(args):
                     args_tensor = [arg if isinstance(arg, torch.Tensor) else torch.tensor(arg) for arg in args]
+                    constants_tensor = {constants_str}
+                    args_tensor.extend(constants_tensor)
                     {return_str}
                 return g
             call = _wrap_func(module.{self.call_func_name})
