@@ -885,7 +885,8 @@ class CppWrapperCodeGen(WrapperCodeGen):
         self.expr_printer = cexpr
 
     def write_constant(self, name, hashed):
-        self.header.writeline(f"// {name} = None  # {hashed}")
+        # include a hash so our code cache gives different constants different files
+        self.header.writeline(f"// {name} {hashed}")
 
     def write_header(self):
         if V.graph.aot_mode:
