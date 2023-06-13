@@ -1004,7 +1004,14 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     outputs = f(args_tensor)
                     return {outputs_str}
             """
-        # Wrap the func to support setting result._boxed_call = True
+
+        # Append constants to the input args for cpp wrapper.
+        # Python wrapper directly gets the value inside the wrapper call
+        # as a global variable passed when calling exec.
+        # For cpp wrapper, we need to pass this python value to the inductor_entry_cpp func
+        assert all(
+            isinstance(v, torch.Tensor) for v in list(V.graph.constants.values())
+        ), "Expect all constants to be Tensor"
         constants_str = f"[{', '.join(V.graph.constants.keys())}]"
         # TODO: will constants have scalar input?
         args_str = "args_tensor = [arg if isinstance(arg, torch.Tensor) else torch.tensor(arg) for arg in args]"
@@ -1014,6 +1021,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     args_tensor.extend(constants_tensor)
             """
 
+        # Wrap the func to support setting result._boxed_call = True
         result.splice(
             f"""
             def _wrap_func(f):
