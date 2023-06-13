@@ -1006,13 +1006,19 @@ class CppWrapperCodeGen(WrapperCodeGen):
             """
         # Wrap the func to support setting result._boxed_call = True
         constants_str = f"[{', '.join(V.graph.constants.keys())}]"
+        # TODO: will constants have scalar input?
+        args_str = "args_tensor = [arg if isinstance(arg, torch.Tensor) else torch.tensor(arg) for arg in args]"
+        if V.graph.constants:
+            args_str += f"""
+                    constants_tensor = {constants_str}
+                    args_tensor.extend(constants_tensor)
+            """
+
         result.splice(
             f"""
             def _wrap_func(f):
                 def g(args):
-                    args_tensor = [arg if isinstance(arg, torch.Tensor) else torch.tensor(arg) for arg in args]
-                    constants_tensor = {constants_str}
-                    args_tensor.extend(constants_tensor)
+                    {args_str}
                     {return_str}
                 return g
             call = _wrap_func(module.{self.call_func_name})
