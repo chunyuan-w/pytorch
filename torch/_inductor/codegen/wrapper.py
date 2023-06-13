@@ -627,7 +627,6 @@ class WrapperCodeGen(CodeGen):
                 strip=True,
             )
 
-            # TODO: what to do for cpp wrapper??
             for name, value in V.graph.constants.items():
                 # all the constants are global variables, that's why we need
                 # these 'global var_name' lines
@@ -1011,6 +1010,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
         args_str = "args_tensor = [arg if isinstance(arg, torch.Tensor) else torch.tensor(arg) for arg in args]"
         if V.graph.constants:
+            # TODO: further optimize into one line?
             # Append constants to the input args for cpp wrapper.
             # Python wrapper directly gets the value inside the wrapper call
             # as a global variable passed when calling exec.
