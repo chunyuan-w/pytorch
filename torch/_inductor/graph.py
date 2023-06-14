@@ -794,7 +794,9 @@ class GraphLowering(torch.fx.Interpreter):
     def init_wrapper_code(self):
         self.cuda = "cuda" in self.device_types
         if self.cpp_wrapper:
-            self.check_cpp_wrapper()
+            # Disabled the check here to expose all potential cppwrapper issues during validation
+            # self.check_cpp_wrapper()
+
             # Re-check self.cpp_wrapper because it might be disabled due to failed checking
             if self.cuda:
                 assert self.cpp_wrapper, "CudaWrapperCodeGen hit unsupported case"
