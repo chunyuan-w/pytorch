@@ -948,6 +948,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 """
                 c10::optional<at::Scalar> optional_scalar;
                 c10::optional<c10::string_view> optional_string;
+                c10::optional<at::Layout> optional_layout;
                 torch::List<c10::optional<at::Scalar>> optional_list;
                 """
             )
