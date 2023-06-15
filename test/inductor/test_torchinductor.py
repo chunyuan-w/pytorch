@@ -2662,6 +2662,20 @@ class CommonTemplate:
             (torch.randn([1, 2, 4, 8]),),
         )
 
+    @config.patch(fallback_random=True)
+    def test_randn_with_dtype_and_device(self):
+        def fn(vectors):
+            rotations_shape = (12, vectors.shape[-1], 1, 64)
+            random_rotations = torch.randn(rotations_shape, device=vectors.device, dtype=vectors.dtype)
+            # Output dim: Batch_Size x Num_Attn_Heads x Num_Hashes x Seq_Len x Num_Buckets/2
+            rotated_vectors = torch.einsum("bmtd,mdhr->bmhtr", vectors, random_rotations)
+            return rotated_vectors
+
+        self.common(
+            fn,
+            (torch.randn([4, 12, 2048, 64]),),
+        )
+
     def test_embedding(self):
         m = torch.nn.Sequential(
             torch.nn.Embedding(10, 4, padding_idx=0),
