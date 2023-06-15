@@ -1046,13 +1046,22 @@ class CppWrapperCodeGen(WrapperCodeGen):
             'RECORD_FUNCTION("inductor_wrapper_call", c10::ArrayRef<c10::IValue>({{}}));'
         )
 
-    def codegen_device(self, device):
+    def codegen_option(self, device):
         from .cpp import DEVICE_TO_ATEN
 
         return (
             f"at::device(c10::Device({DEVICE_TO_ATEN[device.type]}, {device.index}))"
             if device.index is not None
             else f"at::device({DEVICE_TO_ATEN[device.type]})"
+        )
+
+    def codegen_device(self, device):
+        from .cpp import DEVICE_TO_ATEN
+
+        return (
+            f"c10::Device({DEVICE_TO_ATEN[device.type]}, {device.index})"
+            if device.index is not None
+            else f"{DEVICE_TO_ATEN[device.type]}"
         )
 
     def make_buffer_allocation(self, buffer):
@@ -1068,7 +1077,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
             f"{self.declare}{buffer.get_name()} = {self.namespace}empty_strided("
             f"{self.codegen_shape_tuple(shape)}, "
             f"{self.codegen_shape_tuple(stride)}, "
-            f"{self.codegen_device(device)}"
+            f"{self.codegen_option(device)}"
             f".dtype({DTYPE_TO_ATEN[dtype]})){self.ending}"
         )
 
