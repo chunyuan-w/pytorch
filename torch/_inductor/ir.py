@@ -2866,6 +2866,16 @@ class ExternKernel(InputsKernel):
         args.extend(self.codegen_const_args())
         return args
 
+    def get_kwargs_value(self, arg_name):
+        if arg_name in self.kwargs:
+            return self.kwargs.get(arg_name)
+        if (
+            hasattr(self, "kwargs_default_value")
+            and arg_name in self.kwargs_default_value
+        ):
+            return self.kwargs_default_value.get(arg_name)
+        raise AssertionError("arg %s not found in self.kwargs or self.kwargs_default_value" % arg_name)
+
     def codegen_kwargs(self):
         kwargs = []
         if self.kwargs:
@@ -2875,10 +2885,7 @@ class ExternKernel(InputsKernel):
                     self.ordered_kwargs_for_cpp_kernel
                 ), "ordered_kwargs_for_cpp_kernel has to be provided"
                 for arg_name in self.ordered_kwargs_for_cpp_kernel:
-                    assert arg_name in self.kwargs, (
-                        "arg %s not found in self.kwargs" % arg_name
-                    )
-                    v = self.kwargs.get(arg_name)
+                    v = self.get_kwargs_value(arg_name)
                     kwargs.append(V.graph.wrapper_code.val_to_str(v))
             else:
                 kwargs = [
@@ -3233,6 +3240,15 @@ class FallbackKernel(ExternKernelAlloc):
                 if V.graph.cpp_wrapper
                 else f"aten.{kernel.__name__}"
             )
+            # TODO: use_key="" for now. Should be overload name?
+            schema = torch._C._get_schema(op_overload_packet._qualified_op_name, "")
+            self.ordered_kwargs_for_cpp_kernel = [
+                x.name for x in schema.arguments if x.kwarg_only
+            ]
+            self.kwargs_default_value = {
+                x.name: x.default_value for x in schema.arguments if x.kwarg_only
+            }
+
         elif isinstance(kernel, torch._ops.HigherOrderOperator):
             if getattr(torch._prims.rng_prims, kernel.__name__, None) is kernel:
                 self.kernel = f"torch._prims.rng_prims.{kernel.__name__}"
