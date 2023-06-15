@@ -2666,9 +2666,13 @@ class CommonTemplate:
     def test_randn_with_dtype_and_device(self):
         def fn(vectors):
             rotations_shape = (12, vectors.shape[-1], 1, 64)
-            random_rotations = torch.randn(rotations_shape, device=vectors.device, dtype=vectors.dtype)
+            random_rotations = torch.randn(
+                rotations_shape, device=vectors.device, dtype=vectors.dtype
+            )
             # Output dim: Batch_Size x Num_Attn_Heads x Num_Hashes x Seq_Len x Num_Buckets/2
-            rotated_vectors = torch.einsum("bmtd,mdhr->bmhtr", vectors, random_rotations)
+            rotated_vectors = torch.einsum(
+                "bmtd,mdhr->bmhtr", vectors, random_rotations
+            )
             return rotated_vectors
 
         self.common(
