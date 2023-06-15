@@ -2874,7 +2874,9 @@ class ExternKernel(InputsKernel):
             and arg_name in self.kwargs_default_value
         ):
             return self.kwargs_default_value.get(arg_name)
-        raise AssertionError("arg %s not found in self.kwargs or self.kwargs_default_value" % arg_name)
+        raise AssertionError(
+            "arg %s not found in self.kwargs or self.kwargs_default_value" % arg_name
+        )
 
     def codegen_kwargs(self):
         kwargs = []
