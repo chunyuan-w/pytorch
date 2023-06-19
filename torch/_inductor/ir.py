@@ -3106,20 +3106,23 @@ class ScatterFallback(ExternKernel):
 
         # TODO: support other overload for cpp wrapper
         if V.graph.cpp_wrapper:
-            if self.src_is_tensor:
-                line = (
-                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
-                )
-                if self.kwargs["reduce"]:
-                    line += (
-                        f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
-                    )
+            if self.fn == "aten.scatter_":
+                if self.src_is_tensor:
+                    line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                    if self.kwargs["reduce"]:
+                        line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
+                else:
+                    line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                    if self.kwargs["reduce"]:
+                        raise AssertionError(
+                            "src_is_tensor False & with reduce is unsupported"
+                        )
             else:
                 line = (
                     f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
                 )
-                if self.kwargs["reduce"]:
-                    raise AssertionError("src_is_tensor False & with reduce is unsupported")
+                assert self.kwargs["reduce"] and self.kwargs["include_self"]
+                line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}, {V.graph.wrapper_code.val_to_str(self.kwargs['include_self'])}"
         else:
             line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
             if self.kernel == "aten.scatter_":
@@ -3145,12 +3148,13 @@ class ScatterFallback(ExternKernel):
         include_self: bool = True,
     ):
         assert fn in {"aten.scatter_", "aten.scatter_reduce_"}
-        if reduce is not None and V.graph.cpp_wrapper:
+        if reduce is not None and V.graph.cpp_wrapper and reduce in ["add", "multiply"]:
             reduce = get_operator_enum[reduce]
         # self.kernel = fn.replace(".", "::").replace("aten", "at") if V.graph.cpp_wrapper else fn
         self.src_is_tensor = isinstance(src, TensorBox)
 
         if V.graph.cpp_wrapper:
+            self.fn = fn
             if fn == "aten.scatter_":
                 if self.src_is_tensor:
                     if reduce is not None:
@@ -3163,7 +3167,10 @@ class ScatterFallback(ExternKernel):
                     else:
                         self.kernel = "at::scatter_out"
             else:
-                raise AssertionError("unsupport scatter fallback")
+                assert (
+                    reduce is not None
+                ), "Expect reduce to be not None for aten.scatter_reduce_"
+                self.kernel = "at::scatter_reduce_out"
         else:
             self.kernel = fn
 
