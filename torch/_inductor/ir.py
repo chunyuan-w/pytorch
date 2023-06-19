@@ -3115,7 +3115,11 @@ class ScatterFallback(ExternKernel):
                         f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
                     )
             else:
-                raise AssertionError("src_is_tensor False unsupported")
+                line = (
+                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                )
+                if self.kwargs["reduce"]:
+                    raise AssertionError("src_is_tensor False & with reduce is unsupported")
         else:
             line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
             if self.kernel == "aten.scatter_":
@@ -3154,7 +3158,10 @@ class ScatterFallback(ExternKernel):
                     else:
                         self.kernel = "at::scatter_out"
                 else:
-                    raise AssertionError("unsupported scatter overload")
+                    if reduce is not None:
+                        raise AssertionError("unsupported scatter overload")
+                    else:
+                        self.kernel = "at::scatter_out"
             else:
                 raise AssertionError("unsupport scatter fallback")
         else:
