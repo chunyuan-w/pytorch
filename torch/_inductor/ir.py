@@ -3121,7 +3121,8 @@ class ScatterFallback(ExternKernel):
                 line = (
                     f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
                 )
-                assert self.kwargs["reduce"] and self.kwargs["include_self"]
+                assert self.kwargs["reduce"] is not None
+                assert self.kwargs["include_self"] is not None
                 line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}, {V.graph.wrapper_code.val_to_str(self.kwargs['include_self'])}"
         else:
             line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
