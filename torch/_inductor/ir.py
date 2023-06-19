@@ -3105,8 +3105,17 @@ class ScatterFallback(ExternKernel):
             src = self.constant_args[1]
 
         # TODO: support other overload for cpp wrapper
-        if V.graph.cpp_wrapper and self.src_is_tensor and self.kwargs["reduce"]:
-            line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}, {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
+        if V.graph.cpp_wrapper:
+            if self.src_is_tensor:
+                line = (
+                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                )
+                if self.kwargs["reduce"]:
+                    line += (
+                        f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
+                    )
+            else:
+                raise AssertionError("src_is_tensor False unsupported")
         else:
             line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
             if self.kernel == "aten.scatter_":
@@ -3139,8 +3148,11 @@ class ScatterFallback(ExternKernel):
 
         if V.graph.cpp_wrapper:
             if fn == "aten.scatter_":
-                if self.src_is_tensor and reduce is not None:
-                    self.kernel = "at::scatter_reduce_out"
+                if self.src_is_tensor:
+                    if reduce is not None:
+                        self.kernel = "at::scatter_reduce_out"
+                    else:
+                        self.kernel = "at::scatter_out"
                 else:
                     raise AssertionError("unsupported scatter overload")
             else:
