@@ -2033,6 +2033,7 @@ class ShapeEnv:
         We try our best to express stride in terms of the sizes, so as to not
         introduce new symbolic variables.
         """
+        breakpoint()
         dim = ex.dim()
 
         # Reimplement the legacy behavior
@@ -2153,6 +2154,7 @@ class ShapeEnv:
         dynamic_dim: DimDynamic = DimDynamic.DUCK,
         constraint_dim: DimConstraint = None,  # NB: includes None
     ) -> "sympy.Expr":
+        breakpoint()
         assert isinstance(source, Source), f"{type(source)} {source}"
         # It's always sound to allocate a symbol as DYNAMIC.  If the user
         # constrained the symbol, force the policy to DYNAMIC, because our

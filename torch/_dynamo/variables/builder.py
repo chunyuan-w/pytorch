@@ -1263,6 +1263,7 @@ class TrackedFake:
 # Performs automatic dynamic dim determination.
 # Returns tuple of (dynamic_dims, constraint_dims) where each is either a list of dims or None.
 def _automatic_dynamic(e, tx, name, static_shapes):
+    breakpoint()
     # Prep for automatic dynamic
     frame_state_entry = None
     if name not in tx.output.frame_state:

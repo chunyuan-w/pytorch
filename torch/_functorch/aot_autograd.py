@@ -3167,6 +3167,7 @@ def create_aot_dispatcher_function(
     # mode instead.
 
     fake_mode = detect_fake_mode(flat_args)
+    breakpoint()
     if fake_mode is None:
         shape_env = ShapeEnv() if aot_config.dynamic_shapes else None
         fake_mode = FakeTensorMode(shape_env=shape_env)
@@ -3547,7 +3548,7 @@ def aot_function(
         >>> x = torch.randn(4, 5, requires_grad=True)
         >>> aot_fn(x)
     """
-
+    breakpoint()
     if bw_compiler is None:
         bw_compiler = fw_compiler
     if inference_compiler is None:
