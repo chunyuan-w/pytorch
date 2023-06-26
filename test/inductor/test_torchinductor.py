@@ -4672,14 +4672,14 @@ class CommonTemplate:
         )
 
     def test_scatter_reduce3(self):
-        def fn(a, dim, index, b, reduce):
+        def fn(a, dim, index, b, reduce, include_self):
             a = a.clone()
             a.scatter_reduce_(dim, index, b, reduce=reduce)
             a1 = a + 1.0
-            a1.scatter_reduce_(dim, index, b, reduce=reduce)
+            a1.scatter_reduce_(dim, index, b, reduce=reduce, include_self=include_self)
             return (a, a1)
 
-        for reduce in ["sum", "prod"]:
+        for reduce, include_self in itertools.product(["sum", "prod"], [False, True]):
             self.common(
                 fn,
                 [
@@ -4688,6 +4688,7 @@ class CommonTemplate:
                     torch.tensor([[1], [2], [3]], dtype=torch.int64),
                     torch.randn(4, 5),
                     reduce,
+                    include_self
                 ],
             )
 
