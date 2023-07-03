@@ -3086,7 +3086,7 @@ class ScatterFallback(ExternKernel):
         return line
 
     def codegen_cpp(self, wrapper, x, index, src):
-        # TODO: support other overload for cpp wrapper
+        # TODO: support other overload for cpp wrapper and remove the below assertions
         line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
         if self.fn == "aten.scatter_":
             if self.src_is_tensor:
