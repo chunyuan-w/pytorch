@@ -3068,9 +3068,6 @@ class InplaceBernoulliFallback(ExternKernel):
         self.name = V.graph.register_buffer(self)
 
 
-get_operator_enum = {"add": "sum", "multiply": "prod"}
-
-
 class ScatterFallback(ExternKernel):
     """
     This needs to be a custom class to handle mutation properly.
@@ -3156,6 +3153,8 @@ class ScatterFallback(ExternKernel):
         self.src_is_tensor = isinstance(src, TensorBox)
 
         if V.graph.cpp_wrapper:
+            # Follow aten/src/ATen/native/ReductionType.h:get_operator_enum
+            get_operator_enum = {"add": "sum", "multiply": "prod"}
             if reduce is not None and reduce in get_operator_enum:
                 reduce = get_operator_enum[reduce]
             self.fn = fn
