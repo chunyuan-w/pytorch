@@ -3090,28 +3090,22 @@ class ScatterFallback(ExternKernel):
 
     def codegen_cpp(self, wrapper, x, index, src):
         # TODO: support other overload for cpp wrapper
+        line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
         if self.fn == "aten.scatter_":
             if self.src_is_tensor:
-                line = (
-                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
-                )
                 if self.kwargs["reduce"]:
                     line += (
                         f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
                     )
             else:
-                line = (
-                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
-                )
                 if self.kwargs["reduce"]:
                     raise AssertionError(
                         "src_is_tensor False & with reduce is unsupported"
                     )
         else:
-            line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
             assert self.kwargs["reduce"] is not None
             assert self.kwargs["include_self"] is not None
-            line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}, {V.graph.wrapper_code.val_to_str(self.kwargs['include_self'])}"
+            line += f", {','.join(self.codegen_kwargs())}"
         line += f"){wrapper.ending}"
         return line
 
@@ -3181,6 +3175,7 @@ class ScatterFallback(ExternKernel):
             constant_args,
             {"reduce": reduce, "include_self": include_self},
         )
+        self.ordered_kwargs_for_cpp_kernel = ["reduce", "include_self"]
         self.name = V.graph.register_buffer(self)
 
 
