@@ -3086,28 +3086,34 @@ class ScatterFallback(ExternKernel):
         else:
             line += ", ".join([""] + self.codegen_kwargs())
         line += f"){wrapper.ending}"
-        return line
+        wrapper.writeline(line)
 
     def codegen_cpp(self, wrapper, x, index, src):
         # TODO: support other overload for cpp wrapper
-        line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
-        if self.fn == "aten.scatter_":
-            if self.src_is_tensor:
-                if self.kwargs["reduce"]:
-                    line += (
-                        f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
-                    )
-            else:
-                if self.kwargs["reduce"]:
-                    raise AssertionError(
-                        "src_is_tensor False & with reduce is unsupported"
-                    )
-        else:
-            assert self.kwargs["reduce"] is not None
-            assert self.kwargs["include_self"] is not None
-            line += f", {','.join(self.codegen_kwargs())}"
-        line += f"){wrapper.ending}"
-        return line
+        inputs = [x, repr(self.constant_args[0]), index, src]
+        args = [*inputs, *self.codegen_kwargs()]
+        # scatter_reduce_out or scatter_out is called. inputs[0] is the out tensor
+        wrapper.generate_extern_kernel_out(
+            None,  # output_view
+            x,  # codegen_reference of the out tensor
+            args,
+            self.kernel,
+        )
+
+        # if self.fn == "aten.scatter_":
+        #     if self.src_is_tensor:
+        #         line += f", {','.join(self.codegen_kwargs())}"
+        #     else:
+        #         if self.kwargs["reduce"]:
+        #             raise AssertionError(
+        #                 "src_is_tensor False & with reduce is unsupported"
+        #             )
+        # else:
+        #     assert self.kwargs["reduce"] is not None
+        #     assert self.kwargs["include_self"] is not None
+        #     line += f", {','.join(self.codegen_kwargs())}"
+        # line += f"){wrapper.ending}"
+        # return line
 
     def codegen(self, wrapper):
         if self.src_is_tensor:
@@ -3116,10 +3122,9 @@ class ScatterFallback(ExternKernel):
             (x, index) = [t.codegen_reference() for t in self.inputs]
             src = self.constant_args[1]
         if V.graph.cpp_wrapper:
-            line = self.codegen_cpp(wrapper, x, index, src)
+            self.codegen_cpp(wrapper, x, index, src)
         else:
-            line = self.codegen_python(wrapper, x, index, src)
-        wrapper.writeline(line)
+            self.codegen_python(wrapper, x, index, src)
 
     def should_allocate(self):
         return False
