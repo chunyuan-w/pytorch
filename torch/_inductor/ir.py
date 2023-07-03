@@ -3100,21 +3100,6 @@ class ScatterFallback(ExternKernel):
             self.kernel,
         )
 
-        # if self.fn == "aten.scatter_":
-        #     if self.src_is_tensor:
-        #         line += f", {','.join(self.codegen_kwargs())}"
-        #     else:
-        #         if self.kwargs["reduce"]:
-        #             raise AssertionError(
-        #                 "src_is_tensor False & with reduce is unsupported"
-        #             )
-        # else:
-        #     assert self.kwargs["reduce"] is not None
-        #     assert self.kwargs["include_self"] is not None
-        #     line += f", {','.join(self.codegen_kwargs())}"
-        # line += f"){wrapper.ending}"
-        # return line
-
     def codegen(self, wrapper):
         if self.src_is_tensor:
             (x, index, src) = [t.codegen_reference() for t in self.inputs]
@@ -3146,18 +3131,18 @@ class ScatterFallback(ExternKernel):
         self.src_is_tensor = isinstance(src, TensorBox)
 
         if V.graph.cpp_wrapper:
-            self.fn = fn
             if fn == "aten.scatter_":
                 if self.src_is_tensor:
-                    if reduce is not None:
-                        self.kernel = "at::scatter_reduce_out"
-                    else:
-                        self.kernel = "at::scatter_out"
+                    self.kernel = (
+                        "at::scatter_out"
+                        if reduce is None
+                        else "at::scatter_reduce_out"
+                    )
                 else:
-                    if reduce is not None:
-                        raise AssertionError("unsupported scatter overload")
-                    else:
-                        self.kernel = "at::scatter_out"
+                    assert (
+                        reduce is None
+                    ), "Expect reduce to be None for aten.scatter_ with scalar src"
+                    self.kernel = "at::scatter_out"
             else:
                 assert (
                     reduce is not None
