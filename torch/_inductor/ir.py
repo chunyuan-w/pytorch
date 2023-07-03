@@ -2879,8 +2879,8 @@ class ExternKernel(InputsKernel):
         if self.kwargs:
             if V.graph.cpp_wrapper:
                 # TODO: use native_functions.yaml as the ground truth
-                assert (
-                    self.ordered_kwargs_for_cpp_kernel
+                assert hasattr(
+                    self, "ordered_kwargs_for_cpp_kernel"
                 ), "ordered_kwargs_for_cpp_kernel has to be provided"
                 for arg_name in self.ordered_kwargs_for_cpp_kernel:
                     assert arg_name in self.kwargs, (
@@ -3090,7 +3090,7 @@ class ScatterFallback(ExternKernel):
 
     def codegen_cpp(self, wrapper, x, index, src):
         # TODO: support other overload for cpp wrapper
-        inputs = [x, repr(self.constant_args[0]), index, src]
+        inputs = [x, V.graph.wrapper_code.val_to_str(self.constant_args[0]), index, src]
         args = [*inputs, *self.codegen_kwargs()]
         # scatter_reduce_out or scatter_out is called. inputs[0] is the out tensor
         wrapper.generate_extern_kernel_out(
@@ -3111,23 +3111,27 @@ class ScatterFallback(ExternKernel):
         else:
             self.codegen_python(wrapper, x, index, src)
 
-    def get_cpp_kernel(self, fn, reduce):
+    def set_cpp_kernel(self, fn, reduce):
         if fn == "aten.scatter_":
             if self.src_is_tensor:
-                kernel = (
-                    "at::scatter_out" if reduce is None else "at::scatter_reduce_out"
-                )
+                if reduce is None:
+                    self.kernel = "at::scatter_out"
+                    self.ordered_kwargs_for_cpp_kernel = ()
+                else:
+                    self.kernel = "at::scatter_reduce_out"
+                    self.ordered_kwargs_for_cpp_kernel = ["reduce", "include_self"]
             else:
                 assert (
                     reduce is None
                 ), "Expect reduce to be None for aten.scatter_ with scalar src"
-                kernel = "at::scatter_out"
+                self.kernel = "at::scatter_out"
+                self.ordered_kwargs_for_cpp_kernel = []
         else:
             assert (
                 reduce is not None
             ), "Expect reduce to be not None for aten.scatter_reduce_"
-            kernel = "at::scatter_reduce_out"
-        return kernel
+            self.kernel = "at::scatter_reduce_out"
+            self.ordered_kwargs_for_cpp_kernel = ["reduce", "include_self"]
 
     def should_allocate(self):
         return False
@@ -3149,7 +3153,7 @@ class ScatterFallback(ExternKernel):
         if V.graph.cpp_wrapper:
             if reduce is not None and reduce in get_operator_enum:
                 reduce = get_operator_enum[reduce]
-            self.kernel = self.get_cpp_kernel(fn, reduce)
+            self.set_cpp_kernel(fn, reduce)
         else:
             self.kernel = fn
 
@@ -3167,7 +3171,6 @@ class ScatterFallback(ExternKernel):
             constant_args,
             {"reduce": reduce, "include_self": include_self},
         )
-        self.ordered_kwargs_for_cpp_kernel = ["reduce", "include_self"]
         self.name = V.graph.register_buffer(self)
 
 
