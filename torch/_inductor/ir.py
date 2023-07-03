@@ -3098,10 +3098,9 @@ class ScatterFallback(ExternKernel):
                         f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
                     )
             else:
-                if self.kwargs["reduce"]:
-                    raise AssertionError(
-                        "src_is_tensor False & with reduce is unsupported"
-                    )
+                assert (
+                    self.kwargs["reduce"] is None
+                ), "Expect reduce to be None for aten.scatter_ with scalar src"
         else:
             assert self.kwargs["reduce"] is not None
             assert self.kwargs["include_self"] is not None
