@@ -3078,40 +3078,53 @@ class ScatterFallback(ExternKernel):
     It also handle the case `src` being a scalar properly.
     """
 
+    def codegen_python(self, wrapper, x, index, src):
+        line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
+        if self.kernel == "aten.scatter_":
+            if self.kwargs["reduce"]:
+                line += f", reduce={repr(self.kwargs['reduce'])}"
+        else:
+            line += ", ".join([""] + self.codegen_kwargs())
+        line += f"){wrapper.ending}"
+        return line
+
+    def codegen_cpp(self, wrapper, x, index, src):
+        # TODO: support other overload for cpp wrapper
+        if self.fn == "aten.scatter_":
+            if self.src_is_tensor:
+                line = (
+                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                )
+                if self.kwargs["reduce"]:
+                    line += (
+                        f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
+                    )
+            else:
+                line = (
+                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                )
+                if self.kwargs["reduce"]:
+                    raise AssertionError(
+                        "src_is_tensor False & with reduce is unsupported"
+                    )
+        else:
+            line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+            assert self.kwargs["reduce"] is not None
+            assert self.kwargs["include_self"] is not None
+            line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}, {V.graph.wrapper_code.val_to_str(self.kwargs['include_self'])}"
+        line += f"){wrapper.ending}"
+        return line
+
     def codegen(self, wrapper):
         if self.src_is_tensor:
             (x, index, src) = [t.codegen_reference() for t in self.inputs]
         else:
             (x, index) = [t.codegen_reference() for t in self.inputs]
             src = self.constant_args[1]
-        # TODO: support other overload for cpp wrapper
         if V.graph.cpp_wrapper:
-            if self.fn == "aten.scatter_":
-                if self.src_is_tensor:
-                    line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
-                    if self.kwargs["reduce"]:
-                        line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
-                else:
-                    line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
-                    if self.kwargs["reduce"]:
-                        raise AssertionError(
-                            "src_is_tensor False & with reduce is unsupported"
-                        )
-            else:
-                line = (
-                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
-                )
-                assert self.kwargs["reduce"] is not None
-                assert self.kwargs["include_self"] is not None
-                line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}, {V.graph.wrapper_code.val_to_str(self.kwargs['include_self'])}"
+            line = self.codegen_cpp(wrapper, x, index, src)
         else:
-            line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
-            if self.kernel == "aten.scatter_":
-                if self.kwargs["reduce"]:
-                    line += f", reduce={repr(self.kwargs['reduce'])}"
-            else:
-                line += ", ".join([""] + self.codegen_kwargs())
-        line += f"){wrapper.ending}"
+            line = self.codegen_python(wrapper, x, index, src)
         wrapper.writeline(line)
 
     def should_allocate(self):
