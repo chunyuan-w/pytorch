@@ -182,6 +182,7 @@ if RUN_CPU:
         BaseTest("test_scatter4"),
         BaseTest("test_scatter5"),
         BaseTest("test_scatter6"),
+        BaseTest("test_scatter_reduce2"),
         BaseTest("test_silu"),  # single input, single output
         BaseTest("test_sort"),
         BaseTest("test_sum_dtype"),  # float64
