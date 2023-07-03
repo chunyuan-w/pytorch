@@ -3144,15 +3144,16 @@ class ScatterFallback(ExternKernel):
             self.fn = fn
             if fn == "aten.scatter_":
                 if self.src_is_tensor:
-                    if reduce is not None:
-                        self.kernel = "at::scatter_reduce_out"
-                    else:
-                        self.kernel = "at::scatter_out"
+                    self.kernel = (
+                        "at::scatter_out"
+                        if reduce is None
+                        else "at::scatter_reduce_out"
+                    )
                 else:
-                    if reduce is not None:
-                        raise AssertionError("unsupported scatter overload")
-                    else:
-                        self.kernel = "at::scatter_out"
+                    assert (
+                        reduce is None
+                    ), "Expect reduce to be None for aten.scatter_ with scalar src"
+                    self.kernel = "at::scatter_out"
             else:
                 assert (
                     reduce is not None
