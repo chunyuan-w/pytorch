@@ -3111,6 +3111,24 @@ class ScatterFallback(ExternKernel):
         else:
             self.codegen_python(wrapper, x, index, src)
 
+    def get_cpp_kernel(self, fn, reduce):
+        if fn == "aten.scatter_":
+            if self.src_is_tensor:
+                kernel = (
+                    "at::scatter_out" if reduce is None else "at::scatter_reduce_out"
+                )
+            else:
+                assert (
+                    reduce is None
+                ), "Expect reduce to be None for aten.scatter_ with scalar src"
+                kernel = "at::scatter_out"
+        else:
+            assert (
+                reduce is not None
+            ), "Expect reduce to be not None for aten.scatter_reduce_"
+            kernel = "at::scatter_reduce_out"
+        return kernel
+
     def should_allocate(self):
         return False
 
@@ -3126,28 +3144,12 @@ class ScatterFallback(ExternKernel):
         include_self: bool = True,
     ):
         assert fn in {"aten.scatter_", "aten.scatter_reduce_"}
-        if reduce is not None and V.graph.cpp_wrapper and reduce in ["add", "multiply"]:
-            reduce = get_operator_enum[reduce]
         self.src_is_tensor = isinstance(src, TensorBox)
 
         if V.graph.cpp_wrapper:
-            if fn == "aten.scatter_":
-                if self.src_is_tensor:
-                    self.kernel = (
-                        "at::scatter_out"
-                        if reduce is None
-                        else "at::scatter_reduce_out"
-                    )
-                else:
-                    assert (
-                        reduce is None
-                    ), "Expect reduce to be None for aten.scatter_ with scalar src"
-                    self.kernel = "at::scatter_out"
-            else:
-                assert (
-                    reduce is not None
-                ), "Expect reduce to be not None for aten.scatter_reduce_"
-                self.kernel = "at::scatter_reduce_out"
+            if reduce is not None and reduce in get_operator_enum:
+                reduce = get_operator_enum[reduce]
+            self.kernel = self.get_cpp_kernel(fn, reduce)
         else:
             self.kernel = fn
 
