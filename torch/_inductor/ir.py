@@ -3068,6 +3068,9 @@ class InplaceBernoulliFallback(ExternKernel):
         self.name = V.graph.register_buffer(self)
 
 
+get_operator_enum = {"add": "sum", "multiply": "prod"}
+
+
 class ScatterFallback(ExternKernel):
     """
     This needs to be a custom class to handle mutation properly.
@@ -3081,13 +3084,34 @@ class ScatterFallback(ExternKernel):
         else:
             (x, index) = [t.codegen_reference() for t in self.inputs]
             src = self.constant_args[1]
-        line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
-        if self.kernel == "aten.scatter_":
-            if self.kwargs["reduce"]:
-                line += f", reduce={repr(self.kwargs['reduce'])}"
+        # TODO: support other overload for cpp wrapper
+        if V.graph.cpp_wrapper:
+            if self.fn == "aten.scatter_":
+                if self.src_is_tensor:
+                    line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                    if self.kwargs["reduce"]:
+                        line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}"
+                else:
+                    line = f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                    if self.kwargs["reduce"]:
+                        raise AssertionError(
+                            "src_is_tensor False & with reduce is unsupported"
+                        )
+            else:
+                line = (
+                    f"{self.kernel}({x}, {x}, {self.constant_args[0]}, {index}, {src}"
+                )
+                assert self.kwargs["reduce"] is not None
+                assert self.kwargs["include_self"] is not None
+                line += f", {V.graph.wrapper_code.val_to_str(self.kwargs['reduce'])}, {V.graph.wrapper_code.val_to_str(self.kwargs['include_self'])}"
         else:
-            line += ", ".join([""] + self.codegen_kwargs())
-        line += ")"
+            line = f"{self.kernel}({x}, {self.constant_args[0]}, {index}, {src}"
+            if self.kernel == "aten.scatter_":
+                if self.kwargs["reduce"]:
+                    line += f", reduce={repr(self.kwargs['reduce'])}"
+            else:
+                line += ", ".join([""] + self.codegen_kwargs())
+        line += f"){wrapper.ending}"
         wrapper.writeline(line)
 
     def should_allocate(self):
@@ -3105,8 +3129,31 @@ class ScatterFallback(ExternKernel):
         include_self: bool = True,
     ):
         assert fn in {"aten.scatter_", "aten.scatter_reduce_"}
-        self.kernel = fn
+        if reduce is not None and V.graph.cpp_wrapper and reduce in ["add", "multiply"]:
+            reduce = get_operator_enum[reduce]
         self.src_is_tensor = isinstance(src, TensorBox)
+
+        if V.graph.cpp_wrapper:
+            self.fn = fn
+            if fn == "aten.scatter_":
+                if self.src_is_tensor:
+                    if reduce is not None:
+                        self.kernel = "at::scatter_reduce_out"
+                    else:
+                        self.kernel = "at::scatter_out"
+                else:
+                    if reduce is not None:
+                        raise AssertionError("unsupported scatter overload")
+                    else:
+                        self.kernel = "at::scatter_out"
+            else:
+                assert (
+                    reduce is not None
+                ), "Expect reduce to be not None for aten.scatter_reduce_"
+                self.kernel = "at::scatter_reduce_out"
+        else:
+            self.kernel = fn
+
         constant_args: Tuple[Any, ...]
         if self.src_is_tensor:
             tensors = [self.realize_input(t) for t in [x, index, src]]
