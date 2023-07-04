@@ -1229,8 +1229,6 @@ class CppWrapperCodeGen(WrapperCodeGen):
         from .cpp import DTYPE_TO_ATEN
 
         if val is None:
-            # TODO: if val is None, for example for layout default value in rand func,
-            # we should define an optional value for it instead of always using at::Tensor()
             return self.none_str
         elif isinstance(val, bool):
             return "true" if val else "false"
