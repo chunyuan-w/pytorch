@@ -2886,17 +2886,13 @@ class ExternKernel(InputsKernel):
             hasattr(self, "kwargs_default_value")
             and arg_name in self.kwargs_default_value
         ):
-            default_value = self.kwargs_default_value.get(arg_name)
+            default_value = self.kwargs_default_value.get(arg_name).get("value")
             if default_value is None:
-                assert (
-                    hasattr(self, "kwargs_default_value_type")
-                    and arg_name in self.kwargs_default_value_type
-                )
-                arg_type = self.kwargs_default_value_type.get(arg_name)
+                arg_type = self.kwargs_default_value.get(arg_name).get("type")
                 # TODO: extend ths support here
                 assert (
-                    str(arg_type) == "Optional[int]"
-                ), "only suppot Optional[int] for now"
+                    str(arg_type) == "Optional[Layout]"
+                ), "only suppot Optional[Layout] for now"
                 optional_layout = OptionalLayout()
                 return optional_layout
             else:
@@ -3275,12 +3271,10 @@ class FallbackKernel(ExternKernelAlloc):
             self.ordered_kwargs_for_cpp_kernel = [
                 x.name for x in schema.arguments if x.kwarg_only
             ]
-            # TODO: put the below two dicts into a same data structure
             self.kwargs_default_value = {
-                x.name: x.default_value for x in schema.arguments if x.kwarg_only
-            }
-            self.kwargs_default_value_type = {
-                x.name: x.type for x in schema.arguments if x.kwarg_only
+                x.name: {"type": x.real_type, "value": x.default_value}
+                for x in schema.arguments
+                if x.kwarg_only
             }
 
         elif isinstance(kernel, torch._ops.HigherOrderOperator):
