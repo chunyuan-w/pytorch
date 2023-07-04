@@ -234,6 +234,9 @@ class OptionalLayout(OptionalAttr):
         self.name = "optional_layout"
 
 
+default_value_map = {"Optional[Layout]": OptionalLayout}
+
+
 def may_convert_to_optional(optional_value, value):
     return optional_value if not value and V.graph.cpp_wrapper else value
 
@@ -2889,12 +2892,11 @@ class ExternKernel(InputsKernel):
             default_value = self.kwargs_default_value.get(arg_name).get("value")
             if default_value is None:
                 arg_type = self.kwargs_default_value.get(arg_name).get("type")
-                # TODO: extend ths support here
+                # TODO: extend the support here
                 assert (
-                    str(arg_type) == "Optional[Layout]"
-                ), "only suppot Optional[Layout] for now"
-                optional_layout = OptionalLayout()
-                return optional_layout
+                    str(arg_type) in default_value_map
+                ), f"unsupported default_value arg_type: {str(arg_type)}"
+                return default_value_map[str(arg_type)]()
             else:
                 return default_value
         raise AssertionError(
