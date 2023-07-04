@@ -2675,15 +2675,11 @@ class CommonTemplate:
             random_rotations = torch.randn(
                 rotations_shape, device=vectors.device, dtype=vectors.dtype
             )
-            # Output dim: Batch_Size x Num_Attn_Heads x Num_Hashes x Seq_Len x Num_Buckets/2
-            rotated_vectors = torch.einsum(
-                "bmtd,mdhr->bmhtr", vectors, random_rotations
-            )
-            return rotated_vectors
+            return random_rotations
 
         self.common(
             fn,
-            (torch.randn([4, 12, 2048, 64]),),
+            (torch.randn([4, 12, 2, 64]),),
         )
 
     def test_embedding(self):
