@@ -869,26 +869,26 @@ if torch._C._has_mkldnn:
             graph = match.graph
             lstm_node = match.output_node()
             input = args[0]
-            weight0, weight1, weight2, weight3 = args[1:5]
+            weight0, weight1 = args[1:3]
             reverse = kwargs.get("reverse")
             packed_lstm_op = aten.mkldnn_rnn_layer.default
             with graph.inserting_before(lstm_node):
-                packed_weight_op = mkldnn._reorder_mkldnn_rnn_layer_weight
-                packed_weight_inputs = (weight0, weight1, weight2, weight3)
+                packed_weight_op = mkldnn._reorder_mkldnn_rnn_layer_weight.default
+                packed_weight_inputs = (weight0, weight1)
                 packed_weight_node = graph.create_node(
-                    "call_function", packed_weight_op, args=packed_weight_inputs
+                    "call_function", packed_weight_op, packed_weight_inputs, {}, "name"
                 )
-                packed_weight_items = [get_item(graph, packed_weight_node, i) for i in range(4)]
-                pack_lstm_inputs = (args[0], *packed_weight_items, args[5], args[6], reverse, *args[7:])
+                packed_weight_items = [get_item(graph, packed_weight_node, i) for i in range(2)]
+                pack_lstm_inputs = (args[0], *packed_weight_items, args[3], args[4], args[5], args[6], reverse, *args[7:])
                 
-                lstm_node.args = pack_lstm_inputs
-                
-                # packed_lstm_node = graph.create_node(
-                    # "call_function", packed_lstm_op, tuple(pack_lstm_inputs)
-                # )
-                # lstm_node.replace_all_uses_with(packed_lstm_node)
-                # packed_lstm_node.meta.update(lstm_node.meta)
-                # graph.erase_node(lstm_node)                
+                # lstm_node.args = pack_lstm_inputs
+                # print("done")
+                packed_lstm_node = graph.create_node(
+                    "call_function", packed_lstm_op, args=pack_lstm_inputs
+                )
+                lstm_node.replace_all_uses_with(packed_lstm_node)
+                packed_lstm_node.meta.update(lstm_node.meta)
+                graph.erase_node(lstm_node)                
                              
             
 
@@ -961,6 +961,7 @@ if torch._C._has_mkldnn:
             mkldnn._reorder_convolution_transpose_weight,
             mkldnn._reorder_linear_weight,
             torch.ops.mkl._mkl_reorder_linear_weight,
+            mkldnn._reorder_mkldnn_rnn_layer_weight,
         ]
         for node in gm.graph.nodes:
             if node.target in packed_weight_ops and len(node.args[0].users) > 1:

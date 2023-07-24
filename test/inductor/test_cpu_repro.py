@@ -309,7 +309,7 @@ class CPUReproTests(TestCase):
                 "hidden_size": [32],
                 "num_layers": [1],
                 "bidirectional": [False],
-                "bias": [False],
+                "bias": [True],
                 "empty_state": [False],
                 "batch_first": [False],
                 "batch_size": [2],
