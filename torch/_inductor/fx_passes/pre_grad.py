@@ -98,7 +98,7 @@ def fuse_fx(gm: torch.fx.GraphModule, example_inputs):
     # prepack it then. Add a temporary pass for lstm prepack before
     # AOTAutograd to get the performance benifit and need to figure
     # out a way to make this pass work after the AOTAutograd.
-    gm = mkldnn_fuse_fx(gm, example_inputs)
+    # gm = mkldnn_fuse_fx(gm, example_inputs)
     return gm
 
 

@@ -686,6 +686,9 @@ if torch._C._has_mkldnn:
             add_node.replace_all_uses_with(repl)
             match.erase_nodes(graph)
 
+    def _is_packable_mkldnn_rnn_layer(match):
+        return True
+
     def _is_packable_convolution(match):
         """
         Check if the node is supported for MKLDNN convolution.
@@ -786,6 +789,25 @@ if torch._C._has_mkldnn:
         Arg(),
     )
 
+    _aten_mkldnn_rnn_layer_args = (
+        Arg(), # input
+        Arg(), # weight0
+        Arg(), # weight1
+        Arg(), # weight2
+        Arg(), # weight3
+        Arg(), # hx_
+        Arg(), # cx_
+        KeywordArg("reverse"), # reverse
+        Arg(), # batch_sizes
+        Arg(), # mode
+        Arg(), # hidden_size
+        Arg(), # num_layers
+        Arg(), # has_biases
+        Arg(), # bidirectional
+        Arg(), # batch_first
+        Arg(), # train
+    )
+
     def _register_weight_pack_pass():
         @register_freezing_graph_pattern(
             CallFunction(aten.convolution.default, *_aten_conv_args),
@@ -827,6 +849,14 @@ if torch._C._has_mkldnn:
                 conv_node.replace_all_uses_with(packed_conv_node)
                 packed_conv_node.meta.update(conv_node.meta)
                 graph.erase_node(conv_node)
+
+
+        @register_freezing_graph_pattern(
+            CallFunction(aten.mkldnn_rnn_layer.default, *_aten_mkldnn_rnn_layer_args),
+            extra_check=_is_packable_mkldnn_rnn_layer,
+        )
+        def mkldnn_rnn_layer(match, *args, **kwargs):
+            print("hit lstm match")
 
         @register_freezing_graph_pattern(
             CallFunction(aten.addmm.default, Arg(), Arg(), Arg()),

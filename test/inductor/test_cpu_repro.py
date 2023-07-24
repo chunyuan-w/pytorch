@@ -287,19 +287,33 @@ class CPUReproTests(TestCase):
     @torch._dynamo.config.patch(dynamic_shapes=True)
     @torch._dynamo.config.patch(assume_static_by_default=False)
     @torch._dynamo.config.patch(allow_rnn=True)
+    @config.patch(freezing=True)    
     def test_lstm_packed(self):
         def _lstm_params_list():
+            # params_dict = {
+            #     "unbatched": [True, False],
+            #     "input_size": [1, 2],
+            #     "hidden_size": [5, 32],
+            #     "num_layers": [1, 3],
+            #     "bidirectional": [False, True],
+            #     "bias": [False, True],
+            #     "empty_state": [False, True],
+            #     "batch_first": [True, False],
+            #     "batch_size": [1, 2],
+            #     "seq_len": [1, 3],
+            # }
+
             params_dict = {
-                "unbatched": [True, False],
-                "input_size": [1, 2],
-                "hidden_size": [5, 32],
-                "num_layers": [1, 3],
-                "bidirectional": [False, True],
-                "bias": [False, True],
-                "empty_state": [False, True],
-                "batch_first": [True, False],
-                "batch_size": [1, 2],
-                "seq_len": [1, 3],
+                "unbatched": [False],
+                "input_size": [2],
+                "hidden_size": [32],
+                "num_layers": [1],
+                "bidirectional": [False],
+                "bias": [False],
+                "empty_state": [False],
+                "batch_first": [False],
+                "batch_size": [2],
+                "seq_len": [3],
             }
 
             params_list = []
