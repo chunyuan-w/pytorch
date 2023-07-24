@@ -419,6 +419,21 @@ static bool should_use_plain_format(ideep::tensor w) {
 #endif
 }
 
+static std::vector<Tensor> mkldnn_reorder_mkldnn_rnn_layer_weight(
+ Tensor weight0,
+ Tensor weight1,
+ Tensor weight2,
+ Tensor weight3,
+ c10::OptionalArrayRef<int64_t> input_size) {
+
+  std::vector<Tensor> result(4);
+  result[0] = weight0;
+  result[1] = weight1;
+  result[2] = weight2;
+  result[3] = weight3;
+  return result;
+}
+
 static std::vector<Tensor> mkldnn_reorder_lstm_weight(
     TensorList weight,
     int64_t input_feature_size,
@@ -529,6 +544,9 @@ TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_lstm_weight"),
       TORCH_FN(mkldnn_reorder_lstm_weight));
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_reorder_mkldnn_rnn_layer_weight"),
+      TORCH_FN(mkldnn_reorder_mkldnn_rnn_layer_weight));      
 }
 
 #else

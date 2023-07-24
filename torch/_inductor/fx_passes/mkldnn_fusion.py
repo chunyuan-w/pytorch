@@ -1,5 +1,6 @@
 import functools
 from functools import reduce
+import operator
 
 import torch
 
@@ -687,6 +688,10 @@ if torch._C._has_mkldnn:
             match.erase_nodes(graph)
 
     def _is_packable_mkldnn_rnn_layer(match):
+        lstm_node = match.output_node()
+        if lstm_node.args[1].op != "get_attr":
+            return False
+        # TODO: args 2, 3, 4
         return True
 
     def _is_packable_convolution(match):
@@ -856,7 +861,36 @@ if torch._C._has_mkldnn:
             extra_check=_is_packable_mkldnn_rnn_layer,
         )
         def mkldnn_rnn_layer(match, *args, **kwargs):
-            print("hit lstm match")
+            print("hit mkldnn_rnn_layer")
+            def get_item(graph, node, index):
+                return graph.call_function(operator.getitem, (node, index))
+            
+            # print("hit lstm match")
+            graph = match.graph
+            lstm_node = match.output_node()
+            input = args[0]
+            weight0, weight1, weight2, weight3 = args[1:5]
+            reverse = kwargs.get("reverse")
+            packed_lstm_op = aten.mkldnn_rnn_layer.default
+            with graph.inserting_before(lstm_node):
+                packed_weight_op = mkldnn._reorder_mkldnn_rnn_layer_weight
+                packed_weight_inputs = (weight0, weight1, weight2, weight3)
+                packed_weight_node = graph.create_node(
+                    "call_function", packed_weight_op, args=packed_weight_inputs
+                )
+                packed_weight_items = [get_item(graph, packed_weight_node, i) for i in range(4)]
+                pack_lstm_inputs = (args[0], *packed_weight_items, args[5], args[6], reverse, *args[7:])
+                
+                lstm_node.args = pack_lstm_inputs
+                
+                # packed_lstm_node = graph.create_node(
+                    # "call_function", packed_lstm_op, tuple(pack_lstm_inputs)
+                # )
+                # lstm_node.replace_all_uses_with(packed_lstm_node)
+                # packed_lstm_node.meta.update(lstm_node.meta)
+                # graph.erase_node(lstm_node)                
+                             
+            
 
         @register_freezing_graph_pattern(
             CallFunction(aten.addmm.default, Arg(), Arg(), Arg()),
