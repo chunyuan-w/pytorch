@@ -4165,6 +4165,125 @@ class ConvolutionTransposeUnary(ExternKernelAlloc):
         )
 
 
+class MkldnnRnnLayer(ExternKernelAlloc):
+    def __init__(
+        self,
+        layout,
+        inputs,
+        constant_args=(),
+        kernel="aten.mkldnn_rnn_layer"
+    ):
+        super().__init__(
+            layout,
+            inputs,
+            constant_args,
+        )
+        self.kernel = kernel
+
+
+    def codegen(self, wrapper):
+        wrapper.writeline(
+            f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
+        )
+        
+    
+    @classmethod
+    def create(
+        cls,
+        x: "TensorBox",
+        w0: "TensorBox",
+        w1: "TensorBox",
+        w2: "TensorBox",
+        w3: "TensorBox",
+        hx: "TensorBox",
+        cx: "TensorBox",
+        reverse: bool,
+        batch_sizes: List[int],
+        mode: int,
+        hidden_size: int,
+        num_layers: int,
+        has_biases: bool,
+        bidirectional: bool,
+        batch_first: bool,
+        train: bool,
+    ):    
+        x.realize()
+        w0.realize()
+        w1.realize()
+        w2.realize()
+        w3.realize()
+        hx.realize()
+        cx.realize()
+
+        input_size = x.get_size()
+        assert len(input_size) == 3, "Expect lstm input to be 3D"
+        if batch_first:
+            input_size = [input_size[1], input_size[0], input_size[2]]
+        
+        seq_length, mini_batch, input_size = input_size
+        hidden_size = hx.get_size()[2]
+        output_shape = [seq_length, mini_batch, hidden_size]
+
+        if batch_first:
+            output_shape = [output_shape[1], output_shape[0], output_shape[2]]
+        
+        hy_shape = hx.get_size()
+        cy_shape = cx.get_size()        
+        
+        res: List[IRNode] = []
+
+        inputs = [x, w0, w1, w2, w3, hx, cx]
+        constant_args = [
+            reverse,
+            batch_sizes,
+            mode,
+            hidden_size,
+            num_layers,
+            has_biases,
+            bidirectional,
+            batch_first,
+            train
+        ]
+        
+        packed = MkldnnRnnLayer(
+            MultiOutputLayout(x.get_device()),
+            inputs=inputs,
+            constant_args=constant_args,
+        )        
+        
+        def get_strides_of_lstm_output(output_shape, batch_first):
+            assert len(output_shape) == 3, "Expect output_shape to be 3D"
+            if batch_first:
+                return [output_shape[2], output_shape[2] * output_shape[0], 1]
+            else:
+                return make_contiguous_strides_for(output_shape)        
+
+        indices = []
+        output_sizes = [output_shape, hy_shape, cy_shape]
+        output_strides = [
+            get_strides_of_lstm_output(output_shape, batch_first),
+            make_contiguous_strides_for(hy_shape),
+            make_contiguous_strides_for(cy_shape),
+        ]
+        output_ir = [
+            MultiOutput(
+                FixedLayout(
+                    x.get_device(),
+                    x.get_dtype(),
+                    output_size,
+                    output_stride,
+                ),
+                packed,
+                indices + [(list, i)],
+            )
+            for i, (output_size, output_stride) in enumerate(
+                zip(output_sizes, output_strides)
+            )
+        ]
+
+        return output_ir        
+
+
 class LSTM(ExternKernelAlloc):
     def __init__(
         self,

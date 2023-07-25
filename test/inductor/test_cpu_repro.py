@@ -309,7 +309,7 @@ class CPUReproTests(TestCase):
                 "hidden_size": [32],
                 "num_layers": [1],
                 "bidirectional": [False],
-                "bias": [True],
+                "bias": [False],
                 "empty_state": [False],
                 "batch_first": [False],
                 "batch_size": [2],
@@ -375,7 +375,7 @@ class CPUReproTests(TestCase):
 
                     fn_opt = torch._dynamo.optimize("inductor")(mod)
                     code = run_and_get_cpp_code(fn_opt, *inps)
-                    self.assertTrue("torch.ops.mkldnn._lstm" in code)
+                    self.assertTrue("aten.mkldnn_rnn_layer" in code)
                     self.assertEqual(fn_opt(*inps), mod(*inps))
 
     @torch._dynamo.config.patch(dynamic_shapes=True)

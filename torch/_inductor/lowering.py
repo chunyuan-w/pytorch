@@ -1114,6 +1114,7 @@ def register_onednn_fusion_ops():
             torch.ops.mkldnn._convolution_transpose_pointwise,
             torch.ops.mkldnn._linear_pointwise,
             torch.ops.mkldnn._lstm,
+            aten.mkldnn_rnn_layer.default,
         ]
 
         @register_lowering(torch.ops.mkldnn._convolution_pointwise)
@@ -1280,6 +1281,49 @@ def register_onednn_fusion_ops():
                     batch_first,
                 ),
             )
+
+        @register_lowering(aten.mkldnn_rnn_layer.default)
+        def mkldnn_rnn_layer(
+            x: TensorBox,
+            w0: TensorBox,
+            w1: TensorBox,
+            w2: TensorBox,
+            w3: TensorBox,
+            hx: TensorBox,
+            cx: TensorBox,
+            reverse: bool,
+            batch_sizes: List[int],
+            mode: int,
+            hidden_size: int,
+            num_layers: int,
+            has_biases: bool,
+            bidirectional: bool,
+            batch_first: bool,
+            train: bool,
+        ):
+            return pytree.tree_map(
+                TensorBox.create,
+                ir.MkldnnRnnLayer.create(
+                x,
+                w0,
+                w1,
+                w2,
+                w3,
+                hx,
+                cx,
+                reverse,
+                batch_sizes,
+                mode,
+                hidden_size,
+                num_layers,
+                has_biases,
+                bidirectional,
+                batch_first,
+                train,
+                ) ,
+            )            
+
+            
 
         if torch._C.has_mkl:
             cpu_needs_realized_inputs.append(torch.ops.mkl._mkl_linear)
