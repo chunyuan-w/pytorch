@@ -422,9 +422,68 @@ static bool should_use_plain_format(ideep::tensor w) {
 static std::vector<Tensor> mkldnn_reorder_mkldnn_rnn_layer_weight(
  Tensor weight0,
  Tensor weight1,
+ int64_t hidden_size,
+ bool reverse,
+ bool has_biases,
+ bool batch_first,
  c10::OptionalArrayRef<int64_t> input_size) {
 
+  std::vector<int64_t> input_size_value;
+  int64_t time_step, batch_size;
+  if (input_size.has_value()) {
+    input_size_value = input_size.value().vec();
+    int64_t time_index = batch_first ? 1: 0;
+    int64_t batch_size_index = batch_first ? 0: 1;
+
+    time_step = input_size_value[time_index];
+    batch_size = input_size_value[batch_size_index];
+  } else {
+    // no value fed, provide one here
+    time_step = 5;
+    batch_size = 10;
+  }
+
   std::vector<Tensor> result(2);
+
+  ideep::tensor w1_, w2_;
+  at::Tensor packed_w1, packed_w2;  
+  
+  int64_t feature_size = weight0.size(-1);
+
+  std::tie(w1_, w2_) = get_lstm_packed_weights(
+    weight0,
+    weight1,
+    at::zeros(
+      weight0.sizes(),
+      weight0.options()),
+    at::zeros(
+      weight1.sizes(),
+      weight1.options()),
+    feature_size,
+    hidden_size,
+    has_biases, // has_biases
+    1, // num_layers
+    false, // bidirectional
+    time_step,
+    batch_size,
+    reverse);
+
+  if (should_use_plain_format(w1_)) {
+    packed_w1 = weight0;
+  } else {
+    packed_w1 = new_with_itensor_mkldnn(std::move(w1_), optTypeMetaToScalarType(weight0.options().dtype_opt()), weight0.options().device_opt());
+  }
+
+  if (should_use_plain_format(w2_)) {
+    packed_w2 = weight1;
+  } else {
+    packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(weight1.options().dtype_opt()), weight1.options().device_opt());
+  }
+
+  // result[0] = packed_w1;
+  // result[1] = packed_w2;
+
+
   result[0] = weight0;
   result[1] = weight1;
   return result;

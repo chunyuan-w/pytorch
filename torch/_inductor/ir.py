@@ -4217,15 +4217,16 @@ class MkldnnRnnLayer(ExternKernelAlloc):
 
         input_size = x.get_size()
         assert len(input_size) == 3, "Expect lstm input to be 3D"
-        if batch_first:
-            input_size = [input_size[1], input_size[0], input_size[2]]
+        # batch_first is handled in the lstm OP
+        # if batch_first:
+        #     input_size = [input_size[1], input_size[0], input_size[2]]
         
         seq_length, mini_batch, input_size = input_size
-        hidden_size = hx.get_size()[2]
+        # hidden_size = hx.get_size()[2]
         output_shape = [seq_length, mini_batch, hidden_size]
 
-        if batch_first:
-            output_shape = [output_shape[1], output_shape[0], output_shape[2]]
+        # if batch_first:
+        #     output_shape = [output_shape[1], output_shape[0], output_shape[2]]
         
         hy_shape = hx.get_size()
         cy_shape = cx.get_size()        

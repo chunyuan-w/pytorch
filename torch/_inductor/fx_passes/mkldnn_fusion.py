@@ -872,9 +872,12 @@ if torch._C._has_mkldnn:
             weight0, weight1 = args[1:3]
             reverse = kwargs.get("reverse")
             packed_lstm_op = aten.mkldnn_rnn_layer.default
+            hidden_size = args[9]
+            has_biases = args[11]
+            batch_first = args[13]
             with graph.inserting_before(lstm_node):
                 packed_weight_op = mkldnn._reorder_mkldnn_rnn_layer_weight.default
-                packed_weight_inputs = (weight0, weight1)
+                packed_weight_inputs = (weight0, weight1, hidden_size, reverse, has_biases, batch_first)
                 packed_weight_node = graph.create_node(
                     "call_function", packed_weight_op, packed_weight_inputs, {}, "name"
                 )

@@ -2396,7 +2396,8 @@ def mkldnn_one_layer_lstm(inp, hidden, params, has_biases, reverse=False):
         train,
     )
     y, hy, cy = outputs[0], outputs[1], outputs[2]
-    return y, (hy.squeeze(1), cy.squeeze(1))
+    # TODO: batch_first (squeeze(1)?) or not
+    return y, (hy.squeeze(0), cy.squeeze(0))
 
 
 def _rnn_helper(

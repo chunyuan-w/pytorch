@@ -364,11 +364,13 @@ class CPUReproTests(TestCase):
                     bidirectional,
                     batch_first,
                 ).eval()
-                mod = mod.to(dtype)
-                v = v.to(dtype)
-                h = h.to(dtype)
-                c = c.to(dtype)
-                with torch.no_grad():
+                # mod = mod.to(dtype)
+                # v = v.to(dtype)
+                # h = h.to(dtype)
+                # c = c.to(dtype)
+                maybe_autocast = torch.cpu.amp.autocast() if dtype == torch.bfloat16 else contextlib.nullcontext()
+                
+                with torch.no_grad(), maybe_autocast:
                     inps = [v]
                     if not empty_state:
                         inps.append((h, c))
