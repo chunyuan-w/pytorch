@@ -4207,13 +4207,15 @@ class MkldnnRnnLayer(ExternKernelAlloc):
         batch_first: bool,
         train: bool,
     ):    
-        x.realize()
-        w0.realize()
-        w1.realize()
-        w2.realize()
-        w3.realize()
-        hx.realize()
-        cx.realize()
+        x = cls.require_stride1(cls.realize_input(x))
+        # TODO: x should be contiguous before calling mkldnn_rnn_layer. Do other inputs need this as well?
+        x.freeze_layout()
+        w0 = cls.require_stride1(cls.realize_input(w0))
+        w1 = cls.require_stride1(cls.realize_input(w1))
+        w2 = cls.require_stride1(cls.realize_input(w2))
+        w3 = cls.require_stride1(cls.realize_input(w3))
+        hx = cls.require_stride1(cls.realize_input(hx))
+        cx = cls.require_stride1(cls.realize_input(cx))
 
         input_size = x.get_size()
         assert len(input_size) == 3, "Expect lstm input to be 3D"
@@ -4254,10 +4256,10 @@ class MkldnnRnnLayer(ExternKernelAlloc):
         
         def get_strides_of_lstm_output(output_shape, batch_first):
             assert len(output_shape) == 3, "Expect output_shape to be 3D"
-            if batch_first:
-                return [output_shape[2], output_shape[2] * output_shape[0], 1]
-            else:
-                return make_contiguous_strides_for(output_shape)        
+            # if batch_first:
+                # return [output_shape[2], output_shape[2] * output_shape[0], 1]
+            # else:
+            return make_contiguous_strides_for(output_shape)        
 
         indices = []
         output_sizes = [output_shape, hy_shape, cy_shape]

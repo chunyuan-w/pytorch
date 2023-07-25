@@ -310,10 +310,10 @@ class CPUReproTests(TestCase):
                 "num_layers": [1],
                 "bidirectional": [False],
                 "bias": [False],
-                "empty_state": [False],
-                "batch_first": [False],
-                "batch_size": [2],
-                "seq_len": [3],
+                "empty_state": [True],
+                "batch_first": [False, True],
+                "batch_size": [4],
+                "seq_len": [2],
             }
 
             params_list = []
