@@ -480,12 +480,12 @@ static std::vector<Tensor> mkldnn_reorder_mkldnn_rnn_layer_weight(
     packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(weight1.options().dtype_opt()), weight1.options().device_opt());
   }
 
-  // result[0] = packed_w1;
-  // result[1] = packed_w2;
+  result[0] = packed_w1;
+  result[1] = packed_w2;
 
 
-  result[0] = weight0;
-  result[1] = weight1;
+  // result[0] = weight0;
+  // result[1] = weight1;
   return result;
 }
 
