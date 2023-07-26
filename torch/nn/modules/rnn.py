@@ -282,6 +282,10 @@ class RNNBase(Module):
         return s.format(**self.__dict__)
 
     def __getstate__(self):
+        # If weights have been changed, re-init _flat_weights in __getstate__ here.
+        if not torch.jit.is_scripting():
+            if self._weights_have_changed():
+                self._init_flat_weights()        
         # Don't serialize the weight references.
         state = self.__dict__.copy()
         del state['_flat_weight_refs']
