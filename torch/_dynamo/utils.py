@@ -911,6 +911,9 @@ def wrap_fake_exception(fn):
 
 def deepcopy_to_fake_tensor(obj, fake_mode):
     with torch._subclasses.fake_tensor.FakeCopyMode(fake_mode):
+        # TODO: need to do this when entering FakeMode perviously
+        if isinstance(obj, torch.nn.LSTM):
+            obj._init_flat_weights()
         return wrap_fake_exception(lambda: copy.deepcopy(obj))
 
 
