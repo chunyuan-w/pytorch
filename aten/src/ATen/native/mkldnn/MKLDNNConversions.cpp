@@ -489,103 +489,6 @@ static std::vector<Tensor> mkldnn_reorder_mkldnn_rnn_layer_weight(
   return result;
 }
 
-static std::vector<Tensor> mkldnn_reorder_lstm_weight(
-    TensorList weight,
-    int64_t input_feature_size,
-    int64_t hidden_size,
-    bool has_biases,
-    int64_t num_layers,
-    bool bidirectional,
-    bool batch_first,
-    c10::OptionalArrayRef<int64_t> input_size) {
-  std::vector<int64_t> input_size_value;
-  int64_t time_step, batch_size;
-  if (input_size.has_value()) {
-    input_size_value = input_size.value().vec();
-    int64_t time_index = batch_first ? 1: 0;
-    int64_t batch_size_index = batch_first ? 0: 1;
-
-    time_step = input_size_value[time_index];
-    batch_size = input_size_value[batch_size_index];
-  } else {
-    // no value fed, provide one here
-    time_step = 5;
-    batch_size = 10;
-  }
-
-  std::vector<Tensor> result(weight.size());
-
-  auto num_directions = bidirectional ? 2 : 1;
-  int64_t weight_stride0 = has_biases ? 4 : 2;
-
-  at::MatrixRef<at::Tensor> weights{
-      weight, static_cast<size_t>(weight_stride0)};
-  ideep::tensor w1_, w2_;
-  at::Tensor packed_w1, packed_w2;
-
-  for (int64_t layer = 0; layer < num_layers; layer++) {
-    for (int64_t direction = 0; direction < num_directions; direction++) {
-      // for layer == 0, feature_size = input_feature_size
-      // otherwise, feature_size = hidden_size
-      int64_t layer_feature_size = layer == 0? input_feature_size : num_directions * hidden_size;
-      auto index = layer * num_directions + direction;
-      auto layer_weights = weights[index];
-      TORCH_CHECK(layer_weights.size() == 2 || layer_weights.size() == 4);
-      auto reverse = (direction > 0);
-
-      std::tie(w1_, w2_) = get_lstm_packed_weights(
-        layer_weights[0],
-        layer_weights[1],
-        has_biases ? layer_weights[2] : at::zeros(
-                           layer_weights[0].sizes(),
-                           layer_weights[0].options()),
-        has_biases ? layer_weights[3]
-                            : at::zeros(
-                                  layer_weights[1].sizes(),
-                                  layer_weights[1].options()),
-        layer_feature_size,
-        hidden_size,
-        has_biases,
-        num_layers,
-        bidirectional,
-        time_step,
-        batch_size,
-        reverse);
-
-      // TODO: use is_opaque() after updating ideep in pytorch
-      // Don't pack when the weight is of rnn_packed format
-      // When the weight is of rnn_packed format, if the seq_lens of
-      // the input changes, the format of weight also changes.
-      // oneDNN does not support reorder from rnn_packed back to public format.
-      // LSTM based on BRGEMM kernel (on AVX512 and newest ISAs) will use blocked
-      // format for weight of LSTM, which won't change when the input seq_lens
-      // changes.
-      // On AVX2, queried weight will be plain format
-      if (should_use_plain_format(w1_)) {
-        packed_w1 = layer_weights[0];
-      } else {
-        packed_w1 = new_with_itensor_mkldnn(std::move(w1_), optTypeMetaToScalarType(layer_weights[0].options().dtype_opt()), layer_weights[0].options().device_opt());
-      }
-
-      if (should_use_plain_format(w2_)) {
-        packed_w2 = layer_weights[1];
-      } else {
-        packed_w2 = new_with_itensor_mkldnn(std::move(w2_), optTypeMetaToScalarType(layer_weights[1].options().dtype_opt()), layer_weights[1].options().device_opt());
-      }
-
-      result[index * weight_stride0] = packed_w1;
-      result[index * weight_stride0+1] = packed_w2;
-
-      if (has_biases) {
-        result[index * weight_stride0+2] = layer_weights[2];
-        result[index * weight_stride0+3] = layer_weights[3];
-      }
-    }
-  }
-
-  return result;
-}
-
 TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_convolution_transpose_weight"),
@@ -596,9 +499,6 @@ TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_convolution_weight"),
       TORCH_FN(mkldnn_reorder_conv2d_weight));
-  m.impl(
-      TORCH_SELECTIVE_NAME("mkldnn::_reorder_lstm_weight"),
-      TORCH_FN(mkldnn_reorder_lstm_weight));
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_mkldnn_rnn_layer_weight"),
       TORCH_FN(mkldnn_reorder_mkldnn_rnn_layer_weight));      

@@ -2691,15 +2691,14 @@ def use_mkldnn(input, hx, params):
         return False
 
     dtypes = {t.dtype for t in tensors}
-    if len(dtypes) != 1:
-        return False
 
     device = devices.pop()
     dtype = dtypes.pop()
     if device != torch.device("cpu"):
         return False
-    if dtype not in [torch.float, torch.bfloat16]:
-        return False
+    for dtype in dtypes:
+        if dtype not in [torch.float, torch.bfloat16]:
+            return False
 
     if input.requires_grad:
         return False
