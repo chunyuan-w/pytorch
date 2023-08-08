@@ -679,20 +679,20 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
             maybe_mark_step(args)
 
             # interleave the runs to handle frequency scaling and load changes
-            with maybe_mark_profile(p=p, mark="expected"):
-                timings[rep, 0], expected_output = timed(
-                    model,
-                    model_iter_fn,
-                    inputs,
-                    return_result=True,
-                    times=times,
-                    collect_outputs=args.collect_outputs,
-                )
+            # with maybe_mark_profile(p=p, mark="expected"):
+            timings[rep, 0], expected_output = timed(
+                model,
+                model_iter_fn,
+                inputs,
+                return_result=True,
+                times=times,
+                collect_outputs=args.collect_outputs,
+            )
 
             # call mark_step between the 2 calls to make the comparison fair.
             maybe_mark_step(args)
 
-            with maybe_mark_profile(p=p, mark="actual"):
+            with torch.autograd.profiler.profile(enabled=args.enable_profiler) as prof:
                 timings[rep, 1], actual_output = timed(
                     model,
                     frozen_model_iter_fn,
@@ -707,11 +707,15 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
                     expected_output, actual_output, tol=tolerance
                 )
 
-    if args.export_profiler_trace:
-        name = args.profiler_trace_name + "_" + model.name + ".json"
-        name = os.path.join(torch._dynamo.config.base_dir, name)
-        p.export_chrome_trace(name)
+    if args.enable_profiler:
+        print("enter export_profiler_trace")
+        print(prof.key_averages().table(sort_by="self_cpu_time_total"))
+        # name = args.profiler_trace_name + "_" + model.name + ".json"
+        # name = os.path.join(torch._dynamo.config.base_dir, name)
+        # p.export_chrome_trace(name)
     median = np.median(timings, axis=0)
+    print("time eager:", median[0])
+    print("time inductor:", median[1])
     speedup = median[0] / median[1]
     if args.dump_raw_metrics:
         np.save(
@@ -2603,6 +2607,11 @@ def parse_args(args=None):
         help="Specify the part of the model to run.",
     )
     parser.add_argument(
+        "--enable-profiler",
+        action="store_true",
+        help="exports trace of kineto profiler",
+    )    
+    parser.add_argument(
         "--export-profiler-trace",
         action="store_true",
         help="exports trace of kineto profiler",
@@ -3185,6 +3194,10 @@ def run(runner, args, original_dir=None):
         inductor_config.cpp_wrapper = args.cpp_wrapper
         if args.inference:
             inductor_config.freezing = args.freezing
+        
+        if args.enable_profiler:
+            inductor_config.profiler_mark_wrapper_call = True
+            inductor_config.cpp.enable_kernel_profile = True
 
     runner.setup_amp()
 
