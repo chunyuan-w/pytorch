@@ -3626,6 +3626,7 @@ class FallbackKernel(ExternKernelAlloc):
                     for x in schema.arguments
                     if x.kwarg_only
                 }
+                # TODO: positional args default value
         elif isinstance(kernel, torch._ops.HigherOrderOperator):
             if getattr(torch._prims.rng_prims, kernel.__name__, None) is kernel:
                 self.kernel = f"torch._prims.rng_prims.{kernel.__name__}"
