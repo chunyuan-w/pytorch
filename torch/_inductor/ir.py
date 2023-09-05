@@ -3618,6 +3618,11 @@ class FallbackKernel(ExternKernelAlloc):
                 else f"aten.{kernel.__name__}"
             )
             if schema is not None:
+                self.args_default_value = [
+                    {"type": x.real_type, "value": x.default_value}
+                    for x in schema.arguments
+                    if not x.kwarg_only
+                ]
                 self.ordered_kwargs_for_cpp_kernel = [
                     x.name for x in schema.arguments if x.kwarg_only
                 ]
@@ -3688,6 +3693,27 @@ class FallbackKernel(ExternKernelAlloc):
         tensor_args = [Shim(x.codegen_reference()) for x in self.inputs]
         args, kwargs = self.unflatten_args(tensor_args, self.constant_args)
         args = [V.graph.wrapper_code.val_to_arg_str(x) for x in args]
+        if V.graph.cpp_wrapper and self.args_default_value:
+            n_args = len(args)
+            n_pos_args = len(self.args_default_value)
+            # Some positional args are not provided, need to use their default value
+            if n_args < n_pos_args:
+                pos_args = []
+                for i in range(n_args, n_pos_args):
+                    v = self.args_default_value[i]["value"]
+                    if v is None:
+                        arg_type = self.args_default_value[i]["type"]
+                        # TODO: extend the support here
+                        assert (
+                            str(arg_type) in default_value_map
+                        ), f"unsupported default_value arg_type: {str(arg_type)}"
+                        arg_val = default_value_map[str(arg_type)]()
+                    else:
+                        arg_val = v
+                    pos_args.append(arg_val)
+                pos_args = [V.graph.wrapper_code.val_to_arg_str(x) for x in pos_args]
+                args.extend(pos_args)
+
         # let self.codegen_kwargs handle kwargs
         self.kwargs.update(kwargs)
         return args
