@@ -3631,7 +3631,6 @@ class FallbackKernel(ExternKernelAlloc):
                     for x in schema.arguments
                     if x.kwarg_only
                 }
-                # TODO: positional args default value
         elif isinstance(kernel, torch._ops.HigherOrderOperator):
             if getattr(torch._prims.rng_prims, kernel.__name__, None) is kernel:
                 self.kernel = f"torch._prims.rng_prims.{kernel.__name__}"
@@ -3682,6 +3681,21 @@ class FallbackKernel(ExternKernelAlloc):
             x.name for x in kernel._schema.arguments if x.kwarg_only
         ]
 
+    def get_args_value(self, pos):
+        assert pos < len(
+            self.args_default_value
+        ), f"expected the index {pos} to be smaller than len(self.args_default_value): {len(self.args_default_value)}"
+        v = self.args_default_value[pos]["value"]
+        if v is None:
+            arg_type = self.args_default_value[pos]["type"]
+            # TODO: extend the support here
+            assert (
+                str(arg_type) in default_value_map
+            ), f"unsupported default_value arg_type: {str(arg_type)}"
+            return default_value_map[str(arg_type)]()
+        else:
+            return v
+
     def codegen_args(self):
         @dataclasses.dataclass
         class Shim:
@@ -3696,21 +3710,9 @@ class FallbackKernel(ExternKernelAlloc):
         if V.graph.cpp_wrapper and self.args_default_value:
             n_args = len(args)
             n_pos_args = len(self.args_default_value)
-            # Some positional args are not provided, need to use their default value
+            # Some positional args are not provided, need to use their default value in cpp wrapper
             if n_args < n_pos_args:
-                pos_args = []
-                for i in range(n_args, n_pos_args):
-                    v = self.args_default_value[i]["value"]
-                    if v is None:
-                        arg_type = self.args_default_value[i]["type"]
-                        # TODO: extend the support here
-                        assert (
-                            str(arg_type) in default_value_map
-                        ), f"unsupported default_value arg_type: {str(arg_type)}"
-                        arg_val = default_value_map[str(arg_type)]()
-                    else:
-                        arg_val = v
-                    pos_args.append(arg_val)
+                pos_args = [self.get_args_value(i) for i in range(n_args, n_pos_args)]
                 pos_args = [V.graph.wrapper_code.val_to_arg_str(x) for x in pos_args]
                 args.extend(pos_args)
 

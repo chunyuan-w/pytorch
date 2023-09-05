@@ -909,9 +909,8 @@ def python_type_to_schema_type():
         torch.dtype: "int",
         torch.device: "Device",
         bool: "bool",
-        ir.TensorBox: "Tensor",
-        # TODO: basic python types mapping
         float: "float",
+        ir.TensorBox: "Tensor",
     }
     return PYTHON_TYPE_TO_SCHEMA_TYPE
 
