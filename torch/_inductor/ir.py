@@ -3409,8 +3409,38 @@ class InplaceBernoulliFallback(ExternKernel):
     """
     This needs to be a custom class to handle mutation properly
     """
+    # TODO: duplicated func
+    def set_cpp_kernel(self, kernel):
+        from .codegen.wrapper import get_cpp_op_schema
 
-    kernel = "aten.bernoulli_"
+        assert (
+            not kernel._schema.is_mutable
+        ), f"mutable {kernel.__name__} is not supported with cpp_wrapper"
+
+        # These checks are here because ops that return aliasing tensors will
+        # return type Tensor& instead of Tensor, but codegen will always write
+        # type Tensor on the LHS.
+        def is_not_write(arg):
+            return arg.alias_info is None or not arg.alias_info.is_write
+
+        assert all(
+            is_not_write(x) for x in kernel._schema.arguments
+        ), f"{kernel.__name__} with alias_info arguments is not supported with cpp_wrapper"
+        assert all(
+            is_not_write(x) for x in kernel._schema.returns
+        ), f"{kernel.__name__} with alias_info returns is not supported with cpp_wrapper"
+
+        self.kernel = kernel._schema.name
+        self.cpp_kernel_overlad_name = kernel._schema.overload_name
+        self.cpp_kernel_key = (
+            f"{self.kernel.replace('::', '_')}_{self.cpp_kernel_overlad_name}"
+        )
+
+        self.cpp_op_schema = get_cpp_op_schema(kernel)
+        self.ordered_kwargs_for_cpp_kernel = [
+            x.name for x in kernel._schema.arguments if x.kwarg_only
+        ]
+    
 
     def codegen(self, wrapper):
         (x,) = (t.codegen_reference() for t in self.inputs)
@@ -3433,6 +3463,17 @@ class InplaceBernoulliFallback(ExternKernel):
             constant_args,
         )
         self.name = V.graph.register_buffer(self)
+        print("self.cst:", self.constant_args)
+        if V.graph.cpp_wrapper:
+            if len(self.constant_args) > 0:
+                p = self.constant_args[0]
+            if isinstance(p, float):
+                kernel = torch.ops.aten.bernoulli_.float
+            else:
+                kernel = torch.ops.aten.bernoulli_.Tensor
+            self.set_cpp_kernel(kernel)
+        else:
+            self.kernel = "aten.bernoulli_"
 
 
 class ScatterFallback(ExternKernel):
