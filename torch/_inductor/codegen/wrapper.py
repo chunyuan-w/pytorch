@@ -92,11 +92,11 @@ def convert_return_type(python_type):
     return f"at::{python_type}"
 
 
-def get_cpp_op_schema(kernel):
+def get_cpp_op_schema(schema):
     # use x.real_type instead of x.type so that we get ScalarType instead of int
-    arg_types = [repr(x.real_type) for x in kernel._schema.arguments]
-    arg_names = [x.name for x in kernel._schema.arguments]
-    returns = [repr(x.real_type) for x in kernel._schema.returns]
+    arg_types = [repr(x.real_type) for x in schema.arguments]
+    arg_names = [x.name for x in schema.arguments]
+    returns = [repr(x.real_type) for x in schema.returns]
 
     num_retunrs = len(returns)
     assert num_retunrs > 0, "must have at least one return value"

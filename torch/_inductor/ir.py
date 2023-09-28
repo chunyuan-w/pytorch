@@ -2980,6 +2980,37 @@ class ExternKernel(InputsKernel):
     def codegen(self, wrapper):
         raise NotImplementedError()
 
+    def set_cpp_kernel(self, schema):
+        from .codegen.wrapper import get_cpp_op_schema
+
+        assert (
+            not schema.is_mutable
+        ), f"mutable {schema} is not supported with cpp_wrapper"
+
+        # These checks are here because ops that return aliasing tensors will
+        # return type Tensor& instead of Tensor, but codegen will always write
+        # type Tensor on the LHS.
+        def is_not_write(arg):
+            return arg.alias_info is None or not arg.alias_info.is_write
+
+        assert all(
+            is_not_write(x) for x in schema.arguments
+        ), f"{schema} with alias_info arguments is not supported with cpp_wrapper"
+        assert all(
+            is_not_write(x) for x in schema.returns
+        ), f"{schema} with alias_info returns is not supported with cpp_wrapper"
+
+        self.kernel = schema.name
+        self.cpp_kernel_overlad_name = schema.overload_name
+        self.cpp_kernel_key = (
+            f"{self.kernel.replace('::', '_')}_{self.cpp_kernel_overlad_name}"
+        )
+
+        self.cpp_op_schema = get_cpp_op_schema(schema)
+        self.ordered_kwargs_for_cpp_kernel = [
+            x.name for x in schema.arguments if x.kwarg_only
+        ]
+
     @staticmethod
     def copy_input(x):
         pw = Pointwise.create(
@@ -3410,8 +3441,6 @@ class InplaceBernoulliFallback(ExternKernel):
     This needs to be a custom class to handle mutation properly
     """
 
-    kernel = "aten.bernoulli_"
-
     def codegen(self, wrapper):
         (x,) = (t.codegen_reference() for t in self.inputs)
         wrapper.writeline(
@@ -3433,6 +3462,24 @@ class InplaceBernoulliFallback(ExternKernel):
             constant_args,
         )
         self.name = V.graph.register_buffer(self)
+
+        if V.graph.cpp_wrapper:
+            args = [x] + list(constant_args)
+            kwargs = {}
+            kernel = torch.ops.aten.bernoulli_
+            _, schemas = get_signature_for_torch_op(kernel, return_schemas=True)
+            schema = None
+            schema = try_find_schema(schemas, args, kwargs)
+            assert (
+                schema is not None
+            ), "cpp schema of InplaceBernoulliFallback not found"
+            self.set_cpp_kernel(schema)
+            self.use_cpp_op_schema = True
+
+            print("schema")
+
+        else:
+            self.kernel = "aten.bernoulli_"
 
 
 class ScatterFallback(ExternKernel):
@@ -3673,7 +3720,7 @@ class FallbackKernel(ExternKernelAlloc):
         else:
             if V.graph.cpp_wrapper:
                 self.use_cpp_op_schema = True
-                self.set_cpp_kernel(kernel)
+                self.set_cpp_kernel(kernel._schema)
             else:
                 self.kernel = (
                     f"{kernel.__module__.replace('._ops.', '.ops.')}.{kernel.__name__}"
@@ -3681,37 +3728,6 @@ class FallbackKernel(ExternKernelAlloc):
         self.unflatten_args = unflatten_args
         self.kwargs = {} if kwargs is None else kwargs
         V.graph.warn_fallback(self.kernel)
-
-    def set_cpp_kernel(self, kernel):
-        from .codegen.wrapper import get_cpp_op_schema
-
-        assert (
-            not kernel._schema.is_mutable
-        ), f"mutable {kernel.__name__} is not supported with cpp_wrapper"
-
-        # These checks are here because ops that return aliasing tensors will
-        # return type Tensor& instead of Tensor, but codegen will always write
-        # type Tensor on the LHS.
-        def is_not_write(arg):
-            return arg.alias_info is None or not arg.alias_info.is_write
-
-        assert all(
-            is_not_write(x) for x in kernel._schema.arguments
-        ), f"{kernel.__name__} with alias_info arguments is not supported with cpp_wrapper"
-        assert all(
-            is_not_write(x) for x in kernel._schema.returns
-        ), f"{kernel.__name__} with alias_info returns is not supported with cpp_wrapper"
-
-        self.kernel = kernel._schema.name
-        self.cpp_kernel_overlad_name = kernel._schema.overload_name
-        self.cpp_kernel_key = (
-            f"{self.kernel.replace('::', '_')}_{self.cpp_kernel_overlad_name}"
-        )
-
-        self.cpp_op_schema = get_cpp_op_schema(kernel)
-        self.ordered_kwargs_for_cpp_kernel = [
-            x.name for x in kernel._schema.arguments if x.kwarg_only
-        ]
 
     def get_arg_default_value(self, pos):
         assert hasattr(
