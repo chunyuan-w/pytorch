@@ -5054,7 +5054,27 @@ class QConvPointWisePT2E(ExternKernelAlloc):
               fp32_output, unary_attr, unary_scalars, unary_algorithm]
         """
         self.has_bias = len(inputs) == 5
-        super().__init__(layout, inputs, constant_args)
+        super().__init__(layout, inputs, constant_args, None, kernel="torch.ops.onednn.qconv2d_pointwise", cpp_kernel="onednn::qconv2d_pointwise",)
+        self.cpp_kernel_key = "qconv2d_pointwise"
+        self.cpp_op_schema = """
+            at::Tensor(
+                at::Tensor act,
+                double act_scale,
+                int64_t act_zero_point,
+                at::Tensor weight,
+                at::Tensor weight_scales,
+                at::Tensor weight_zero_points,
+                c10::optional<at::Tensor> bias,
+                torch::List<int64_t> stride,
+                torch::List<int64_t> padding,
+                torch::List<int64_t> dilation,
+                int64_t groups,
+                double inv_output_scale, 
+                int64_t output_zero_point,
+                bool fp32_output,
+                c10::string_view attr,
+                torch::List<c10::optional<at::Scalar>> scalars,                
+                c10::optional<c10::string_view> algorithm)"""        
 
     def codegen(self, wrapper):
         # Parser the inputs and constant
@@ -5083,25 +5103,31 @@ class QConvPointWisePT2E(ExternKernelAlloc):
 
         self.kernel = "torch.ops.onednn.qconv2d_pointwise"
         codegen_args = (
-            f"{x}"
-            + f", {x_scale}"
-            + f", {x_zp}"
-            + f", {packed_weight}"
-            + f", {w_scale}"
-            + f", {w_zp}"
-            + f", {bias}"
-            + f", {stride}"
-            + f", {padding}"
-            + f", {dilation}"
-            + f", {groups}"
-            + f", {o_inv_scale}"
-            + f", {o_zp}"
-            + f", {fp32_output}"
-            + f", {unary_attr}"
-            + f", {unary_scalars}"
-            + f", {unary_algorithm}"
+            x,
+            x_scale,
+            x_zp,
+            packed_weight,
+            w_scale,
+            w_zp,
+            bias,
+            stride,
+            padding,
+            dilation,
+            groups,
+            o_inv_scale,
+            o_zp,
+            fp32_output,
+            unary_attr,
+            unary_scalars,
+            unary_algorithm,
         )
-        wrapper.writeline(f"{self.get_name()} = {self.kernel}({codegen_args})")
+        wrapper.generate_extern_kernel_alloc_and_find_schema_if_needed(
+            self.get_name(),
+            self.kernel,
+            codegen_args,
+            self.cpp_op_schema,
+            self.cpp_kernel_key,
+        )
         if isinstance(self.layout, Layout):
             self.codegen_size_asserts(wrapper)
 
@@ -5149,6 +5175,7 @@ class QConvPointWisePT2E(ExternKernelAlloc):
         w_scale.realize()
         w_zp.realize()
         inputs = inputs + [w_scale, w_zp]
+
         constant_args = constant_args + [
             x_scale,
             x_zp,
@@ -5156,7 +5183,7 @@ class QConvPointWisePT2E(ExternKernelAlloc):
             output_zero_point,
             fp32_output,
             unary_attr,
-            unary_scalars,
+            may_convert_to_optional(unary_scalars),
             unary_algorithm,
         ]
 
