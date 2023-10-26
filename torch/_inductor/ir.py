@@ -5240,7 +5240,7 @@ class QConvPointWiseBinaryPT2E(ExternKernelAlloc):
                 bool fp32_output,
                 c10::string_view binary_attr,
                 c10::optional<at::Scalar> alpha,
-                c10::string_view attr,
+                c10::optional<c10::string_view> attr,
                 torch::List<c10::optional<at::Scalar>> scalars,                
                 c10::optional<c10::string_view> algorithm)"""       
 
