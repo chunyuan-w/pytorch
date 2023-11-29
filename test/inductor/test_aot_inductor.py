@@ -71,6 +71,7 @@ class AOTInductorModelRunner:
 
     @classmethod
     def load(cls, device, so_path, example_inputs):
+        print("in load")
         if IS_FBCODE:
             from .fb import test_aot_inductor_model_runner_pybind
 
@@ -88,6 +89,8 @@ class AOTInductorModelRunner:
                 return pytree.tree_unflatten(flat_outputs, out_spec)
 
         else:
+            print("cpp_sources:")
+            print(aot_inductor_launcher(so_path, device))
             module = torch.utils.cpp_extension.load_inline(
                 name="aot_inductor",
                 cpp_sources=[aot_inductor_launcher(so_path, device)],
@@ -1073,5 +1076,5 @@ if __name__ == "__main__":
     from torch._dynamo.test_case import run_tests
 
     # cpp_extension N/A in fbcode
-    if HAS_CUDA and not TEST_WITH_ROCM:
-        run_tests(needs="filelock")
+    # if HAS_CUDA and not TEST_WITH_ROCM:
+    run_tests(needs="filelock")

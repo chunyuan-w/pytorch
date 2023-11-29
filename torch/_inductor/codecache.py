@@ -1349,6 +1349,8 @@ class AotCodeCache:
             extra=cpp_command,
             specified_dir=config.aot_inductor.output_path,
         )
+        
+        print("input_path in AotCodeCache:", input_path)
 
         if key not in cls.cache:
             from filelock import FileLock
