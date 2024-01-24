@@ -12,6 +12,7 @@
 #else
 #include <ATen/ops/_to_dense_native.h>
 #include <ATen/ops/empty.h>
+#include <ATen/ops/ones.h>
 #include <ATen/ops/empty_native.h>
 #include <ATen/ops/mkldnn_reorder_conv2d_weight_native.h>
 #include <ATen/ops/mkldnn_reorder_conv3d_weight_native.h>
@@ -480,6 +481,11 @@ static std::vector<Tensor> mkldnn_reorder_mkldnn_rnn_layer_weight(
   return {packed_w1, packed_w2};
 }
 
+static Tensor mkldnn_serialize(const Tensor& self) {
+  Tensor serialized_md = at::ones({5});
+  return serialized_md;
+}
+
 TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_convolution_transpose_weight"),
@@ -493,6 +499,12 @@ TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_mkldnn_rnn_layer_weight"),
       TORCH_FN(mkldnn_reorder_mkldnn_rnn_layer_weight));
+}
+
+TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_mkldnn_serialize"),
+      TORCH_FN(mkldnn_serialize)); 
 }
 
 #else

@@ -241,6 +241,8 @@ class AOTInductorModelBase {
     for (size_t i = 0; i < num_constants; i++) {
       std::string name = this->constant_name(i);
       size_t data_size = this->constant_data_size(i);
+      printf("data_size: %ld\n", data_size);
+      
       uint8_t* internal_ptr = (data_size != 0)
           ? constant_ptr(constants_internal_offset[i], bytes_read, data_size)
           : nullptr;
@@ -447,6 +449,7 @@ class AOTInductorModelBase {
     int64_t offset;
     size_t data_size;
     int8_t layout;
+    std::vector<float> serialized_md;
   };
 
   std::vector<ParamInfo> inputs_info_;

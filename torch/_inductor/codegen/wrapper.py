@@ -1571,6 +1571,14 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 self.prefix.writeline(
                     f"constants_info_[{idx}].layout = static_cast<int8_t>({self.codegen_layout(tensor.layout)});"
                 )
+                if tensor.is_mkldnn:
+                    serialized_tensor = torch.ops.mkldnn._mkldnn_serialize(tensor);
+                    assert serialized_tensor.dim() == 1, "Expect serialized_tensor to be 1-D"
+                    serialized_list = serialized_tensor.tolist()
+                    serialized_list_str = self.codegen_shape_tuple(serialized_list)
+                    self.prefix.writeline(
+                        f"constants_info_[{idx}].serialized_md = {serialized_list_str};"
+                    )                
 
             self.prefix.writeline("update_constants_map(std::move(constants_map));")
 
