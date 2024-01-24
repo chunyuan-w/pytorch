@@ -210,6 +210,25 @@ AOTITorchError aoti_torch_empty_strided(
   });
 }
 
+AOTI_TORCH_EXPORT AOTITorchError aoti_get_serialized_md(
+    int8_t layout,
+    int64_t serialized_md_size,
+    const float* serialized_md_ptr) {
+  
+  AOTI_TORCH_CONVERT_EXCEPTION_TO_ERROR_CODE({
+    if (layout == static_cast<int8_t>(at::kMkldnn)) {
+      std::vector<float> vector_serialized_md {serialized_md_ptr, serialized_md_ptr + serialized_md_size};
+        for (auto i = 0; i < serialized_md_size; i++) {
+          printf("serialized md at %d: %f\n", i, vector_serialized_md[i]);
+        }
+    } else {
+      printf("not mkldnn tensor\n");
+    }
+  });
+  
+
+}
+
 AOTITorchError aoti_torch_create_tensor_from_blob(
     void* data,
     int64_t ndim,

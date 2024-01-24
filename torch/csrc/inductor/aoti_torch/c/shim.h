@@ -176,6 +176,12 @@ AOTI_TORCH_EXPORT AOTITorchError aoti_torch_create_tensor_from_blob(
     AtenTensorHandle* ret // returns new reference
 );
 
+AOTI_TORCH_EXPORT AOTITorchError aoti_get_serialized_md(
+    int8_t layout,
+    int64_t serialized_md_size,
+    const float* serialized_md_ptr
+);
+
 AOTI_TORCH_EXPORT AOTITorchError aoti_torch__scaled_dot_product_flash_attention(
     AtenTensorHandle query,
     AtenTensorHandle key,

@@ -255,6 +255,10 @@ class AOTInductorModelBase {
       auto stride = this->constant_stride(i);
       auto offset = this->constant_offset(i);
       auto layout = this->constant_layout(i);
+      
+      auto serialized_md_ptr = this->serialized_md(i);
+      auto serialized_md_size = this->serialized_md_size(i);
+      aoti_get_serialized_md(layout, serialized_md_size, serialized_md_ptr);
 
       auto device_type = aoti_torch_device_type_cuda();
       if (is_cpu) {
@@ -379,6 +383,14 @@ class AOTInductorModelBase {
     return constants_info_.at(idx).data_size;
   }
 
+  const float* serialized_md(int64_t idx) const {
+    return constants_info_.at(idx).serialized_md.data();
+  }
+
+  size_t serialized_md_size(int64_t idx) {
+    return constants_info_.at(idx).serialized_md.size();
+  }
+
   const char* get_in_spec() const {
     return in_spec_.c_str();
   }
@@ -450,6 +462,7 @@ class AOTInductorModelBase {
     size_t data_size;
     int8_t layout;
     std::vector<float> serialized_md;
+    int64_t serialized_md_size;
   };
 
   std::vector<ParamInfo> inputs_info_;
