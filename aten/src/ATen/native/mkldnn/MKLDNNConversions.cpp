@@ -573,6 +573,13 @@ static Tensor mkl_reorder_linear_weight(
       (float*)(orig_w.get_data_handle()),
       K,
       (float*)(mkl_weight.get_data_handle()));
+  
+  std::string saved_op_type = get_op_type_from_mkldnn_tensor(packed_weight);
+  int64_t saved_batch_size = get_batch_size_from_mkldnn_tensor(packed_weight);
+  
+  std::cout << "op_type: " << saved_op_type << "\n";
+  std::cout << "batch_size: " << saved_batch_size << "\n";
+  
   return packed_weight;
 }
 

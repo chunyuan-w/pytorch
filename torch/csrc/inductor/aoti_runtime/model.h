@@ -256,9 +256,9 @@ class AOTInductorModelBase {
       auto offset = this->constant_offset(i);
       auto layout = this->constant_layout(i);
       
-      auto serialized_md_ptr = this->serialized_md(i);
-      auto serialized_md_size = this->serialized_md_size(i);
-      aoti_get_serialized_md(layout, serialized_md_size, serialized_md_ptr);
+      // auto serialized_md_ptr = this->serialized_md(i);
+      // auto serialized_md_size = this->serialized_md_size(i);
+      // aoti_get_serialized_md(layout, serialized_md_size, serialized_md_ptr);
 
       auto device_type = aoti_torch_device_type_cuda();
       if (is_cpu) {

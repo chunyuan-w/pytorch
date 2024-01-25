@@ -38,6 +38,10 @@ TORCH_API ideep::tensor itensor_from_tensor(const Tensor& tensor);
 // Set MKLDNN verbose level
 TORCH_API int set_verbose(int level);
 
+TORCH_API std::string get_op_type_from_mkldnn_tensor(const Tensor& tensor);
+
+TORCH_API int64_t get_batch_size_from_mkldnn_tensor(const Tensor& tensor);
+
 }}
 
 #endif // AT_MKLDNN_ENABLED

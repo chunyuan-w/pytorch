@@ -26,9 +26,15 @@ struct TORCH_API OpaqueTensorImpl : public TensorImpl {
       c10::Device device,
       OpaqueHandle opaque_handle,
       c10::IntArrayRef sizes,
+      std::string op_type = std::string("none"),
+      int64_t batch_size = -1,
       bool is_non_overlapping_and_dense = true)
       : TensorImpl(key_set, data_type, device),
-        opaque_handle_(std::move(opaque_handle)) {
+        opaque_handle_(std::move(opaque_handle)), op_type_(op_type), batch_size_(batch_size)  {
+    
+    std::cout << "constructor op_type: " << op_type_ << "\n";
+    std::cout << "constructor batch_size: " << batch_size_ << "\n";
+    
     set_storage_access_should_throw();
     set_custom_sizes_strides(SizesStridesPolicy::CustomStrides);
     sizes_and_strides_.set_sizes(sizes);
@@ -42,6 +48,15 @@ struct TORCH_API OpaqueTensorImpl : public TensorImpl {
     TensorImpl::release_resources();
     opaque_handle_ = {};
   }
+
+  void set_op_type(std::string op_type) {
+    op_type_ = op_type;
+  }
+
+  void set_batch_size(int64_t batch_size) {
+    batch_size_ = batch_size;
+  }
+
 
   void set_size(int64_t dim, int64_t new_size) override {
     AT_ERROR("opaque tensors do not have set_size");
@@ -137,6 +152,14 @@ struct TORCH_API OpaqueTensorImpl : public TensorImpl {
     return opaque_handle_;
   }
 
+  std::string op_type() {
+    return op_type_;
+  }
+
+  int64_t batch_size() {
+    return batch_size_;
+  }
+
  protected:
   /**
    * Copy the tensor metadata fields (e.g. sizes / strides / storage pointer /
@@ -181,6 +204,8 @@ struct TORCH_API OpaqueTensorImpl : public TensorImpl {
   }
 
   OpaqueHandle opaque_handle_;
+  std::string op_type_;
+  int64_t batch_size_;
 };
 
 } // namespace at

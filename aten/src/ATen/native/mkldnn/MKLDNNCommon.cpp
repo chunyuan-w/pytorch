@@ -160,6 +160,16 @@ ideep::tensor itensor_from_tensor(const Tensor& tensor) {
   }
 }
 
+std::string get_op_type_from_mkldnn_tensor(const Tensor& tensor) {
+  MKLDNNTensorImpl *mklimpl = static_cast<MKLDNNTensorImpl *>(tensor.unsafeGetTensorImpl());
+  return mklimpl->op_type();
+}
+
+int64_t get_batch_size_from_mkldnn_tensor(const Tensor& tensor) {
+  MKLDNNTensorImpl *mklimpl = static_cast<MKLDNNTensorImpl *>(tensor.unsafeGetTensorImpl());
+  return mklimpl->batch_size();
+}
+
 int set_verbose(int level) {
     return ideep::utils::set_verbose(level);
 }
