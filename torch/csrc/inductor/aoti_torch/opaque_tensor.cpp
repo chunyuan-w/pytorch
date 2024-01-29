@@ -16,7 +16,11 @@ at::Tensor mkldnn_tensor_from_data_ptr(
     at::IntArrayRef dims,
     at::ScalarType dtype,
     at::Device device) {
-  auto a = ideep::tensor({dims.vec(), ideep::tensor::data_type::s8}, data_ptr);
+  printf("from mkldnn_tensor_from_data_ptr\n");
+  ideep::tensor::data_type ideep_dtype = at::native::get_mkldnn_dtype(dtype);
+  // TODO: why s8 here? Seems dtype does not matter. Only the data_ptr is important here.
+  // auto a = ideep::tensor({dims.vec(), ideep::tensor::data_type::s8}, data_ptr);
+  auto a = ideep::tensor({dims.vec(), ideep_dtype}, data_ptr);
   return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
 }
 
