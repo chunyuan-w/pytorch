@@ -210,21 +210,24 @@ AOTITorchError aoti_torch_empty_strided(
   });
 }
 
-AOTI_TORCH_EXPORT AOTITorchError aoti_get_serialized_md(
+int aoti_torch_get_serialized_md(
     int8_t layout,
-    int64_t serialized_md_size,
-    const float* serialized_md_ptr) {
+    int64_t serialized_md_size) {
   
-  AOTI_TORCH_CONVERT_EXCEPTION_TO_ERROR_CODE({
-    if (layout == static_cast<int8_t>(at::kMkldnn)) {
-      std::vector<float> vector_serialized_md {serialized_md_ptr, serialized_md_ptr + serialized_md_size};
-        for (auto i = 0; i < serialized_md_size; i++) {
-          printf("serialized md at %d: %f\n", i, vector_serialized_md[i]);
-        }
-    } else {
-      printf("not mkldnn tensor\n");
-    }
-  });
+    // if (layout == static_cast<int8_t>(at::kMkldnn)) {
+
+    //   // c10::ArrayRef<float> vector_serialized_md(serialized_md_ptr, serialized_md_size);
+
+    //   // std::vector<float> vector_serialized_md {serialized_md_ptr, serialized_md_ptr + serialized_md_size};
+    //     // for (auto i = 0; i < serialized_md_size; i++) {
+    //     //   printf("serialized md at %d: %f\n", i, vector_serialized_md[i]);
+    //     // }
+    //     printf("done for loop\n");
+    // } else {
+    //   printf("not mkldnn tensor\n");
+    // }
+    printf("no op func\n");
+    return 0;
   
 
 }

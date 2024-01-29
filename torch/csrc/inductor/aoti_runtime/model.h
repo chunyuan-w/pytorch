@@ -256,9 +256,17 @@ class AOTInductorModelBase {
       auto offset = this->constant_offset(i);
       auto layout = this->constant_layout(i);
       
-      // auto serialized_md_ptr = this->serialized_md(i);
-      // auto serialized_md_size = this->serialized_md_size(i);
-      // aoti_get_serialized_md(layout, serialized_md_size, serialized_md_ptr);
+      auto serialized_md_ptr = this->serialized_md(i);
+      auto serialized_md_size = this->serialized_md_size(i);
+      std::vector<float> vector_serialized_md {serialized_md_ptr, serialized_md_ptr + serialized_md_size};
+      
+        for (auto i = 0; i < serialized_md_size; i++) {
+          printf("serialized md at %d: %f\n", i, vector_serialized_md[i]);
+        }
+
+      // TODO: calling this function will crash, even if the func is no-op
+      // auto tmp = aoti_torch_get_serialized_md(layout, serialized_md_size);
+      printf("done aoti_get_serialized_md\n");
 
       auto device_type = aoti_torch_device_type_cuda();
       if (is_cpu) {
