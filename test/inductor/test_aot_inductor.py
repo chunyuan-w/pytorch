@@ -328,19 +328,31 @@ class AOTInductorTestsTemplate:
         self.check_model(Model(self.device), example_inputs)
 
     def test_freezing(self):
+        # BS = 10000
+        # out1 = 9
+        # in_feature = 10   
+        
+        
+        BS = 10
+        out1 = 9
+        in_feature = 10
+        out2 = in_feature - out1
+        assert out2 > 0, "Expected out2 > 0"
+
+
         class Model(torch.nn.Module):
             def __init__(self, device):
                 super().__init__()
-                self.weight = torch.randn(9, 10, device=device)
-                self.padding = torch.randn(1, 10, device=device)
+                self.weight = torch.randn(out1, in_feature, device=device)
+                self.padding = torch.randn(out2, in_feature, device=device)
 
             def forward(self, x, y):
                 padded_weight = torch.cat((self.weight, self.padding), dim=0)
                 return x + torch.nn.functional.linear(y, padded_weight)
 
         example_inputs = (
-            torch.randn(10, 10, device=self.device),
-            torch.randn(10, 10, device=self.device),
+            torch.randn(BS, in_feature, device=self.device),
+            torch.randn(BS, in_feature, device=self.device),
         )
 
         with config.patch({"freezing": True}):

@@ -559,6 +559,11 @@ static Tensor mkl_reorder_linear_weight(
       weight.options().layout_opt(),
       weight.options().device_opt(),
       weight.options().pinned_memory_opt());
+ 
+  std::cout << "pack_size: " << pack_size << "\n";
+  std::cout << "weight size: " << weight.sizes() << "\n";
+  std::cout << "packed_weight size: " << packed_weight.sizes() << "\n"; 
+ 
   ideep::tensor& mkl_weight = itensor_from_mkldnn(packed_weight);
   auto weight_ = weight.contiguous();
   const ideep::tensor orig_w = itensor_view_from_dense(weight_);

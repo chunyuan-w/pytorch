@@ -378,6 +378,19 @@ static Tensor mkl_linear(
     auto K = origin_weight_t.size(1);
     auto N = origin_weight_t.size(0);
     const ideep::tensor& w = itensor_from_mkldnn(mkl_weight_t);
+    
+    auto w_ideep_dtype = w.get_data_type();
+    if (w_ideep_dtype == ideep::data_type::f32) {
+      printf("w ideep fp32\n");
+    } else if (w_ideep_dtype == ideep::data_type::s8)
+    {
+      printf("w ideep s8\n");
+    } else {
+      printf("no dtype hit\n");
+    }
+    
+
+
     auto in_ptr = self_.data_ptr<float>();
     auto weight_ptr = (float*)(w.get_data_handle());
     auto out_ptr = output.data_ptr<float>();
