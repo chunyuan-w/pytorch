@@ -246,6 +246,10 @@ class ArrayRefTensor {
     return numel_;
   }
 
+  auto layout() const {
+    return layout_;
+  }
+
   void set_arrayref(MiniArrayRef<T> new_arrayref) {
     arrayRef_ = new_arrayref;
   }
@@ -259,6 +263,8 @@ class ArrayRefTensor {
   int32_t device_type_ = 0;
   int32_t device_idx_ = 0;
   int32_t numel_ = 0;
+  // TODO: fix me
+  int8_t layout_;
 };
 
 inline AtenTensorHandle reinterpret_tensor_wrapper(

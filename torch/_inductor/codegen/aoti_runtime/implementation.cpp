@@ -75,6 +75,7 @@ struct ThreadLocalCachedOutputTensor<ArrayRefTensor<T>> {
         0,
         aoti_torch_dtype<std::remove_const_t<T>>(),
         t.device_type(),
+        t.layout(),
         t.device_idx(),
         &handle));
     tensor_ = handle;

@@ -1827,9 +1827,15 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 self.prefix.writeline(
                     f"constants_info_[{idx}].offset = {tensor.storage_offset()};"
                 )
-                self.prefix.writeline(
-                    f"constants_info_[{idx}].data_size = {tensor.untyped_storage().nbytes()};"
-                )
+                if tensor.is_mkldnn:
+                    # TODO: use blocked_weights_md.get_size() for data_size
+                    self.prefix.writeline(
+                        f"constants_info_[{idx}].data_size = {tensor.numel() * tensor.element_size()};"
+                    )
+                else:
+                    self.prefix.writeline(
+                        f"constants_info_[{idx}].data_size = {tensor.untyped_storage().nbytes()};"
+                    )
 
                 size_str = ", ".join([str(s) for s in tensor.size()])
                 self.prefix.writeline(f"constants_info_[{idx}].shape = {{{size_str}}};")
@@ -1837,6 +1843,9 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 stride_str = ", ".join([str(s) for s in tensor.stride()])
                 self.prefix.writeline(
                     f"constants_info_[{idx}].stride = {{{stride_str}}};"
+                )
+                self.prefix.writeline(
+                    f"constants_info_[{idx}].layout = static_cast<int8_t>({self.codegen_layout(tensor.layout)});"
                 )
                 if name in V.graph.dynamo_flat_name_to_original_fqn:
                     self.prefix.writeline(
@@ -2382,6 +2391,11 @@ class CppWrapperCodeGen(WrapperCodeGen):
             from .cpp import DTYPE_TO_ATEN
 
             return DTYPE_TO_ATEN[dtype]
+
+    def codegen_layout(self, layout):
+        from .cpp import LAYOUT_TO_ATEN
+
+        return LAYOUT_TO_ATEN[layout]
 
     @functools.lru_cache(None)
     def codegen_int_array_var(

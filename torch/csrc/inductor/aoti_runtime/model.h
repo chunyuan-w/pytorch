@@ -329,6 +329,7 @@ class AOTInductorModelBase {
       auto size = this->constant_shape(i);
       auto stride = this->constant_stride(i);
       auto offset = this->constant_offset(i);
+      auto layout = this->constant_layout(i);
 
       AtenTensorHandle tensor_handle;
       AOTI_TORCH_ERROR_CODE_CHECK(aoti_torch_create_tensor_from_blob(
@@ -338,6 +339,7 @@ class AOTInductorModelBase {
           stride,
           offset,
           dtype,
+          layout,
           device_type_,
           device_idx_,
           &tensor_handle));
@@ -442,6 +444,10 @@ class AOTInductorModelBase {
     return constants_info_.at(idx).offset;
   }
 
+  int8_t constant_layout(int64_t idx) const {
+    return constants_info_.at(idx).layout;
+  }
+
   size_t constant_data_size(int64_t idx) const {
     return constants_info_.at(idx).data_size;
   }
@@ -540,6 +546,7 @@ class AOTInductorModelBase {
     int32_t dtype;
     int64_t offset;
     size_t data_size;
+    int8_t layout;
     const char* original_fqn = nullptr;
   };
 

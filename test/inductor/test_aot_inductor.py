@@ -238,6 +238,7 @@ class AOTInductorTestsTemplate:
 
     def test_freezing(self):
         dtype = torch.bfloat16
+
         class Model(torch.nn.Module):
             def __init__(self, device):
                 super().__init__()
