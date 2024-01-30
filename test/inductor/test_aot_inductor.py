@@ -237,19 +237,20 @@ class AOTInductorTestsTemplate:
         self.check_model(Model(self.device), example_inputs)
 
     def test_freezing(self):
+        dtype = torch.bfloat16
         class Model(torch.nn.Module):
             def __init__(self, device):
                 super().__init__()
-                self.weight = torch.randn(9, 10, device=device)
-                self.padding = torch.randn(1, 10, device=device)
+                self.weight = torch.randn(9, 10, device=device).to(dtype)
+                self.padding = torch.randn(1, 10, device=device).to(dtype)
 
             def forward(self, x, y):
                 padded_weight = torch.cat((self.weight, self.padding), dim=0)
                 return x + torch.nn.functional.linear(y, padded_weight)
 
         example_inputs = (
-            torch.randn(10, 10, device=self.device),
-            torch.randn(10, 10, device=self.device),
+            torch.randn(10, 10, device=self.device).to(dtype),
+            torch.randn(10, 10, device=self.device).to(dtype),
         )
 
         with config.patch({"freezing": True}):
@@ -1869,7 +1870,7 @@ copy_tests(
         ),
         # TODO: test_freezing_non_abi_compatible_cpu somehow fails on CI but not locally,
         #   NotImplementedError: Cannot access storage of OpaqueTensorImpl
-        "test_freezing": TestFailure(("non_abi_compatible_cpu",), is_skip=True),
+        # "test_freezing": TestFailure(("non_abi_compatible_cpu",), is_skip=True),
     },
 )
 
@@ -1899,5 +1900,5 @@ if __name__ == "__main__":
     from torch._dynamo.test_case import run_tests
 
     # cpp_extension N/A in fbcode
-    if HAS_CUDA or sys.platform == "darwin":
-        run_tests(needs="filelock")
+    # if HAS_CUDA or sys.platform == "darwin":
+    run_tests(needs="filelock")
