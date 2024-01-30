@@ -547,6 +547,7 @@ class AOTInductorModelBase {
     int64_t offset;
     size_t data_size;
     int8_t layout;
+    std::vector<uint8_t> serialized_md;
     const char* original_fqn = nullptr;
   };
 

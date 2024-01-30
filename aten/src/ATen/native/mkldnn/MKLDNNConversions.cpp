@@ -13,6 +13,7 @@
 #include <ATen/ops/_to_dense_native.h>
 #include <ATen/ops/empty.h>
 #include <ATen/ops/empty_native.h>
+#include <ATen/ops/from_blob.h>
 #include <ATen/ops/mkldnn_reorder_conv2d_weight_native.h>
 #include <ATen/ops/mkldnn_reorder_conv3d_weight_native.h>
 #include <ATen/ops/to_mkldnn_native.h>
@@ -480,6 +481,26 @@ static std::vector<Tensor> mkldnn_reorder_mkldnn_rnn_layer_weight(
   return {packed_w1, packed_w2};
 }
 
+static Tensor mkldnn_serialize(const Tensor& self) {
+  // TODO: call serialize API in oneDNN
+  const ideep::tensor packed_w = itensor_from_mkldnn(self);
+  auto packed_w_desc = packed_w.get_desc();
+  auto c_wei_desc = packed_w_desc.get();
+  size_t size;
+  dnnl_memory_desc_get_blob(nullptr, &size, c_wei_desc);
+  std::vector<uint8_t> serialized_wei_desc(size);
+  dnnl_memory_desc_get_blob(serialized_wei_desc.data(), &size, c_wei_desc);
+
+  for (size_t i = 0; i < size; i++) {
+    printf("serialized_wei_desc at pos %ld: %d\n", i, serialized_wei_desc[i]);
+  }
+
+  // Tensor serialized_md = at::from_blob(serialized_wei_desc, {size}, at::TensorOptions(at::kByte));
+  Tensor serialized_md = at::from_blob((void*)serialized_wei_desc.data(), {(int64_t)serialized_wei_desc.size()}, at::TensorOptions(at::kByte));
+  std::cout << "dtype: "<< serialized_md.dtype() << "\n";
+  return serialized_md;
+}
+
 TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_convolution_transpose_weight"),
@@ -493,6 +514,12 @@ TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_reorder_mkldnn_rnn_layer_weight"),
       TORCH_FN(mkldnn_reorder_mkldnn_rnn_layer_weight));
+}
+
+TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("mkldnn::_mkldnn_serialize"),
+      TORCH_FN(mkldnn_serialize));
 }
 
 #else
