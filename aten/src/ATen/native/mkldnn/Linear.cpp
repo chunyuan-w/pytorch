@@ -260,6 +260,7 @@ static Tensor mkldnn_linear_pointwise_binary(
     const Tensor& weight_t,
     const c10::optional<Tensor>& bias_opt,
     c10::string_view attr) {
+  printf("in mkldnn_linear_pointwise_binary\n");
   c10::MaybeOwned<Tensor> bias_maybe_owned =
       at::borrow_from_optional_tensor(bias_opt);
   const Tensor& bias = *bias_maybe_owned;
@@ -278,6 +279,7 @@ static Tensor mkldnn_linear_pointwise_binary(
   const int64_t dim = input.dim();
   auto input_reshaped =
       dim == 2 ? input : input.reshape({-1, input.size(input.dim() - 1)});
+  printf("in mkldnn_linear_pointwise_binary 111\n");
 
   std::vector<int64_t> output_size(input_size.begin(), input_size.end() - 1);
   output_size.push_back(weight_t.size(0));
@@ -286,6 +288,7 @@ static Tensor mkldnn_linear_pointwise_binary(
     return output;
   }
   auto other_reshaped = other_t.contiguous();
+  printf("in mkldnn_linear_pointwise_binary 222\n");
 
   if (dim != 2) {
     std::vector<int64_t> output_size_reshaped = {

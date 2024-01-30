@@ -1853,7 +1853,11 @@ class CppWrapperCodeGen(WrapperCodeGen):
                     assert (
                         serialized_tensor.dim() == 1
                     ), "Expect serialized_tensor to be 1-D"
+
+                    print("py type: ", serialized_tensor.dtype)
+                    print("py value: ", serialized_tensor)
                     serialized_list = serialized_tensor.tolist()
+                    print("py list: ", serialized_list)
                     serialized_list_str = self.codegen_shape_tuple(serialized_list)
                     self.prefix.writeline(
                         f"constants_info_[{idx}].serialized_md = {serialized_list_str};"

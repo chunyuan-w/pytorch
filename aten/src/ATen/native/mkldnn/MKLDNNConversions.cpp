@@ -12,6 +12,9 @@
 #else
 #include <ATen/ops/_to_dense_native.h>
 #include <ATen/ops/empty.h>
+#include <ATen/ops/randn.h>
+#include <ATen/ops/empty_like.h>
+#include <ATen/ops/ones.h>
 #include <ATen/ops/empty_native.h>
 #include <ATen/ops/from_blob.h>
 #include <ATen/ops/mkldnn_reorder_conv2d_weight_native.h>
@@ -493,12 +496,17 @@ static Tensor mkldnn_serialize(const Tensor& self) {
 
   for (size_t i = 0; i < size; i++) {
     printf("serialized_wei_desc at pos %ld: %d\n", i, serialized_wei_desc[i]);
+    std::cout << "serialized_wei_desc: " << serialized_wei_desc[i] << "\n";
   }
 
   // Tensor serialized_md = at::from_blob(serialized_wei_desc, {size}, at::TensorOptions(at::kByte));
   Tensor serialized_md = at::from_blob((void*)serialized_wei_desc.data(), {(int64_t)serialized_wei_desc.size()}, at::TensorOptions(at::kByte));
+  auto res = at::empty_like(serialized_md);
+  // TODO: a copy is needed here so that from_blob won't be released
+  res.copy_(serialized_md);
   std::cout << "dtype: "<< serialized_md.dtype() << "\n";
-  return serialized_md;
+  std::cout << "tensor serialized_md: " << serialized_md << "\n";
+  return res;
 }
 
 TORCH_LIBRARY_IMPL(mkldnn, CPU, m) {
