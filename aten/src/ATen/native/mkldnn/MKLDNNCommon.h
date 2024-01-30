@@ -33,6 +33,8 @@ TORCH_API Tensor new_with_itensor_mkldnn(ideep::tensor&& it, c10::optional<Scala
 
 TORCH_API int64_t data_ptr_from_mkldnn(const Tensor& mkldnn_tensor);
 
+TORCH_API void* data_ptr_from_mkldnn_aot(at::Tensor* mkldnn_tensor);
+
 // Retrieve `ideep::tensor` from MKL-DNN tensor
 TORCH_API ideep::tensor& itensor_from_mkldnn(const Tensor& mkldnn_tensor);
 
@@ -51,6 +53,7 @@ TORCH_API ideep::tensor itensor_from_tensor(const Tensor& tensor);
 
 // Set MKLDNN verbose level
 TORCH_API int set_verbose(int level);
+
 
 }}
 

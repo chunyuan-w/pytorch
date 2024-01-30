@@ -157,7 +157,9 @@ class ConstantHandle {
   ConstantHandle() = default;
 
   explicit ConstantHandle(AtenTensorHandle handle) : handle_(handle) {
+    printf("before aoti_torch_get_data_ptr\n");
     AOTI_TORCH_ERROR_CODE_CHECK(aoti_torch_get_data_ptr(handle_, &data_));
+    printf("after aoti_torch_get_data_ptr\n");
   }
 
   operator AtenTensorHandle() const {
@@ -358,7 +360,9 @@ class AOTInductorModelBase {
       constants_map_->emplace(std::move(name), tensor_handle);
     }
     if (constants_map_) {
+      printf("before update_constants_array_from_map\n");
       this->update_constants_array_from_map();
+      printf("after update_constants_array_from_map\n");
     }
   }
 
@@ -490,16 +494,23 @@ class AOTInductorModelBase {
           "constants_map_ was not ready when constants_ is trying to be constructed from it!"};
     }
     if (!constants_) {
+      printf("before ConstantHandle\n");
       constants_ =
           std::make_shared<std::vector<ConstantHandle>>(constants_info_.size());
+      printf("after ConstantHandle\n");
     } else {
+      printf("before resize\n");
       constants_->resize(constants_info_.size());
+      printf("after resize\n");
     }
+    printf("idx\n");
     int idx = 0;
     for (const auto& info : constants_info_) {
       const auto it = constants_map_->find(info.name);
       if (it != constants_map_->end()) {
+        printf("before build ConstantHandle\n");
         constants_->at(idx) = ConstantHandle(it->second);
+        printf("after build ConstantHandle\n");
       }
       idx++;
     }

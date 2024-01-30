@@ -194,8 +194,17 @@ AOTITorchError aoti_torch_get_data_ptr(
     AtenTensorHandle tensor,
     void** ret_data_ptr) {
   AOTI_TORCH_CONVERT_EXCEPTION_TO_ERROR_CODE({
+    printf("before tensor_handle_to_tensor_pointer\n");
     at::Tensor* t = tensor_handle_to_tensor_pointer(tensor);
-    *ret_data_ptr = t->data_ptr();
+    printf("before data_ptr\n");
+
+    if (t->is_mkldnn()) {
+      printf("is_mkldnn\n");
+      *ret_data_ptr = data_ptr_from_mkldnn(t);
+    } else {
+      *ret_data_ptr = t->data_ptr();
+    }
+    printf("after data_ptr\n");
   });
 }
 
@@ -365,7 +374,10 @@ AOTITorchError aoti_torch_create_tensor_from_blob(
           device,
           serialized_md,
           serialized_md_size));
+      printf("before tensor_pointer_to_tensor_handle\n");
       *ret_new_tensor = tensor_pointer_to_tensor_handle(mkldnn_tensor);
+      printf("after tensor_pointer_to_tensor_handle\n");
+
     } else {
       c10::TensorOptions options = c10::TensorOptions().device(device).dtype(
           static_cast<c10::ScalarType>(dtype));
