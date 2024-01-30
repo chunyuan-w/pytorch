@@ -331,6 +331,16 @@ class AOTInductorModelBase {
       auto offset = this->constant_offset(i);
       auto layout = this->constant_layout(i);
 
+      auto serialized_md_ptr = this->serialized_md(i);
+      auto serialized_md_size = this->serialized_md_size(i);
+      std::vector<uint8_t> vector_serialized_md{
+          serialized_md_ptr, serialized_md_ptr + serialized_md_size};
+
+      for (size_t i = 0; i < serialized_md_size; i++) {
+        printf(
+            "recovered serialized md at %ld: %d\n", i, vector_serialized_md[i]);
+      }
+
       AtenTensorHandle tensor_handle;
       AOTI_TORCH_ERROR_CODE_CHECK(aoti_torch_create_tensor_from_blob(
           internal_ptr,
@@ -340,6 +350,8 @@ class AOTInductorModelBase {
           offset,
           dtype,
           layout,
+          serialized_md_ptr,
+          serialized_md_size,
           device_type_,
           device_idx_,
           &tensor_handle));
@@ -456,6 +468,14 @@ class AOTInductorModelBase {
     return constants_info_.at(idx).original_fqn;
   }
 
+  const uint8_t* serialized_md(int64_t idx) const {
+    return constants_info_.at(idx).serialized_md.data();
+  }
+
+  size_t serialized_md_size(int64_t idx) {
+    return constants_info_.at(idx).serialized_md.size();
+  }
+
   const char* get_in_spec() const {
     return in_spec_.c_str();
   }
@@ -548,6 +568,7 @@ class AOTInductorModelBase {
     size_t data_size;
     int8_t layout;
     std::vector<uint8_t> serialized_md;
+    int64_t serialized_md_size;
     const char* original_fqn = nullptr;
   };
 

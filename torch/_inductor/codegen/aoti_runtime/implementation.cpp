@@ -67,6 +67,10 @@ struct ThreadLocalCachedOutputTensor<ArrayRefTensor<T>> {
     capacity_ = t.numel();
     storage_ = std::make_unique<T[]>(t.numel());
     AtenTensorHandle handle;
+    // TODO: fix me
+    uint8_t* serialized_md;
+    size_t serialized_md_size;
+
     AOTI_TORCH_ERROR_CODE_CHECK(aoti_torch_create_tensor_from_blob(
         storage_.get(),
         t.sizes().size(),
@@ -76,6 +80,8 @@ struct ThreadLocalCachedOutputTensor<ArrayRefTensor<T>> {
         aoti_torch_dtype<std::remove_const_t<T>>(),
         t.device_type(),
         t.layout(),
+        serialized_md,
+        serialized_md_size,
         t.device_idx(),
         &handle));
     tensor_ = handle;

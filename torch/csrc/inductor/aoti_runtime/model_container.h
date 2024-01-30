@@ -190,7 +190,10 @@ class AOTInductorModelContainer {
           stride,
           offset,
           models_[0]->constant_dtype(idx),
-          models_[0]->constant_layout(idx) aoti_torch_device_type_cuda(),
+          models_[0]->constant_layout(idx),
+          models_[0]->serialized_md(idx),
+          models_[0]->serialized_md_size(idx),
+          aoti_torch_device_type_cuda(),
           device_idx,
           &tensor_handle));
 
