@@ -524,7 +524,7 @@ struct ConvParams {
 
     // TODO: these shapes will crash when using mkldnn. Fallback to native for now.
     bool tmp_fallback = input.is_contiguous(at::MemoryFormat::ChannelsLast) && at::symint::size<T>(input, 0) == 1 && at::symint::size<T>(input, 1) == 3 && at::symint::size<T>(input, 2) == 1024 &&
-    at::symint::size<T>(input, 3) == 1024 && at::symint::size<T>(weight, 0) == 3 && at::symint::size<T>(weight, 1) == 1 &&
+    at::symint::size<T>(input, 3) == 1024 && at::symint::size<T>(weight, 0) == 3 &&
     at::symint::size<T>(weight, 2) == 1 && at::symint::size<T>(weight, 3) > 14 && groups == at::symint::size<T>(input, 1);
 
     return (input.is_mkldnn()) || // input is mkldnn Tensor
