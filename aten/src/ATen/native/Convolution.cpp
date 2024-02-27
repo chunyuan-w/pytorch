@@ -15,6 +15,7 @@
 #include <c10/macros/Macros.h>
 #include <limits>
 #include <utility>
+#include <iostream>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -521,6 +522,17 @@ struct ConvParams {
          (input.scalar_type() == at::kHalf && mkldnn_fp16_device_check()))) {
       return true;
     }
+
+
+    bool tmp_fallback = input.is_contiguous(at::MemoryFormat::ChannelsLast) && at::symint::size<T>(input, 0) == 1 && at::symint::size<T>(input, 1) == 3 && at::symint::size<T>(input, 2) == 1024 &&
+    at::symint::size<T>(input, 3) == 1024 && at::symint::size<T>(weight, 0) == 3 && at::symint::size<T>(weight, 1) == 1 &&
+    at::symint::size<T>(weight, 2) == 1 && at::symint::size<T>(weight, 3) > 14 && groups == at::symint::size<T>(input, 1);
+
+    std::cout << "input CL:" << input.is_contiguous(at::MemoryFormat::ChannelsLast) << "\n";
+    std::cout << "weight shape:" << weight.sizes() << "\n";
+    std::cout << "input shape:" << input.sizes() << "\n";
+    std::cout << "tmp_fallback:" << tmp_fallback << "\n";
+
     return (input.is_mkldnn()) || // input is mkldnn Tensor
       (input.device().is_cpu() &&
        input.scalar_type() == kFloat && // only on CPU Float Tensors
@@ -531,7 +543,8 @@ struct ConvParams {
        (groups > 1
         || (at::symint::size<T>(weight, -1) > 3 && at::symint::size<T>(weight, -2) > 3)
         || at::symint::size<T>(input, 0) > 1
-        || at::symint::size<T>(input, 0)*at::symint::size<T>(input, 1)*at::symint::size<T>(input, 2)*at::symint::size<T>(input, 3) > 20480) // for some case, native is faster
+        || at::symint::size<T>(input, 0)*at::symint::size<T>(input, 1)*at::symint::size<T>(input, 2)*at::symint::size<T>(input, 3) > 20480) && // for some case, native is faster
+        (!tmp_fallback)
         );
 
 #endif
