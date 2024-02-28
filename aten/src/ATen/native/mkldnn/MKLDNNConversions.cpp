@@ -248,6 +248,10 @@ static Tensor mkldnn_reorder_linear_weight(
   ideep::tensor result;
   result.init(packed_desc);
   result.feed_from(w);
+
+  std::cout << "is_plain in prepack: " << packed_desc.is_plain() << "\n";
+
+
   return new_with_itensor_mkldnn(std::move(result), optTypeMetaToScalarType(self.options().dtype_opt()), self.options().device_opt());
 }
 
@@ -486,8 +490,10 @@ static std::vector<Tensor> mkldnn_reorder_mkldnn_rnn_layer_weight(
 
 static Tensor mkldnn_serialize(const Tensor& self) {
   // TODO: call serialize API in oneDNN
-  const ideep::tensor packed_w = itensor_from_mkldnn(self);
+  const ideep::tensor packed_w = itensor_from_tensor(self);
   auto packed_w_desc = packed_w.get_desc();
+  std::cout << "is_plain before se: " << packed_w_desc.is_plain() << "\n";
+  
   auto c_wei_desc = packed_w_desc.get();
   size_t size;
   dnnl_memory_desc_get_blob(nullptr, &size, c_wei_desc);

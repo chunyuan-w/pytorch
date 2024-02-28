@@ -93,7 +93,8 @@ def check_model(
             disable_constraint_solver,
         )
 
-    self.assertTrue(same(actual, expected))
+    # self.assertTrue(same(actual, expected))
+    self.assertEqual(actual, expected)
 
 
 def check_model_with_multiple_inputs(
