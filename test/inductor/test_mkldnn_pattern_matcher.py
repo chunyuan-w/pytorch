@@ -2091,6 +2091,43 @@ class TestDynamicPatternMatcher(TestPatternMatcherBase):
         v = torch.randn(x_shape, dtype=torch.float32)
         self._test_common(mod, (v,), 0, 0)
 
+    def test_linear_fusion_dynamic(self):
+        class M(torch.nn.Module):
+            def __init__(
+                self,
+            ):
+                super().__init__()
+                self.w1 = torch.nn.Linear(16, 16, bias=False)
+
+            def forward(self, x):
+                return F.gelu(self.w1(x))
+
+        dtypes = []
+        if torch.ops.mkldnn._is_mkldnn_bf16_supported():
+            dtypes.append(torch.bfloat16)
+        if torch.ops.mkldnn._is_mkldnn_fp16_supported():
+            dtypes.append(torch.float16)
+        for dtype in dtypes:
+            mod = M().to(dtype).eval()
+            v = torch.randn(2, 4, 16).to(dtype)
+            # 1. view(match_count=4, match_nodes=4).
+            # 2. mm to packed linear(match_count=2, match_nodes=2).
+            # 3. view+linear+view to linear(match_count=2, match_nodes=6).
+
+            match_count = 8
+            match_nodes = 12
+            include_ops = ["torch.ops.mkldnn._linear_pointwise"]
+            exclude_ops = []
+            self._test_code_common(
+                mod,
+                (v,),
+                include_ops,
+                exclude_ops,
+                rtol=1e-2,
+                atol=1e-2,
+                check_dynamic=True,
+            )
+
     def test_multi_linear_share_same_input_dynamic(self):
         # llama pattern.
         class M(torch.nn.Module):

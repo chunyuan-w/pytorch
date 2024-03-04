@@ -759,8 +759,15 @@ if torch._C._has_mkldnn:
             # check linear's input's shape[:-1] == reshape_2[:-1]
             # and check product(reshape_2[:-1]) == reshape_1[0]
             if dynamic_shapes:
-                # TODO: Haozhe investigate how add guard here
-                return
+                can_remove_reshape = linear_input_node.meta.get("val").shape[
+                    :-1
+                ] == torch.Size([val.meta.get("val") for val in reshape_2[:-1]])
+                can_remove_reshape = can_remove_reshape and (
+                    reduce(
+                        operator.mul, [val.meta.get("val") for val in reshape_2[:-1]]
+                    )
+                    == reshape_1[0].meta.get("val")
+                )
             else:
                 can_remove_reshape = linear_input_node.meta.get("val").shape[
                     :-1
