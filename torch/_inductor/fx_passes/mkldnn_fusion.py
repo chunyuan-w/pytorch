@@ -761,10 +761,19 @@ if torch._C._has_mkldnn:
             if dynamic_shapes:
                 can_remove_reshape = linear_input_node.meta.get("val").shape[
                     :-1
-                ] == torch.Size([val.meta.get("val") for val in reshape_2[:-1]])
+                ] == torch.Size(
+                    [
+                        val if isinstance(val, int) else val.meta.get("val")
+                        for val in reshape_2[:-1]
+                    ]
+                )
                 can_remove_reshape = can_remove_reshape and (
                     reduce(
-                        operator.mul, [val.meta.get("val") for val in reshape_2[:-1]]
+                        operator.mul,
+                        [
+                            val if isinstance(val, int) else val.meta.get("val")
+                            for val in reshape_2[:-1]
+                        ],
                     )
                     == reshape_1[0].meta.get("val")
                 )
