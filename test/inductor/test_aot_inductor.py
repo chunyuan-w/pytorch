@@ -278,23 +278,25 @@ class AOTInductorTestsTemplate:
         self.check_model(Model(self.device), example_inputs)
 
     def test_freezing(self):
-        class Model(torch.nn.Module):
-            def __init__(self, device):
-                super().__init__()
-                self.weight = torch.randn(9, 10, device=device)
-                self.padding = torch.randn(1, 10, device=device)
+        for dtype in [torch.float32, torch.bfloat16]:
 
-            def forward(self, x, y):
-                padded_weight = torch.cat((self.weight, self.padding), dim=0)
-                return x + torch.nn.functional.linear(y, padded_weight)
+            class Model(torch.nn.Module):
+                def __init__(self, device):
+                    super().__init__()
+                    self.weight = torch.randn(9, 10, device=device).to(dtype)
+                    self.padding = torch.randn(1, 10, device=device).to(dtype)
 
-        example_inputs = (
-            torch.randn(10, 10, device=self.device),
-            torch.randn(10, 10, device=self.device),
-        )
+                def forward(self, x, y):
+                    padded_weight = torch.cat((self.weight, self.padding), dim=0)
+                    return x + torch.nn.functional.linear(y, padded_weight)
 
-        with config.patch({"freezing": True}):
-            self.check_model(Model(self.device), example_inputs)
+            example_inputs = (
+                torch.randn(10, 10, device=self.device).to(dtype),
+                torch.randn(10, 10, device=self.device).to(dtype),
+            )
+
+            with config.patch({"freezing": True}):
+                self.check_model(Model(self.device), example_inputs)
 
     def test_simple_split(self):
         class Model(torch.nn.Module):

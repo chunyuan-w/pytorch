@@ -314,6 +314,8 @@ AOTITorchError aoti_torch_create_tensor_from_blob(
     int64_t storage_offset,
     int32_t dtype,
     int8_t layout,
+    const uint8_t* serialized_md,
+    int64_t serialized_md_size,    
     int32_t device_type,
     int32_t device_index,
     AtenTensorHandle* ret_new_tensor) {
@@ -326,7 +328,7 @@ AOTITorchError aoti_torch_create_tensor_from_blob(
       // get a mkldnn tensor wrapped by a torch Tensor(OpaqueTensorImpl),
       // which used by later mkldnn op.
       *ret_new_tensor = new_tensor_handle(mkldnn_tensor_from_data_ptr(
-          data, sizes, static_cast<c10::ScalarType>(dtype), device));
+          data, sizes, static_cast<c10::ScalarType>(dtype), device, serialized_md, serialized_md_size));
     } else {
 
     c10::TensorOptions options = c10::TensorOptions().device(device).dtype(

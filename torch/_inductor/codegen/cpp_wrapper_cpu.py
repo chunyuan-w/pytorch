@@ -595,6 +595,22 @@ class CppWrapperCpu(WrapperCodeGen):
                 self.prefix.writeline(
                     f"constants_info_[{idx}].layout = static_cast<int8_t>({self.codegen_layout(tensor.layout)});"
                 )
+
+                if tensor.is_mkldnn:
+                    serialized_tensor = torch.ops.mkldnn._mkldnn_serialize(tensor)
+                    assert (
+                        serialized_tensor.dim() == 1
+                    ), "Expect serialized_tensor to be 1-D"
+
+                    print("py type: ", serialized_tensor.dtype)
+                    print("py value: ", serialized_tensor)
+                    serialized_list = serialized_tensor.tolist()
+                    print("py list: ", serialized_list)
+                    serialized_list_str = self.codegen_shape_tuple(serialized_list)
+                    self.prefix.writeline(
+                        f"constants_info_[{idx}].serialized_md = {serialized_list_str};"
+                    )
+
                 if name in V.graph.dynamo_flat_name_to_original_fqn:
                     original_fqn = V.graph.dynamo_flat_name_to_original_fqn.get(
                         name, name
