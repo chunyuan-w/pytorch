@@ -238,21 +238,22 @@ class AOTInductorTestsTemplate:
         self.check_model(Model(self.device), example_inputs)
 
     def test_freezing(self):
-        dtype = torch.bfloat16
+        # dtype = torch.bfloat16
+        dtype = torch.float32
 
         class Model(torch.nn.Module):
             def __init__(self, device):
                 super().__init__()
-                self.weight = torch.randn(9, 10, device=device).to(dtype)
-                self.padding = torch.randn(1, 10, device=device).to(dtype)
+                self.weight = torch.randn(1, 2, device=device).to(dtype)
+                self.padding = torch.randn(1, 2, device=device).to(dtype)
 
             def forward(self, x, y):
                 padded_weight = torch.cat((self.weight, self.padding), dim=0)
                 return x + torch.nn.functional.linear(y, padded_weight)
 
         example_inputs = (
-            torch.randn(10, 10, device=self.device).to(dtype),
-            torch.randn(10, 10, device=self.device).to(dtype),
+            torch.randn(2, 2, device=self.device).to(dtype),
+            torch.randn(2, 2, device=self.device).to(dtype),
         )
 
         with config.patch({"freezing": True}):

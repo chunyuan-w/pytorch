@@ -11,6 +11,8 @@
 #include <ATen/ops/_to_dense_native.h>
 #include <ATen/ops/empty.h>
 #include <ATen/ops/linear.h>
+#include <ATen/ops/ones.h>
+#include <ATen/ops/empty_native.h>
 #include <ATen/ops/mkldnn_linear_backward_input.h>
 #include <ATen/ops/mkldnn_linear_backward_input_native.h>
 #include <ATen/ops/mkldnn_linear_backward_native.h>
@@ -386,8 +388,11 @@ static Tensor mkl_linear(
     const ideep::tensor& w = itensor_from_mkldnn(mkl_weight_t);
     auto in_ptr = self_.data_ptr<float>();
     auto weight_ptr = (float*)(w.get_data_handle());
+    std::cout << "weight_ptr in compute:" << weight_ptr << "\n";
+    
     auto out_ptr = output.data_ptr<float>();
     if (bias.defined()) {
+      printf("enter bias\n");
       auto bias_ = bias.is_contiguous() ? bias : bias.contiguous();
       auto bias_ptr = bias_.data_ptr<float>();
       at::parallel_for(0, M, 1, [&](int64_t begin, int64_t end) {
@@ -396,6 +401,75 @@ static Tensor mkl_linear(
         }
       });
     }
+    printf("before cblas_sgemm_compute\n");
+    
+    
+    printf("values %ld, %ld, %ld\n", M , N, K);
+    std::cout << "in shapes: " << self_.sizes() << "\n";
+    std::cout << "out shapes: " << output.sizes() << "\n";
+    
+    // printf("peek before compute\n");
+    // w.peek(w.get_dims()[0]);
+    // for (size_t i = 0; i < w.get_dims()[0]; i++) {
+    //   if (weight_ptr[i] != 0.) {
+    //     printf("idx %ld: %f ", i, weight_ptr[i]);
+    //   }
+    // }
+
+    // auto packed_weight = at::ones(
+    //     w.get_dims(),
+    //     self_.scalar_type(),
+    //     self_.options().layout_opt(),
+    //     self_.options().device_opt(),
+    //     self_.options().pinned_memory_opt());    
+    // std::vector<float> packed_weight(1982689);
+
+  int64_t pack_size =
+      (int64_t)(cblas_sgemm_pack_get_size(CblasBMatrix, M, N, K) / sizeof(float) + 1);
+  auto packed_weight = empty_mkldnn(
+      {pack_size, 1},
+      origin_weight_t.scalar_type(),
+      origin_weight_t.options().layout_opt(),
+      origin_weight_t.options().device_opt(),
+      origin_weight_t.options().pinned_memory_opt());
+  ideep::tensor& mkl_weight = itensor_from_mkldnn(packed_weight);
+  auto origin_weight_ = origin_weight_t.contiguous();
+  const ideep::tensor orig_w = itensor_view_from_dense(origin_weight_);
+  cblas_sgemm_pack(
+      CblasRowMajor,
+      CblasBMatrix,
+      CblasTrans,
+      M,
+      N,
+      K,
+      1.0f,
+      (float*)(orig_w.get_data_handle()),
+      K,
+      (float*)(mkl_weight.get_data_handle()));
+  auto runtime_weight_ptr = (float*)(mkl_weight.get_data_handle());
+
+
+  bool equals = (w == mkl_weight);
+  std::cout << "equals: " << equals << "\n";
+  std::cout << "w dims: " << w.get_dims() << "\n";
+  std::cout << "mkl_weight dims: " << mkl_weight.get_dims() << "\n";
+
+  for (long i = 0; i < mkl_weight.get_dims()[0]; i++) {
+    if (weight_ptr[i] != runtime_weight_ptr[i]) {
+      printf("mismatch at idx %ld: w: %f, runtime_weight_ptr: %f\n", i, weight_ptr[i], runtime_weight_ptr[i]);
+    }
+  }
+
+    printf("peek at compute time\n");
+    std::cout << "w dims in compute:" << w.get_dims() << "\n";
+    w.peek(w.get_dims()[0]);
+
+    std::cout << "runtime_weight_ptr dims in compute:" << w.get_dims() << "\n";
+    mkl_weight.peek(mkl_weight.get_dims()[0]);
+
+    
+    auto runtime_ptr = std::getenv("RUNTIME_PTR");
+    
     cblas_sgemm_compute(
         CblasRowMajor,
         CblasNoTrans,
@@ -405,11 +479,16 @@ static Tensor mkl_linear(
         K,
         in_ptr,
         K,
-        weight_ptr,
+        runtime_ptr ? runtime_weight_ptr : weight_ptr,
+        // packed_weight.data(),
+        // (float*)packed_weight.data_ptr(),
+        // weight_ptr,
         K,
         bias.defined() ? 1.f : 0.f,
         out_ptr,
         N);
+    printf("after cblas_sgemm_compute\n");
+
   } else {
     output = at::linear_out(output, self, origin_weight_t, bias_opt);
   }

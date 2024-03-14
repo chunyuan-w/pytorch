@@ -602,6 +602,10 @@ static Tensor mkl_reorder_linear_weight(
       (float*)(orig_w.get_data_handle()),
       K,
       (float*)(mkl_weight.get_data_handle()));
+
+    std::cout << "peek at prepack time:" << mkl_weight.get_dims() << "\n";
+    mkl_weight.peek(mkl_weight.get_dims()[0]);
+
   return packed_weight;
 }
 
