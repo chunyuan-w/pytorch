@@ -23,9 +23,23 @@ at::Tensor mkldnn_tensor_from_data_ptr(
     at::Device device,
     const uint8_t* serialized_md,
     int64_t serialized_md_size) {
-  // TODO: add deserialize here        
-  auto a = ideep::tensor({dims.vec(), ideep::tensor::data_type::s8}, data_ptr);
+  // TODO: add deserialize here
+
+
+  std::vector<uint8_t> vector_serialized_md{
+      serialized_md, serialized_md + serialized_md_size};
+
+  dnnl_memory_desc_t deserialized_wei_desc;
+  dnnl_memory_desc_create_with_blob(
+      &deserialized_wei_desc, vector_serialized_md.data());
+
+  auto a = ideep::tensor(deserialized_wei_desc, data_ptr);
   return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
+
+
+
+//   auto a = ideep::tensor({dims.vec(), ideep::tensor::data_type::s8}, data_ptr);
+//   return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
 }
 
 #else
