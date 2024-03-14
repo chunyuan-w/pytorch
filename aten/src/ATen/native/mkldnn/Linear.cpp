@@ -377,6 +377,8 @@ static Tensor mkl_linear(
   }
   int64_t M = self.numel() / self.size(self.dim() - 1);
   if (M == prepack_batch_size && mkl_weight_t.is_mkldnn()) {
+    printf("mkl prepack linear\n");
+
     auto self_ = self.is_contiguous() ? self : self.contiguous();
     auto K = origin_weight_t.size(1);
     auto N = origin_weight_t.size(0);
@@ -408,6 +410,7 @@ static Tensor mkl_linear(
         out_ptr,
         N);
   } else {
+    printf("fallback linear\n");
     output = at::linear_out(output, self, origin_weight_t, bias_opt);
   }
   return output;

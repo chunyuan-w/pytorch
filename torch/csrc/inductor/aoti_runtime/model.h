@@ -204,6 +204,7 @@ class AOTInductorModelBase {
       auto size = this->constant_shape(i);
       auto stride = this->constant_stride(i);
       auto offset = this->constant_offset(i);
+      auto layout = this->constant_layout(i);
 
       AtenTensorHandle tensor_handle;
       AOTI_TORCH_ERROR_CODE_CHECK(aoti_torch_create_tensor_from_blob(
@@ -213,6 +214,7 @@ class AOTInductorModelBase {
           stride,
           offset,
           dtype,
+          layout,
           device_type_,
           device_idx_,
           &tensor_handle));
@@ -321,6 +323,10 @@ class AOTInductorModelBase {
     return constants_info_.at(idx).dtype;
   }
 
+  int8_t constant_layout(int64_t idx) const {
+    return constants_info_.at(idx).layout;
+  }
+
   size_t constant_offset(int64_t idx) const {
     return constants_info_.at(idx).offset;
   }
@@ -351,15 +357,18 @@ class AOTInductorModelBase {
           "constants_map_ was not ready when constants_ is trying to be constructed from it!"};
     }
     if (!constants_) {
+      printf("no !constants_\n");
       constants_ =
           std::make_shared<std::vector<ConstantHandle>>(constants_info_.size());
     } else {
+      printf("has constants_\n");
       constants_->resize(constants_info_.size());
     }
     int idx = 0;
     for (const auto& info : constants_info_) {
       const auto it = constants_map_->find(info.name);
       if (it != constants_map_->end()) {
+        printf("before ConstantHandle\n");
         constants_->at(idx) = ConstantHandle(it->second);
       }
       idx++;
@@ -427,6 +436,7 @@ class AOTInductorModelBase {
     int32_t dtype;
     int64_t offset;
     size_t data_size;
+    int8_t layout;
     const char* original_fqn = nullptr;
     bool from_folded;
   };

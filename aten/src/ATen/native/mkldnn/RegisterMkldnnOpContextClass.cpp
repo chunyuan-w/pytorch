@@ -74,6 +74,7 @@ TORCH_LIBRARY(mkldnn, m) {
   m.def("_is_mkldnn_bf16_supported", &is_mkldnn_bf16_supported);
   m.def("_is_mkldnn_fp16_supported", &is_mkldnn_fp16_supported);
   m.def("_is_mkldnn_acl_supported", &is_mkldnn_acl_supported);
+  m.def("mkldnn::data_ptr(Tensor mkldnn_tensor) -> int");
 }
 
 TORCH_LIBRARY(mkldnn_prepacked, m) {
