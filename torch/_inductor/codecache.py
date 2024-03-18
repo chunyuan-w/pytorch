@@ -1772,7 +1772,7 @@ class AotCodeCompiler:
                 if t.is_mkldnn:
                     raw_array = ctypes.cast(
                         torch.ops.mkldnn.data_ptr(t),
-                        ctypes.POINTER(ctypes.c_ubyte * t.element_size() * t.numel()),
+                        ctypes.POINTER(ctypes.c_ubyte * torch.ops.mkldnn._data_size(t)),
                     )
                     return bytes(raw_array.contents)
 
