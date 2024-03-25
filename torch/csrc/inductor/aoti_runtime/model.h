@@ -377,18 +377,15 @@ class AOTInductorModelBase {
           "constants_map_ was not ready when constants_ is trying to be constructed from it!"};
     }
     if (!constants_) {
-      printf("no !constants_\n");
       constants_ =
           std::make_shared<std::vector<ConstantHandle>>(constants_info_.size());
     } else {
-      printf("has constants_\n");
       constants_->resize(constants_info_.size());
     }
     int idx = 0;
     for (const auto& info : constants_info_) {
       const auto it = constants_map_->find(info.name);
       if (it != constants_map_->end()) {
-        printf("before ConstantHandle\n");
         constants_->at(idx) = ConstantHandle(it->second);
       }
       idx++;

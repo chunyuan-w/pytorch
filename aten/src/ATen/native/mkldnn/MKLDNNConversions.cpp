@@ -483,7 +483,6 @@ static Tensor mkldnn_serialize(const Tensor& self) {
   // TODO: call serialize API in oneDNN
   const ideep::tensor packed_w = itensor_from_tensor(self);
   auto packed_w_desc = packed_w.get_desc();
-  std::cout << "is_plain before se: " << packed_w_desc.is_plain() << "\n";
 
   auto c_wei_desc = packed_w_desc.get();
   size_t size;
@@ -491,18 +490,11 @@ static Tensor mkldnn_serialize(const Tensor& self) {
   std::vector<uint8_t> serialized_wei_desc(size);
   dnnl_memory_desc_get_blob(serialized_wei_desc.data(), &size, c_wei_desc);
 
-  for (size_t i = 0; i < size; i++) {
-    printf("serialized_wei_desc at pos %ld: %d\n", i, serialized_wei_desc[i]);
-    std::cout << "serialized_wei_desc: " << serialized_wei_desc[i] << "\n";
-  }
-
   // Tensor serialized_md = at::from_blob(serialized_wei_desc, {size}, at::TensorOptions(at::kByte));
   Tensor serialized_md = at::from_blob((void*)serialized_wei_desc.data(), {(int64_t)serialized_wei_desc.size()}, at::TensorOptions(at::kByte));
   auto res = at::empty_like(serialized_md);
   // TODO: a copy is needed here so that from_blob won't be released
   res.copy_(serialized_md);
-  std::cout << "dtype: "<< serialized_md.dtype() << "\n";
-  std::cout << "tensor serialized_md: " << serialized_md << "\n";
   return res;
 }
 
