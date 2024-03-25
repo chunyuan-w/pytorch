@@ -286,16 +286,41 @@ class AOTInductorTestsTemplate:
             class Model(torch.nn.Module):
                 def __init__(self, device):
                     super().__init__()
-                    self.weight = torch.randn(9, 10, device=device).to(dtype)
-                    self.padding = torch.randn(1, 10, device=device).to(dtype)
+                    self.weight = torch.randn(10, 10, device=device).to(dtype)
+                    # self.padding = torch.randn(1, 512, device=device).to(dtype)
 
-                def forward(self, x, y):
-                    padded_weight = torch.cat((self.weight, self.padding), dim=0)
-                    return x + torch.nn.functional.linear(y, padded_weight)
+                def forward(self, y):
+                    # padded_weight = torch.cat((self.weight, self.padding), dim=0)
+                    return torch.nn.functional.linear(y, self.weight)
 
             example_inputs = (
+                # torch.randn(10, 10, device=self.device).to(dtype),
                 torch.randn(10, 10, device=self.device).to(dtype),
-                torch.randn(10, 10, device=self.device).to(dtype),
+            )
+
+            with config.patch({"freezing": True}):
+                self.check_model(Model(self.device), example_inputs)
+
+    def test_conv_freezing(self):
+        import itertools
+        for dtype, groups in itertools.product([torch.float], [1, 2]):
+            iC = 2
+            oC = 3
+            class Model(torch.nn.Module):
+                def __init__(self, device):
+                    super().__init__()
+                    # self.weight = torch.randn(2, 3, 1, 1, device=device).to(dtype)
+                    self.weight = torch.randn(oC * groups, iC, 3, 3, device=device).to(dtype)
+                    # self.weight = torch.randn(2, 3, 3, 3, device=device).to(dtype)
+                    # self.padding = torch.randn(1, 512, device=device).to(dtype)
+
+                def forward(self, y):
+                    # padded_weight = torch.cat((self.weight, self.padding), dim=0)
+                    return torch.nn.functional.conv2d(y, self.weight, groups=groups)
+
+            example_inputs = (
+                # torch.randn(10, 10, device=self.device).to(dtype),
+                torch.randn(2, iC * groups, 10, 10, device=self.device).to(dtype),
             )
 
             with config.patch({"freezing": True}):
@@ -2239,3 +2264,4 @@ if __name__ == "__main__":
     run_tests(needs="filelock")
 
 # TORCH_COMPILE_DEBUG=1 python -u test/inductor/test_aot_inductor.py -k AOTInductorTestNonABICompatibleCpu.test_freezing_non_abi_compatible_cpu  2>&1 | tee debug_pr_rebase.log
+# TORCH_COMPILE_DEBUG=1 python -u test/inductor/test_aot_inductor.py -k AOTInductorTestNonABICompatibleCpu.test_conv_freezing_non_abi_compatible_cpu
