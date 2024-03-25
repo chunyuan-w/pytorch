@@ -260,6 +260,7 @@ AOTI_TORCH_EXPORT AOTITorchError aoti_torch_create_tensor_from_blob(
     int8_t layout,
     const uint8_t* serialized_md,
     int64_t serialized_md_size,    
+    int groups,
     int32_t device_type,
     int32_t device_index,
     AtenTensorHandle* ret // returns new reference

@@ -22,7 +22,8 @@ at::Tensor mkldnn_tensor_from_data_ptr(
     at::ScalarType dtype,
     at::Device device,
     const uint8_t* serialized_md,
-    int64_t serialized_md_size) {
+    int64_t serialized_md_size,
+    int groups) {
   // TODO: add deserialize here
 
 
@@ -32,8 +33,10 @@ at::Tensor mkldnn_tensor_from_data_ptr(
   dnnl_memory_desc_t deserialized_wei_desc;
   dnnl_memory_desc_create_with_blob(
       &deserialized_wei_desc, vector_serialized_md.data());
-
-  auto a = ideep::tensor(deserialized_wei_desc, data_ptr);
+  // groups is needed for grouped conv
+  // TODO: deconv
+  ideep::tensor::desc deserialized_ideep_desc(deserialized_wei_desc, groups);
+  auto a = ideep::tensor(deserialized_ideep_desc, data_ptr);
   return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
 
 
@@ -50,7 +53,8 @@ at::Tensor mkldnn_tensor_from_data_ptr(
     at::ScalarType dtype,
     at::Device device,
     const uint8_t* serialized_md,
-    int64_t serialized_md_size) {
+    int64_t serialized_md_size,
+    int groups) {
   TORCH_CHECK(false, "MKL-DNN build is disabled");
 }
 
