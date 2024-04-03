@@ -217,6 +217,12 @@ class AOTInductorModelBase {
       auto size = this->constant_shape(i);
       auto stride = this->constant_stride(i);
       auto offset = this->constant_offset(i);
+      auto layout = this->constant_layout(i);
+      auto serialized_md_ptr = this->serialized_md(i);
+      auto serialized_md_size = this->serialized_md_size(i);
+      auto groups = this->groups(i);
+      std::vector<uint8_t> vector_serialized_md{
+          serialized_md_ptr, serialized_md_ptr + serialized_md_size};
 
       AtenTensorHandle tensor_handle;
       AOTI_TORCH_ERROR_CODE_CHECK(aoti_torch_create_tensor_from_blob(
@@ -226,6 +232,10 @@ class AOTInductorModelBase {
           stride,
           offset,
           dtype,
+          layout,
+          serialized_md_ptr,
+          serialized_md_size,
+          groups,          
           device_type_,
           device_idx_,
           &tensor_handle));
@@ -334,6 +344,10 @@ class AOTInductorModelBase {
     return constants_info_.at(idx).dtype;
   }
 
+  int8_t constant_layout(int64_t idx) const {
+    return constants_info_.at(idx).layout;
+  }
+
   size_t constant_offset(int64_t idx) const {
     return constants_info_.at(idx).offset;
   }
@@ -344,6 +358,18 @@ class AOTInductorModelBase {
 
   const char* constant_original_fqn(int64_t idx) const {
     return constants_info_.at(idx).original_fqn;
+  }
+
+  const uint8_t* serialized_md(int64_t idx) const {
+    return constants_info_.at(idx).serialized_md.data();
+  }
+
+  size_t serialized_md_size(int64_t idx) {
+    return constants_info_.at(idx).serialized_md.size();
+  }
+
+  int groups(int64_t idx) {
+    return constants_info_.at(idx).groups;
   }
 
   bool constant_from_folded(int64_t idx) const {
@@ -440,6 +466,10 @@ class AOTInductorModelBase {
     int32_t dtype;
     int64_t offset;
     size_t data_size;
+    int8_t layout;
+    std::vector<uint8_t> serialized_md;
+    int64_t serialized_md_size;
+    int groups;    
     const char* original_fqn = nullptr;
     bool from_folded;
   };
