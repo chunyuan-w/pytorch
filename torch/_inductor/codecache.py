@@ -1833,6 +1833,13 @@ class AotCodeCompiler:
                 if t.numel() == 0:
                     return b""
 
+                if t.is_mkldnn:
+                    raw_array = ctypes.cast(
+                        torch.ops.mkldnn.data_ptr(t),
+                        ctypes.POINTER(ctypes.c_ubyte * torch.ops.mkldnn._data_size(t)),
+                    )
+                    return bytes(raw_array.contents)
+
                 t_cpu = t.untyped_storage().cpu()
                 raw_array = ctypes.cast(
                     t_cpu.data_ptr(),

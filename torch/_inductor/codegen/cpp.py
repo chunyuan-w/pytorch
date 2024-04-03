@@ -111,6 +111,11 @@ DEVICE_TO_ATEN = {
     "cuda": "at::kCUDA",
 }
 
+LAYOUT_TO_ATEN = {
+    torch.strided: "at::kStrided",
+    torch._mkldnn: "at::kMkldnn",
+}
+
 INDEX_TYPE = "long"
 
 NATIVE_OMP_RTYPES = {"+", "*", "^", "||", "min", "max"}
