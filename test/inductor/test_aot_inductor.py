@@ -111,7 +111,10 @@ def check_model(
             disable_constraint_solver,
         )
 
-    self.assertTrue(same(actual, expected))
+    # self.assertTrue(same(actual, expected))
+    print(actual)
+    print(expected)
+    self.assertEqual(actual, expected)
 
 
 def check_model_with_multiple_inputs(
@@ -307,23 +310,75 @@ class AOTInductorTestsTemplate:
         self.check_model(Model(self.device), example_inputs)
 
     def test_freezing(self):
-        class Model(torch.nn.Module):
-            def __init__(self, device):
-                super().__init__()
-                self.weight = torch.randn(9, 10, device=device)
-                self.padding = torch.randn(1, 10, device=device)
+        for dtype in [torch.float32, torch.bfloat16]:
 
-            def forward(self, x, y):
-                padded_weight = torch.cat((self.weight, self.padding), dim=0)
-                return x + torch.nn.functional.linear(y, padded_weight)
+            class Model(torch.nn.Module):
+                def __init__(self, device):
+                    super().__init__()
+                    self.weight = torch.randn(10, 10, device=device).to(dtype)
+                    # self.padding = torch.randn(1, 512, device=device).to(dtype)
 
-        example_inputs = (
-            torch.randn(10, 10, device=self.device),
-            torch.randn(10, 10, device=self.device),
-        )
+                def forward(self, y):
+                    # padded_weight = torch.cat((self.weight, self.padding), dim=0)
+                    return torch.nn.functional.linear(y, self.weight)
 
-        with config.patch({"freezing": True}):
-            self.check_model(Model(self.device), example_inputs)
+            example_inputs = (
+                # torch.randn(10, 10, device=self.device).to(dtype),
+                torch.randn(10, 10, device=self.device).to(dtype),
+            )
+
+            with config.patch({"freezing": True}):
+                self.check_model(Model(self.device), example_inputs)
+
+    def test_conv_freezing(self):
+        import itertools
+        for dtype, groups in itertools.product([torch.bfloat16, torch.float], [1, 2]):
+            iC = 2
+            oC = 3
+            class Model(torch.nn.Module):
+                def __init__(self, device):
+                    super().__init__()
+                    # self.weight = torch.randn(2, 3, 1, 1, device=device).to(dtype)
+                    self.weight = torch.randn(oC * groups, iC, 3, 3, device=device).to(dtype)
+                    # self.weight = torch.randn(2, 3, 3, 3, device=device).to(dtype)
+                    # self.padding = torch.randn(1, 512, device=device).to(dtype)
+
+                def forward(self, y):
+                    # padded_weight = torch.cat((self.weight, self.padding), dim=0)
+                    return torch.nn.functional.conv2d(y, self.weight, groups=groups)
+
+            example_inputs = (
+                # torch.randn(10, 10, device=self.device).to(dtype),
+                torch.randn(2, iC * groups, 10, 10, device=self.device).to(dtype),
+            )
+
+            with config.patch({"freezing": True}):
+                self.check_model(Model(self.device), example_inputs)
+
+    def test_deconv_freezing(self):
+        import itertools
+        for dtype, groups in itertools.product([torch.bfloat16, torch.float], [2, 1]):
+            iC = 2
+            oC = 3
+            class Model(torch.nn.Module):
+                def __init__(self, device):
+                    super().__init__()
+                    # self.weight = torch.randn(2, 3, 1, 1, device=device).to(dtype)
+                    self.weight = torch.randn(iC, oC * groups, 3, 3, device=device).to(dtype)
+                    # self.weight = torch.randn(2, 3, 3, 3, device=device).to(dtype)
+                    # self.padding = torch.randn(1, 512, device=device).to(dtype)
+
+                def forward(self, y):
+                    # padded_weight = torch.cat((self.weight, self.padding), dim=0)
+                    return torch.nn.functional.conv_transpose2d(y, self.weight, groups=groups)
+
+            example_inputs = (
+                # torch.randn(10, 10, device=self.device).to(dtype),
+                torch.randn(2, iC, 10, 10, device=self.device).to(dtype),
+            )
+
+            with config.patch({"freezing": True}):
+                self.check_model(Model(self.device), example_inputs)
 
     def test_simple_split(self):
         class Model(torch.nn.Module):
@@ -2690,7 +2745,7 @@ CPU_TEST_FAILURES = {
     "test_fft_c2c": fail_stack_allocation(is_skip=True),
     # TODO: test_freezing_abi_compatible_cpu somehow fails on CI but not locally,
     #   NotImplementedError: Cannot access storage of OpaqueTensorImpl
-    "test_freezing": fail_with_and_without_stack_allocation(is_skip=True),
+    # "test_freezing": fail_with_and_without_stack_allocation(is_skip=True),
     # FIXME: failed with Segfault while exiting the Python runtime
     "test_missing_cubin": fail_with_and_without_stack_allocation(is_skip=True),
     # minimal arrayref interface only works with CPU; test crashes.
@@ -2930,7 +2985,7 @@ copy_tests(
         ),
         # TODO: test_freezing_non_abi_compatible_cpu somehow fails on CI but not locally,
         #   NotImplementedError: Cannot access storage of OpaqueTensorImpl
-        "test_freezing": TestFailure(("non_abi_compatible_cpu",), is_skip=True),
+        # "test_freezing": TestFailure(("non_abi_compatible_cpu",), is_skip=True),
         # no runtime checks for non_abi_compatible mode
         "test_runtime_checks": TestFailure(("non_abi_compatible_cpu",), is_skip=True),
         "test_runtime_checks_dtype_failed": TestFailure(
@@ -2968,5 +3023,8 @@ if __name__ == "__main__":
     from torch._inductor.test_case import run_tests
 
     # cpp_extension N/A in fbcode
-    if HAS_CUDA or sys.platform == "darwin":
-        run_tests(needs="filelock")
+    # if HAS_CUDA or sys.platform == "darwin":
+    run_tests(needs="filelock")
+
+# TORCH_COMPILE_DEBUG=1 python -u test/inductor/test_aot_inductor.py -k AOTInductorTestNonABICompatibleCpu.test_freezing_non_abi_compatible_cpu  2>&1 | tee debug_pr_rebase.log
+# TORCH_COMPILE_DEBUG=1 python -u test/inductor/test_aot_inductor.py -k AOTInductorTestNonABICompatibleCpu.test_conv_freezing_non_abi_compatible_cpu
