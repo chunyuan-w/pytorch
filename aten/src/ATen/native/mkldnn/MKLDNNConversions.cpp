@@ -484,12 +484,20 @@ static Tensor mkldnn_serialize(const Tensor& self) {
   const ideep::tensor packed_w = itensor_from_tensor(self);
   auto packed_w_desc = packed_w.get_desc();
 
-  auto c_wei_desc = packed_w_desc.get();
-  size_t size;
-  dnnl_memory_desc_get_blob(nullptr, &size, c_wei_desc);
-  std::vector<uint8_t> serialized_wei_desc(size);
-  dnnl_memory_desc_get_blob(serialized_wei_desc.data(), &size, c_wei_desc);
+  // auto c_wei_desc = packed_w_desc.get();
+  // size_t size;
+  
+  // // TODO：move to ideep and use C++ API
+  // dnnl_memory_desc_get_blob(nullptr, &size, c_wei_desc);
+  // std::vector<uint8_t> serialized_wei_desc(size);
+  // dnnl_memory_desc_get_blob(serialized_wei_desc.data(), &size, c_wei_desc);
 
+  // TODO: test ideep versioning
+#if IDEEP_PREREQ(3, 4, 1, 2)
+  std::vector<uint8_t> serialized_wei_desc = packed_w_desc.get_blob();
+#else
+      TORCH_CHECK(false, "Unexpected IDeep version to do weight serialization.");
+#endif
   // Tensor serialized_md = at::from_blob(serialized_wei_desc, {size}, at::TensorOptions(at::kByte));
   Tensor serialized_md = at::from_blob((void*)serialized_wei_desc.data(), {(int64_t)serialized_wei_desc.size()}, at::TensorOptions(at::kByte));
   auto res = at::empty_like(serialized_md);
