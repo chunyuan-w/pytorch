@@ -486,8 +486,6 @@ static Tensor mkldnn_serialize(const Tensor& self) {
 
   // auto c_wei_desc = packed_w_desc.get();
   // size_t size;
-  
-  // // TODO：move to ideep and use C++ API
   // dnnl_memory_desc_get_blob(nullptr, &size, c_wei_desc);
   // std::vector<uint8_t> serialized_wei_desc(size);
   // dnnl_memory_desc_get_blob(serialized_wei_desc.data(), &size, c_wei_desc);

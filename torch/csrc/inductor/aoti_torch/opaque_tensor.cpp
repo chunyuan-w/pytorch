@@ -30,13 +30,19 @@ at::Tensor mkldnn_tensor_from_data_ptr(
   std::vector<uint8_t> vector_serialized_md{
       serialized_md, serialized_md + serialized_md_size};
 
-  // TODO: move to ideep and use C++ API
-  dnnl_memory_desc_t deserialized_wei_desc;
-  dnnl_memory_desc_create_with_blob(
-      &deserialized_wei_desc, vector_serialized_md.data());
-  // groups is needed for grouped conv
+//   dnnl_memory_desc_t deserialized_wei_desc;
+//   dnnl_memory_desc_create_with_blob(
+    //   &deserialized_wei_desc, vector_serialized_md.data());
   // TODO: deconv
-  ideep::tensor::desc deserialized_ideep_desc(deserialized_wei_desc, groups);
+  
+  // TODO: test ideep versioning
+#if IDEEP_PREREQ(3, 4, 1, 2)
+  // groups is needed for grouped conv
+  ideep::tensor::desc deserialized_ideep_desc(vector_serialized_md, groups);
+#else
+      TORCH_CHECK(false, "Unexpected IDeep version to do weight deserialization.");
+#endif
+  
   auto a = ideep::tensor(deserialized_ideep_desc, data_ptr);
   return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
 
