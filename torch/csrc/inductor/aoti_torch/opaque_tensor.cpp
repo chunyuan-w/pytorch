@@ -30,6 +30,7 @@ at::Tensor mkldnn_tensor_from_data_ptr(
   std::vector<uint8_t> vector_serialized_md{
       serialized_md, serialized_md + serialized_md_size};
 
+  // TODO: move to ideep and use C++ API
   dnnl_memory_desc_t deserialized_wei_desc;
   dnnl_memory_desc_create_with_blob(
       &deserialized_wei_desc, vector_serialized_md.data());
