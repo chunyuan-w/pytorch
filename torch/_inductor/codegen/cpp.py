@@ -2143,7 +2143,9 @@ class CppKernel(Kernel):
     @property
     def assert_function(self) -> str:
         if V.graph.aot_mode:
-            return "AOTI_TORCH_CHECK"
+            # return "AOTI_TORCH_CHECK"
+            # TODO: add an option here to don't always make it noinline?
+            return "TORCH_CHECK"
         else:
             return "TORCH_CHECK"
 
