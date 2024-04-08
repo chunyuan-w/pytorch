@@ -44,7 +44,16 @@ at::Tensor mkldnn_tensor_from_data_ptr(
 #endif
   
   auto a = ideep::tensor(deserialized_ideep_desc, data_ptr);
-  return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
+  
+  // TODO: workaround to let ideep allocate buffer to make it have good alignment
+  // Should fix the alignment when creating data ptr
+  ideep::tensor aligned_a;
+  aligned_a.init(deserialized_ideep_desc);
+  aligned_a.feed_from(a);
+  return at::native::new_with_itensor_mkldnn(std::move(aligned_a), dtype, device);  
+  
+  
+  // return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
 
 
 
