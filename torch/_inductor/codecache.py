@@ -1681,6 +1681,15 @@ class AotCodeCompiler:
                 cmd = f"{ld_command} -r -b binary -o {consts_o} {consts_path}"
                 run_command_and_check(cmd)
             log.debug("aot constant binary command: %s", cmd)
+            
+            cmd = (
+                f"{objcopy_command} --rename-section"
+                " .data=.ldata"
+                f" {consts_o} {consts_o}"
+            )            
+            log.debug("aot constant rename section command: %s", cmd)
+            run_command_and_check(cmd)
+
 
             cmd = f"rm {consts_path}"
             log.debug("aot constant bin removal command: %s", cmd)
@@ -1774,6 +1783,8 @@ class AotCodeCompiler:
                 use_absolute_path=use_absolute_path,
             )
             log.debug("aot compilation command: %s", compile_cmd)
+            print("aot compilation command:")
+            print(compile_cmd)
             if fbcode_aot_cpu_re:
                 compile_file(input_path, output_o, compile_cmd.split())
                 os.chmod(output_o, 0o644)
@@ -1804,6 +1815,7 @@ class AotCodeCompiler:
                 return bytes(raw_array.contents)
 
             aot_constants = b"".join(
+                # to_bytes value is incorrect? should use size from opaque tensor for prepacked weight??
                 _to_bytes(graph.get_original_value_of_constant(name))
                 for name in graph.constants.keys()
                 if name not in graph.folded_constants
