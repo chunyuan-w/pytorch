@@ -99,13 +99,6 @@ int64_t data_size_from_mkldnn(const Tensor& mkldnn_tensor) {
   return t.get_desc().get_size();
 }
 
-// TODO: this function is not used anymore. Remove it.
-int64_t groups_from_mkldnn(const Tensor& mkldnn_tensor) {
-  ideep::tensor t = itensor_from_mkldnn(mkldnn_tensor);
-  return 1;
-  // return t.get_desc().g();
-}
-
 ideep::tensor itensor_view_from_dense(const Tensor& tensor, bool from_const_data_ptr) {
   TORCH_CHECK(
       tensor.device().is_cpu(),
@@ -198,10 +191,7 @@ TORCH_LIBRARY_IMPL(mkldnn, MkldnnCPU, m) {
       TORCH_FN(data_ptr_from_mkldnn));
   m.impl(
       TORCH_SELECTIVE_NAME("mkldnn::_data_size"),
-      TORCH_FN(data_size_from_mkldnn));
-  m.impl(
-      TORCH_SELECTIVE_NAME("mkldnn::_groups"),
-      TORCH_FN(groups_from_mkldnn));      
+      TORCH_FN(data_size_from_mkldnn));    
 }
 
 }}
