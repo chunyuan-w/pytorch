@@ -220,7 +220,6 @@ class AOTInductorModelBase {
       auto layout = this->constant_layout(i);
       auto serialized_md_ptr = this->serialized_md(i);
       auto serialized_md_size = this->serialized_md_size(i);
-      auto groups = this->groups(i);
       std::vector<uint8_t> vector_serialized_md{
           serialized_md_ptr, serialized_md_ptr + serialized_md_size};
 
@@ -235,7 +234,6 @@ class AOTInductorModelBase {
           layout,
           serialized_md_ptr,
           serialized_md_size,
-          groups,          
           device_type_,
           device_idx_,
           &tensor_handle));
@@ -368,10 +366,6 @@ class AOTInductorModelBase {
     return constants_info_.at(idx).serialized_md.size();
   }
 
-  int groups(int64_t idx) {
-    return constants_info_.at(idx).groups;
-  }
-
   bool constant_from_folded(int64_t idx) const {
     return constants_info_.at(idx).from_folded;
   }
@@ -469,7 +463,6 @@ class AOTInductorModelBase {
     int8_t layout;
     std::vector<uint8_t> serialized_md;
     int64_t serialized_md_size;
-    int groups;    
     const char* original_fqn = nullptr;
     bool from_folded;
   };

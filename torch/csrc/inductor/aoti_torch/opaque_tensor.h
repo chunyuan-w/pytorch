@@ -13,8 +13,7 @@ at::Tensor mkldnn_tensor_from_data_ptr(
     at::ScalarType dtype,
     at::Device device,
     const uint8_t* serialized_md,
-    int64_t serialized_md_size,
-    int groups);    
+    int64_t serialized_md_size);    
 
 }
 } // namespace torch

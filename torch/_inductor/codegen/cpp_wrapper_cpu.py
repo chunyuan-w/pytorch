@@ -743,11 +743,6 @@ class CppWrapperCpu(WrapperCodeGen):
                     self.prefix.writeline(
                         f"constants_info_[{idx}].serialized_md = {serialized_list_str};"
                     )
-
-                    groups = torch.ops.mkldnn._groups(tensor)
-                    self.prefix.writeline(
-                        f"constants_info_[{idx}].groups = {groups};"
-                    )                  
                 if name in V.graph.dynamo_flat_name_to_original_fqn:
                     original_fqn = V.graph.dynamo_flat_name_to_original_fqn.get(
                         name, name
