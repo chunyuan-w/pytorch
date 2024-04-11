@@ -99,9 +99,11 @@ int64_t data_size_from_mkldnn(const Tensor& mkldnn_tensor) {
   return t.get_desc().get_size();
 }
 
+// TODO: this function is not used anymore. Remove it.
 int64_t groups_from_mkldnn(const Tensor& mkldnn_tensor) {
   ideep::tensor t = itensor_from_mkldnn(mkldnn_tensor);
-  return t.get_desc().g();
+  return 1;
+  // return t.get_desc().g();
 }
 
 ideep::tensor itensor_view_from_dense(const Tensor& tensor, bool from_const_data_ptr) {

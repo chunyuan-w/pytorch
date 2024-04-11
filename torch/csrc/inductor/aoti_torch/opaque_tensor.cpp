@@ -38,7 +38,7 @@ at::Tensor mkldnn_tensor_from_data_ptr(
   // TODO: test ideep versioning
 #if IDEEP_PREREQ(3, 4, 1, 2)
   // groups is needed for grouped conv
-  ideep::tensor::desc deserialized_ideep_desc(vector_serialized_md, groups);
+  ideep::tensor::desc deserialized_ideep_desc(vector_serialized_md);
 #else
       TORCH_CHECK(false, "Unexpected IDeep version to do weight deserialization.");
 #endif
