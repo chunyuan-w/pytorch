@@ -16,6 +16,11 @@ void* data_ptr_from_mkldnn(at::Tensor* mkldnn_tensor) {
   return data_ptr;
 }
 
+// bool is_aligned(void* ptr, size_t alignment) {
+//   uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
+//   return (addr % alignment) == 0;
+// }
+
 at::Tensor mkldnn_tensor_from_data_ptr(
     void* data_ptr,
     at::IntArrayRef dims,
@@ -46,13 +51,31 @@ at::Tensor mkldnn_tensor_from_data_ptr(
   
   // TODO: workaround to let ideep allocate buffer to make it have good alignment
   // Should fix the alignment when creating data ptr
-  ideep::tensor aligned_a;
-  aligned_a.init(deserialized_ideep_desc);
-  aligned_a.feed_from(a);
-  return at::native::new_with_itensor_mkldnn(std::move(aligned_a), dtype, device);  
+  // ideep::tensor aligned_a;
+  // aligned_a.init(deserialized_ideep_desc);
+  // aligned_a.feed_from(a);
+  // return at::native::new_with_itensor_mkldnn(std::move(aligned_a), dtype, device);  
   
   
   // return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
+
+
+
+  // size_t alignment = 64; // The desired alignment
+
+  // printf("a alignd: %d\n", is_aligned(a.get_data_handle(), alignment));
+  // printf("aligned_a alignd: %d\n", is_aligned(aligned_a.get_data_handle(), alignment));
+  
+
+  // auto envar = std::getenv("_USE_ALIGNED");
+  // if (envar) {
+  //   return at::native::new_with_itensor_mkldnn(std::move(aligned_a), dtype, device);
+  // } else {
+  //   return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
+  // }
+
+  // We've ensured the buffer of a is 64-alignement when building the constant.o
+  return at::native::new_with_itensor_mkldnn(std::move(a), dtype, device);
 
 
 

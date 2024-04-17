@@ -1710,6 +1710,7 @@ class AotCodeCompiler:
             cmd = (
                 f"{objcopy_command} --rename-section"
                 " .data=.ldata"
+                " --set-section-alignment .data=64"
                 f" {consts_o} {consts_o}"
             )
             log.debug("aot constant rename section command: %s", cmd)
