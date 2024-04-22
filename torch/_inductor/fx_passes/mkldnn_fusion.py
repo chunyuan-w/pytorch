@@ -1308,6 +1308,9 @@ if torch._C._has_mkldnn:
                     torch.bfloat16,
                     torch.float16,
                 )
+                # Test to use oneDNN for FP32 GEMM
+                is_lp_weight = True
+                
                 batch_size = input.meta.get("val").shape[0]
                 if has_free_symbols(batch_size):
                     assert is_lp_weight or mkldnn._is_mkldnn_acl_supported(), (
