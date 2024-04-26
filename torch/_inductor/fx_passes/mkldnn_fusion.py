@@ -1,6 +1,7 @@
 # mypy: allow-untyped-defs
 import functools
 import operator
+import os
 from functools import reduce
 from typing import Any
 
@@ -1100,7 +1101,8 @@ if torch._C._has_mkldnn:
         )
         
         # Test to use oneDNN for FP32 GEMM
-        is_lp_weight = True
+        if os.environ.get("_USE_ONEDNN_GEMM", "0") == "1":
+            is_lp_weight = True
         
         # on x86, for fp32, mkl should be enabled and batch_size should not be a free symbol.
         # on aarch64, use mkldnn op for fp32 as well if acl is enabled
@@ -1313,7 +1315,9 @@ if torch._C._has_mkldnn:
                     torch.float16,
                 )
                 # Test to use oneDNN for FP32 GEMM
-                is_lp_weight = True
+                
+                if os.environ.get("_USE_ONEDNN_GEMM", "0") == "1":
+                    is_lp_weight = True
                 
                 batch_size = input.meta.get("val").shape[0]
                 if has_free_symbols(batch_size):
