@@ -50,6 +50,8 @@ from typing import (
     Union,
 )
 
+from packaging import version
+
 import torch
 from torch._dynamo.device_interface import (
     get_interface_for_device,
@@ -1719,6 +1721,21 @@ class CudaKernelParamCache:
         return cls.cache.keys()
 
 
+# TODO: try objcopy_command -v as well?
+# TODO: the function is similar to get_compiler_version_info
+def _get_objcopy_version(objcopy_command):
+    try:
+        breakpoint()
+        version_string = subprocess.check_output(
+            [objcopy_command, "--version"], stderr=subprocess.STDOUT
+        ).decode("utf-8")
+        version_string_first_line = version_string.split("\n")[0]
+        objcopy_version = version_string_first_line.split()[-1]
+        return objcopy_version
+    except Exception as e:
+        return ""
+
+
 class AotCodeCompiler:
     @classmethod
     def compile(
@@ -1740,6 +1757,7 @@ class AotCodeCompiler:
         )
         fbcode_aot_cpu_re = False
         use_absolute_path = False
+        set_data_alignment = False
         if config.is_fbcode():
             ld_command = build_paths.ld()
             if not cuda and graph.aot_mode:  # Meta internal AOTInductor CPU
@@ -1751,6 +1769,10 @@ class AotCodeCompiler:
         else:
             ld_command = "ld"
             objcopy_command = "objcopy"
+            ver = _get_objcopy_version(objcopy_command)
+            # The --set-section-alignment parameter of objcopy is only available since 2.33.1
+            if ver and version.parse(ver) >= version.parse("2.33.1"):
+                set_data_alignment = True
 
         (
             specified_output_path,
@@ -1793,10 +1815,13 @@ class AotCodeCompiler:
             # .data section is between .text and .bss. When the size of .data is large,
             # during the linking, the relocation of .text against .bss may overflow.
             # Rename it to .ldata so that it won't be in between the .text and .bss section
+            data_alignment_cmd = (
+                "--set-section-alignment .data=64" if set_data_alignment else ""
+            )
             cmd = (
                 f"{objcopy_command} --rename-section"
                 " .data=.ldata"
-                " --set-section-alignment .data=64"  # following the gAlignment of CPU in c10/core/alignment.h
+                f" {data_alignment_cmd}"  # following the gAlignment of CPU in c10/core/alignment.h
                 f" {consts_o} {consts_o}"
             )
             log.debug("aot constant rename section command: %s", cmd)
