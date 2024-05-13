@@ -170,6 +170,9 @@ class CppMicroGemmRef(CppMicroGemm):
 
 
 @register_micro_gemm(
+    # CppMicroGemmConfig(
+    #     torch.float32, torch.float32, torch.float32, VecAVX512, GemmBlocking(6, 64, 1)
+    # ),
     CppMicroGemmConfig(
         torch.float32, torch.float32, torch.float32, VecAVX512, GemmBlocking(8, 48, 1)
     ),

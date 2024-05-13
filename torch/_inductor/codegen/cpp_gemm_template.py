@@ -131,6 +131,7 @@ class CppPackedGemmTemplate(CppTemplate):
         alpha=1,
     ):
         super().__init__("packed_gemm", input_nodes, layout)
+        # breakpoint()
         self.beta = beta
         self.alpha = alpha
         self.num_threads = num_threads
@@ -158,6 +159,7 @@ class CppPackedGemmTemplate(CppTemplate):
             thread_block_m = (m_blocks + cofactor - 1) // cofactor
             return GemmBlocking(thread_block_m, thread_block_n, k_blocks)
 
+        # breakpoint()
         assert (
             not self.is_dynamic_M
         ), "Unable to determine thread blocking for dynamic M."
@@ -186,12 +188,31 @@ class CppPackedGemmTemplate(CppTemplate):
 
     @cache_on_self
     def cache_blocking(self) -> GemmBlocking:
+        # breakpoint()
         # TODO(jgong5): improve cache blocking with CPU info
         assert (
             not self.is_dynamic_M
         ), "Unable to determine cache blocking for dynamic M."
         thread_blocking = self.thread_blocking()
-        return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k)
+        
+        M0 = self.register_blocking.block_m
+        N0 = self.register_blocking.block_n
+        K0 = self.register_blocking.block_k
+        
+        L1_limit = 0.5
+        L2_limit = 0.5
+        
+        # TODO: get L1 and L2 size from cpuinfo
+        L1 = 48 / 1024 # MB
+        L2 = 1280 / 1024 # MB
+        num_byte = 4 # float
+        
+        Kc_blocks = L1 * (1024 * 1024) * L1_limit / (K0 * N0 * num_byte)
+        Mc_blocks = L2 * (1024 * 1024) * L2_limit / (M0 * Kc_blocks * K0 * num_byte)
+        
+        # return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k)
+        return GemmBlocking(Mc_blocks, 1, Kc_blocks)
+        # return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k / 32)
 
     @staticmethod
     def add_choices(
