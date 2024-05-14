@@ -208,8 +208,17 @@ class CppPackedGemmTemplate(CppTemplate):
         num_byte = 4 # float
         
         Kc_blocks = L1 * (1024 * 1024) * L1_limit / (K0 * N0 * num_byte)
-        Mc_blocks = L2 * (1024 * 1024) * L2_limit / (M0 * Kc_blocks * K0 * num_byte)
+        # breakpoint()
+        Kc_blocks = min(Kc_blocks, thread_blocking.block_k)
         
+        Mc_blocks = L2 * (1024 * 1024) * L2_limit / (M0 * Kc_blocks * K0 * num_byte)
+        # breakpoint()
+        Mc_blocks = min(Mc_blocks, thread_blocking.block_m)
+        
+        # breakpoint()
+        import os
+        if os.environ.get("DEBUG_CACHE_BLOCKING", False):
+            print(f"M0-Mc_blocks-K0-Kc_blocks-N0: {M0},{thread_blocking.block_m},{K0},{thread_blocking.block_k},{N0}", )
         # return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k)
         return GemmBlocking(Mc_blocks, 1, Kc_blocks)
         # return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k / 32)
