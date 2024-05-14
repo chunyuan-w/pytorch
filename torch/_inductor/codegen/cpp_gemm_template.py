@@ -199,6 +199,7 @@ class CppPackedGemmTemplate(CppTemplate):
         N0 = self.register_blocking.block_n
         K0 = self.register_blocking.block_k
         
+        # TODO: tune the factor here
         L1_limit = 0.5
         L2_limit = 0.5
         
@@ -206,19 +207,27 @@ class CppPackedGemmTemplate(CppTemplate):
         L1 = 48 / 1024 # MB
         L2 = 1280 / 1024 # MB
         num_byte = 4 # float
+
+        Kc_blocks = thread_blocking.block_k
+        Mc_blocks = thread_blocking.block_m
+
+        size_cache_B = K0 * thread_blocking.block_k *  N0 * num_byte / (1024 * 1024)
+        size_cache_A = M0 * thread_blocking.block_m * K0 * thread_blocking.block_k * num_byte / (1024 * 1024)
         
-        Kc_blocks = L1 * (1024 * 1024) * L1_limit / (K0 * N0 * num_byte)
-        # breakpoint()
-        Kc_blocks = min(Kc_blocks, thread_blocking.block_k)
-        
-        Mc_blocks = L2 * (1024 * 1024) * L2_limit / (M0 * Kc_blocks * K0 * num_byte)
-        # breakpoint()
-        Mc_blocks = min(Mc_blocks, thread_blocking.block_m)
-        
-        # breakpoint()
+        import math
+        def round_down_to_even(f):
+            # FACTOR = 2
+            # return math.floor(f / FACTOR) * FACTOR
+            return math.floor(f)
+                
+        # breakpoint()        
+        if size_cache_B > L2 or size_cache_A > L2:
+            Kc_blocks = round_down_to_even(L1 * (1024 * 1024) * L1_limit / (K0 * N0 * num_byte))
+            Mc_blocks = round_down_to_even(L2 * (1024 * 1024) * L2_limit / (M0 * Kc_blocks * K0 * num_byte))
+
         import os
         if os.environ.get("DEBUG_CACHE_BLOCKING", False):
-            print(f"M0-Mc_blocks-K0-Kc_blocks-N0: {M0},{thread_blocking.block_m},{K0},{thread_blocking.block_k},{N0}", )
+            print(f"M0-Mc_blocks-K0-Kc_blocks-N0: {M0},{Mc_blocks},{K0},{Kc_blocks},{N0}", )
         # return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k)
         return GemmBlocking(Mc_blocks, 1, Kc_blocks)
         # return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k / 32)
