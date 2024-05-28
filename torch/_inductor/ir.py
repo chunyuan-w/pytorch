@@ -5574,10 +5574,11 @@ class FallbackKernel(ExternKernelAlloc):
 
             exported_args = None
             args = None
-            if config.abi_compatible:
-                exported_args = self.export_extern_kernel_node()
-            else:
+            # same as in cpp_wrapper_cpu.py: generate_extern_kernel_alloc_and_find_schema_if_needed_oss: if V.graph.aot_mode or not config.abi_compatible:
+            if V.graph.aot_mode or not config.abi_compatible:
                 args = [*self.codegen_args(), *self.codegen_kwargs()]
+            else:
+                exported_args = self.export_extern_kernel_node()
 
             wrapper.generate_extern_kernel_alloc_and_find_schema_if_needed(
                 self.get_name(),
@@ -6282,65 +6283,65 @@ class MKLPackedLinear(ExternKernelAlloc):
         )
 
 
-class LinearUnary(ExternKernelAlloc):
-    def __init__(
-        self,
-        layout,
-        inputs,
-        constant_args=(),
-    ):
-        super().__init__(
-            layout,
-            inputs,
-            constant_args,
-            None,
-            python_kernel_name="torch.ops.mkldnn._linear_pointwise",
-            cpp_kernel_name="mkldnn::_linear_pointwise",
-        )
-        self.cpp_kernel_key = "linear_pointwise"
-        self.cpp_op_schema = """
-            at::Tensor(
-                const at::Tensor& input_t,
-                const at::Tensor& weight_t,
-                const c10::optional<at::Tensor>& bias_opt,
-                c10::string_view attr,
-                torch::List<c10::optional<at::Scalar>> scalars,
-                c10::optional<c10::string_view> algorithm)"""
+class LinearUnary(FallbackKernel):
+    # def __init__(
+    #     self,
+    #     layout,
+    #     inputs,
+    #     constant_args=(),
+    # ):
+    #     super().__init__(
+    #         layout,
+    #         inputs,
+    #         constant_args,
+    #         None,
+    #         python_kernel_name="torch.ops.mkldnn._linear_pointwise",
+    #         cpp_kernel_name="mkldnn::_linear_pointwise",
+    #     )
+    #     self.cpp_kernel_key = "linear_pointwise"
+    #     self.cpp_op_schema = """
+    #         at::Tensor(
+    #             const at::Tensor& input_t,
+    #             const at::Tensor& weight_t,
+    #             const c10::optional<at::Tensor>& bias_opt,
+    #             c10::string_view attr,
+    #             torch::List<c10::optional<at::Scalar>> scalars,
+    #             c10::optional<c10::string_view> algorithm)"""
 
-    def codegen(self, wrapper):
-        wrapper.generate_extern_kernel_alloc_and_find_schema_if_needed(
-            self.get_name(),
-            self.python_kernel_name,
-            self.cpp_kernel_name,
-            self.codegen_args(),
-            self.cpp_op_schema,
-            self.cpp_kernel_key,
-        )
+    # def codegen(self, wrapper):
+    #     wrapper.generate_extern_kernel_alloc_and_find_schema_if_needed(
+    #         self.get_name(),
+    #         self.python_kernel_name,
+    #         self.cpp_kernel_name,
+    #         self.codegen_args(),
+    #         self.cpp_op_schema,
+    #         self.cpp_kernel_key,
+    #     )
 
-    @classmethod
-    def create(cls, x, w, b, attr, scalars, algorithm):
-        x = cls.require_contiguous(cls.realize_input(x))
-        w = cls.require_contiguous(cls.realize_input(w))
+    # @classmethod
+    # def create(cls, x, w, b, attr, scalars, algorithm):
+    #     x = cls.require_contiguous(cls.realize_input(x))
+    #     w = cls.require_contiguous(cls.realize_input(w))
 
-        *m, ic = x.get_size()
-        oc, ic = w.get_size()
-        inputs = [x, w]
-        constant_args = [attr, scalars if scalars else [-1], algorithm]
-        if b is not None:
-            b = cls.require_contiguous(cls.realize_input(b))
-            inputs.append(b)
-        else:
-            constant_args.insert(0, None)
+    #     *m, ic = x.get_size()
+    #     oc, ic = w.get_size()
+    #     inputs = [x, w]
+    #     constant_args = [attr, scalars if scalars else [-1], algorithm]
+    #     if b is not None:
+    #         b = cls.require_contiguous(cls.realize_input(b))
+    #         inputs.append(b)
+    #     else:
+    #         constant_args.insert(0, None)
 
-        return LinearUnary(
-            layout=FlexibleLayout(
-                device=x.get_device(),
-                dtype=x.get_dtype(),
-                size=list(m) + [oc],
-            ),
-            inputs=inputs,
-            constant_args=constant_args,
-        )
+    #     return LinearUnary(
+    #         layout=FlexibleLayout(
+    #             device=x.get_device(),
+    #             dtype=x.get_dtype(),
+    #             size=list(m) + [oc],
+    #         ),
+    #         inputs=inputs,
+    #         constant_args=constant_args,
+    #     )
 
     def apply_constraint(self):
         pass

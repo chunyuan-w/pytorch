@@ -720,7 +720,8 @@ class GraphModuleSerializer(metaclass=Final):
                         return Argument.create(as_bools=[])
                     elif isinstance(elem_type, torch.IntType):
                         return Argument.create(as_ints=[])
-                    elif isinstance(elem_type, torch.FloatType):
+                    # TODO: we assum NumberType to be Floats (no dedicated type for NumberType)
+                    elif isinstance(elem_type, (torch.FloatType, torch.NumberType)):
                         return Argument.create(as_floats=[])
                     elif isinstance(elem_type, torch.StringType):
                         return Argument.create(as_strings=[])

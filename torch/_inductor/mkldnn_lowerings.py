@@ -119,7 +119,7 @@ def register_onednn_fusion_ops():
             x: TensorBox, w: TensorBox, b: TensorBox, attr, scalars, algorithm
         ):
             return TensorBox.create(
-                ir.LinearUnary.create(x, w, b, attr, scalars, algorithm)
+                ir.LinearUnary.create(torch.ops.mkldnn._linear_pointwise.default, x, w, b, attr, scalars, algorithm)
             )
 
         @register_lowering(torch.ops.mkldnn._linear_pointwise.binary)
