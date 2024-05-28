@@ -3259,3 +3259,8 @@ if __name__ == "__main__":
     # cpp_extension N/A in fbcode
     # if HAS_CUDA or sys.platform == "darwin":
     run_tests(needs="filelock")
+
+
+# TORCH_LOGS="+output_code"  numactl --physcpubind=60-119 --membind=1  python -u test/inductor/test_aot_inductor.py -k AOTInductorTestABICompatibleCpu.test_linear_freezing_abi_compatible_cpu
+#     assert len(val) > 0, "Empty array is not supported in C"
+# AssertionError: Empty array is not supported in C
