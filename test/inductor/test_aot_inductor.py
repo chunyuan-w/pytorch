@@ -1089,6 +1089,22 @@ class AOTInductorTestsTemplate:
             dynamic_shapes=dynamic_shapes,
         )
 
+    def test_conv_bn_folding(self):
+        class Model(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.conv = torch.nn.Conv2d(3, 3, 3, bias=False)
+                self.bn = torch.nn.BatchNorm2d(3)
+
+            def forward(self, x):
+                return self.bn(self.conv(x))
+
+        example_inputs = (torch.randn(1, 3, 8, 8),)
+        m = Model().eval()
+        with torch.no_grad(), config.patch({"is_predispatch": True, "freezing": True}):
+        # with torch.no_grad(), config.patch({"is_predispatch": False, "freezing": True}):
+            self.check_model(m, example_inputs)
+
     def test_cond_use_buffers_from_outer_scope(self):
         inputs = (
             torch.randn((10, 20), device=self.device),
@@ -3291,5 +3307,5 @@ if __name__ == "__main__":
     from torch._inductor.test_case import run_tests
 
     # cpp_extension N/A in fbcode
-    if HAS_CUDA or sys.platform == "darwin":
-        run_tests(needs="filelock")
+    # if HAS_CUDA or sys.platform == "darwin":
+    run_tests(needs="filelock")
