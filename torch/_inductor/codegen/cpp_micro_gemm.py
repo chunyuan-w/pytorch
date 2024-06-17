@@ -452,6 +452,7 @@ class CppMicroGemmAMX(CppMicroGemm):
             else
             {%- endif %}
             if (block_m >= {{num_rows}}) {
+                //_mm_prefetch(&C[m * ldc + n + 8], _MM_HINT_T0);
                 {{kernel_name}}_amx_kernel_{{num_rows}}_{{num_columns}}<accum>(
                     amx_state,
                     A + m * lda,
@@ -468,6 +469,7 @@ class CppMicroGemmAMX(CppMicroGemm):
             }
             {%- endfor %}
             if (block_m > 0) {
+                //_mm_prefetch(&C[m_tail * ldc + n + 8], _MM_HINT_T0);
                 {{kernel_name}}_amx_kernel_16_{{num_columns}}<accum>(
                     amx_state,
                     A + m_tail * lda,
@@ -541,10 +543,12 @@ inline void {{kernel_name}}_amx_kernel_{{num_rows}}_{{num_columns}}(
         {%- set tile_idx_b = tile_offset_b + tile_col %}
         {%- set tile_idx_c = tile_row * num_columns + tile_col %}
         {%- if tile_col == 0 %}
-        _tile_loadd({{tile_idx_a}}, A + {{tile_row * 16}} * lda + k, lda * sizeof({{input_t}}));
+        //_tile_loadd({{tile_idx_a}}, A + {{tile_row * 16}} * lda + k, lda * sizeof({{input_t}}));
+        _tile_stream_loadd({{tile_idx_a}}, A + {{tile_row * 16}} * lda + k, lda * sizeof({{input_t}}));
         {%- endif %}
         {%- if tile_row == 0 %}
         _tile_loadd({{tile_idx_b}}, B + k * ldb + {{tile_col * 16 * 2}}, ldb * 2 * sizeof({{input_t}}));
+        //_tile_stream_loadd({{tile_idx_b}}, B + k * ldb + {{tile_col * 16 * 2}}, ldb * 2 * sizeof({{input_t}}));
         {%- endif %}
         _tile_dpbf16ps({{tile_idx_c}}, {{tile_idx_a}}, {{tile_idx_b}});
         {%- endfor %}
@@ -674,6 +678,7 @@ def create_micro_gemm(
                 if config.extra_check is not None and not config.extra_check(
                     config, m, n, k, alpha, num_threads
                 ):
+                    # print("fail amx check")
                     continue
                 block_m, block_n, block_k = config.register_blocking
                 # Criteria on the ranking of configurations
