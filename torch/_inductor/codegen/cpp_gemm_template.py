@@ -218,7 +218,9 @@ class CppPackedGemmTemplate(CppTemplate):
             not self.is_dynamic_M
         ), "Unable to determine cache blocking for dynamic M."
         thread_blocking = self.thread_blocking()
-        return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k)
+        # breakpoint()
+        return GemmBlocking(8, 1, 16)
+        # return GemmBlocking(thread_blocking.block_m, 1, thread_blocking.block_k)
 
     @staticmethod
     def add_choices(
@@ -311,6 +313,7 @@ class CppPackedGemmTemplate(CppTemplate):
         def pack_weight(inputs, layout_or_out):
             W = inputs[1]
             new_inputs = list(inputs)
+            # breakpoint()
             if isinstance(W, ir.IRNode):
                 if not isinstance(W, ir.TensorBox):
                     W = ir.TensorBox(W)
@@ -341,16 +344,18 @@ class CppPackedGemmTemplate(CppTemplate):
                     W.reshape(k, n // block_n, block_n).transpose(0, 1).contiguous()
                 )
                 if micro_gemm.get_b_layout() != LayoutType.NORMAL:
+                    # breakpoint()
                     assert (
                         micro_gemm.get_b_layout() == LayoutType.VNNI2
                     ), "We only support VNNI2 for now"
                     assert k % 2 == 0, "k should be even for VNNI2 layout"
                     blocked_w = (
                         blocked_w.view(n // block_n, k // 2, 2, block_n)
-                        .transpose(-1, -2)
+                        .transpose(-1, -2) # (n // block_n, k // 2, block_n, 2)
                         .contiguous()
                         .view(n // block_n, k, block_n)
                     )
+                    # breakpoint()
                 # normalize stride to be "contiguous_strides" per size
                 # this avoids the problems in L.view during template codegen
                 new_stride = [1]
