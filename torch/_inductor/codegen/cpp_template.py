@@ -105,6 +105,7 @@ class CppTemplate(KernelTemplate):
         res.splice(
             """
                 #include "c10/util/Unroll.h"
+                #include <chrono>
             """
         )
         enable_kernel_profile = (

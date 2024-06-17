@@ -244,6 +244,32 @@ class CppTemplateKernel(Kernel):
 
         cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
         kernel_group.finalize_kernel(cpp_kernel_proxy, [])
+        # breakpoint()
+        # measure_convert_time = True
+        measure_convert_time = False
+        use_pytorch_profile = True
+        if measure_convert_time:
+            if use_pytorch_profile:
+                kernel_group_code = kernel_group.loops_code.getvalue()
+                kernel_name = "gemm_template_dtype_convert"
+                time_start = f'RECORD_FUNCTION("{kernel_name}", c10::ArrayRef<c10::IValue>({{}}));'
+                insert_string = '    ' + time_start + '\n'
+                insert_position = kernel_group_code.find('{') + len('{\n')
+                string_with_time_start = kernel_group_code[:insert_position] + insert_string + kernel_group_code[insert_position:]
+                return string_with_time_start
+            else:
+                kernel_group_code = kernel_group.loops_code.getvalue()
+                time_start = "auto time1 = std::chrono::high_resolution_clock::now();"
+                time_end = 'printf("convert_time,%.6f #", std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time1).count() / 1000000.0);'
+                insert_string = time_start + '\n'
+                insert_position = kernel_group_code.find('{') + len('{\n')
+                string_with_time_start = kernel_group_code[:insert_position] + insert_string + kernel_group_code[insert_position:]
+                
+                insert_position = string_with_time_start.rfind('}')
+                string_with_time_end = string_with_time_start[:insert_position] + '    ' + time_end + '\n' + string_with_time_start[insert_position:]
+                
+                return string_with_time_end
+                
         return kernel_group.loops_code.getvalue()
 
     def store_output(
@@ -275,6 +301,7 @@ class CppTemplateKernel(Kernel):
            c) If `src` is local, we need to add a local buffer for it and localize the `orig_src` buffer
               in `epilogue_nodes` with `src`.
         """
+        # breakpoint()
         assert dst.get_size() == src.get_size()
         if offsets:
             offsets = parse_expr_with_index_symbols(offsets)
