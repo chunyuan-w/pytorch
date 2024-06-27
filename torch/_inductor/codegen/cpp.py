@@ -3291,6 +3291,7 @@ class CppKernelProxy(CppKernel):
         self.set_ranges(group, reduction_group)
 
         def codegen_kernel(cls, *args):
+            # breakpoint()
             with kernel_group.new_kernel(cls, *args) as kernel:
                 # Ugly hack to maintain the metrics kernel count since
                 # we only count in CppKernelProxy, not those contained in it
@@ -3470,6 +3471,7 @@ class CppKernelProxy(CppKernel):
         def fn(node, *index_vars):
             node.decide_inplace_update()
             node.mark_run()
+            # breakpoint()
             if isinstance(V.kernel, NullKernelHandler):
                 return node._body(*index_vars)
             else:
@@ -3546,6 +3548,7 @@ class CppScheduling(BaseScheduling):
         from .cpp_wrapper_cpu import CppWrapperCpu
 
         self.kernel_group: Union[CppWrapperKernelGroup, KernelGroup]
+        # breakpoint()
         if isinstance(V.graph.wrapper_code, CppWrapperCpu):
             self.kernel_group = CppWrapperKernelGroup()
         else:
@@ -3827,6 +3830,7 @@ class CppScheduling(BaseScheduling):
         else:
             nodes: List[SchedulerNode] = node.get_nodes()  # type: ignore[assignment]
             cpp_kernel_proxy = CppKernelProxy(kernel_group)
+            breakpoint()
             cpp_kernel_proxy.codegen_nodes(nodes)
             kernel_group.finalize_kernel(cpp_kernel_proxy, nodes)
 
@@ -3859,12 +3863,14 @@ class CppScheduling(BaseScheduling):
         assert all(
             isinstance(n, ir.ComputedBuffer) for n in epilogue_ir_nodes
         ), "Epilogue nodes must all be instances of ir.ComputedBuffer"
+        # breakpoint()
         kernel, render = ctb.make_kernel_render(ctb, epilogue_nodes=epilogue_ir_nodes)
         with kernel:
+            # breakpoint()
             for node in [template_node, *epilogue_nodes]:
                 node.mark_run()  # type: ignore[attr-defined]
             src_code = render()
-
+        # breakpoint()
         with V.set_kernel_handler(kernel):
             node_schedule = [template_node, *epilogue_nodes]
             kernel_name = self.define_kernel(src_code, node_schedule, kernel.args)
@@ -3873,6 +3879,7 @@ class CppScheduling(BaseScheduling):
         self.scheduler.free_buffers()
 
     def _get_scheduled_num_args(self):
+        # breakpoint()
         return self.kernel_group.get_num_args()
 
     def ready_to_flush(self):
@@ -3897,6 +3904,7 @@ class CppScheduling(BaseScheduling):
         src_code = src_code.replace("#pragma CMT", "//")
 
         compile_wrapper = IndentedBuffer()
+        # breakpoint()
         args = self.kernel_group.args if kernel_args is None else kernel_args
         _, _, arg_types = args.cpp_argdefs()
         if not V.graph.cpp_wrapper:

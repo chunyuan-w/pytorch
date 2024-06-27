@@ -2748,6 +2748,7 @@ class Scheduler:
 
             self.buffer_names_to_free.update(node.last_usage)
 
+            # breakpoint()
             if node.is_template():
                 node, *epilogue = node.get_nodes()
                 self.get_backend(device).codegen_template(node, epilogue)

@@ -1160,6 +1160,7 @@ class KernelArgs:
         return odict[name]
 
     def __init__(self, sizevars=None):
+        # breakpoint()
         self.input_buffers = dict()
         self.output_buffers = dict()
         self.inplace_buffers = dict()
@@ -1185,6 +1186,7 @@ class KernelArgs:
         return isinstance(name, str) and name.startswith("REMOVED")
 
     def input(self, name):
+        # breakpoint()
         if V.graph.scheduler:
             name = V.graph.scheduler.mutation_real_name.get(name, name)
         assert name not in V.graph.removed_buffers, name
@@ -1413,6 +1415,7 @@ class CSEVariable:
 
 class CppWrapperKernelArgs(KernelArgs):
     def wrap_ptr_arg(self, buf, dtype):
+        # breakpoint()
         from .cpp_utils import DTYPE_TO_CPP
 
         if config.abi_compatible:

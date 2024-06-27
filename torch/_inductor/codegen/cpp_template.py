@@ -84,6 +84,7 @@ class CppTemplate(KernelTemplate):
             template_node: ir.CppTemplateBuffer,
             epilogue_nodes: Optional[List[ir.IRNode]] = None,
         ):
+            # breakpoint()
             kernel = CppTemplateKernel(
                 kernel_name=str(Placeholder.KERNEL_NAME), num_threads=self.num_threads
             )
