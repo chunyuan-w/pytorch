@@ -36,8 +36,12 @@ void test_aoti(const std::string& device, bool use_runtime_constant_folding) {
 
   std::unique_ptr<torch::inductor::AOTIModelContainerRunner> runner;
   if (device == "cuda") {
+#ifdef USE_CUDA
     runner = std::make_unique<torch::inductor::AOTIModelContainerRunnerCuda>(
         model_so_path);
+#else
+    testing::AssertionFailure() << "CUDA support is not available.";
+#endif
   } else if (device == "cpu") {
     runner = std::make_unique<torch::inductor::AOTIModelContainerRunnerCpu>(
         model_so_path);
@@ -112,8 +116,12 @@ void test_aoti_constants_update(
 
   std::unique_ptr<torch::inductor::AOTIModelContainerRunner> runner;
   if (device == "cuda") {
+#ifdef USE_CUDA
     runner = std::make_unique<torch::inductor::AOTIModelContainerRunnerCuda>(
         model_so_path);
+#else
+    testing::AssertionFailure() << "CUDA support is not available.";
+#endif
   } else if (device == "cpu") {
     runner = std::make_unique<torch::inductor::AOTIModelContainerRunnerCpu>(
         model_so_path);
@@ -198,8 +206,12 @@ void test_aoti_double_buffering(
 
   std::unique_ptr<torch::inductor::AOTIModelContainerRunner> runner;
   if (device == "cuda") {
+#ifdef USE_CUDA
     runner = std::make_unique<torch::inductor::AOTIModelContainerRunnerCuda>(
         model_so_path.c_str());
+#else
+    testing::AssertionFailure() << "CUDA support is not available.";
+#endif
   } else if (device == "cpu") {
     runner = std::make_unique<torch::inductor::AOTIModelContainerRunnerCpu>(
         model_so_path.c_str());
@@ -265,9 +277,12 @@ void test_aoti_double_buffering_with_tensor_constants() {
   real_map.emplace("L__self___w", new at::Tensor(w_tensors));
 
   std::unique_ptr<torch::inductor::AOTIModelContainerRunner> runner;
+#ifdef USE_CUDA
   runner = std::make_unique<torch::inductor::AOTIModelContainerRunnerCuda>(
       model_so_path.c_str());
-
+#else
+    testing::AssertionFailure() << "CUDA support is not available.";
+#endif
   // By default, buffer #1 get loaded with burned in weights. Correct results.
   auto actual_output_tensors = runner->run(input_tensors);
   ASSERT_TRUE(torch::allclose(ref_output_tensors[0], actual_output_tensors[0]));

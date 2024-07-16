@@ -87,7 +87,10 @@ def compile_model(device, data):
 
 def main():
     data = {}
-    for device in ["cuda", "cpu"]:
+    devices = ["cpu"]
+    if torch.cuda.is_available():
+        devices.append("cuda")
+    for device in devices:
         compile_model(device, data)
     torch.jit.script(TensorSerializer(data)).save("script_data.pt")
 

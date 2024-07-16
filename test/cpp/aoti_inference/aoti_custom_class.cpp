@@ -30,8 +30,12 @@ MyAOTIClass::MyAOTIClass(
     const std::string& device)
     : lib_path_(model_path), device_(device) {
   if (device_ == "cuda") {
+#ifdef USE_CUDA
     runner_ = std::make_unique<torch::inductor::AOTIModelContainerRunnerCuda>(
         model_path.c_str());
+#else
+    throw std::runtime_error("CUDA support is not available.");
+#endif
   } else if (device_ == "cpu") {
     runner_ = std::make_unique<torch::inductor::AOTIModelContainerRunnerCpu>(
         model_path.c_str());

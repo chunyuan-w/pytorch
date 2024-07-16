@@ -19,9 +19,9 @@ class Net(torch.nn.Module):
 
 
 class NetWithTensorConstants(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, device):
         super().__init__()
-        self.w = torch.randn(30, 1, device="cuda")
+        self.w = torch.randn(30, 1, device=device)
 
     def forward(self, x, y):
         z = self.w * x * y
@@ -34,7 +34,10 @@ data_with_tensor_constants = {}
 
 # Basice AOTI model test generation.
 def generate_basic_tests():
-    for device in ["cpu", "cuda"]:
+    devices = ["cpu"]
+    if torch.cuda.is_available():
+        devices.append("cuda")
+    for device in devices:
         for use_runtime_constant_folding in [True, False]:
             if device == "cpu" and use_runtime_constant_folding:
                 # We do not test runtime const folding for cpu mode.
@@ -73,24 +76,28 @@ def generate_basic_tests():
 
 # AOTI model which will create additional tensors during autograd.
 def generate_test_with_additional_tensors():
-    model = NetWithTensorConstants()
-    x = torch.randn((30, 1), device="cuda")
-    y = torch.randn((30, 1), device="cuda")
-    with torch.no_grad():
-        ref_output = model(x, y)
+    devices = ["cpu"]
+    if torch.cuda.is_available():
+        devices.append("cuda")
+    for device in devices:
+        model = NetWithTensorConstants(device)
+        x = torch.randn((30, 1), device=device)
+        y = torch.randn((30, 1), device=device)
+        with torch.no_grad():
+            ref_output = model(x, y)
 
-    torch._dynamo.reset()
-    with torch.no_grad():
-        model_so_path = aot_compile(model, (x, y))
+        torch._dynamo.reset()
+        with torch.no_grad():
+            model_so_path = aot_compile(model, (x, y))
 
-    data_with_tensor_constants.update(
-        {
-            "model_so_path": model_so_path,
-            "inputs": [x, y],
-            "outputs": [ref_output],
-            "w": model.w,
-        }
-    )
+        data_with_tensor_constants.update(
+            {
+                "model_so_path": model_so_path,
+                "inputs": [x, y],
+                "outputs": [ref_output],
+                "w": model.w,
+            }
+        )
 
 
 generate_basic_tests()
