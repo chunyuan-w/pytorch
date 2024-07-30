@@ -25,6 +25,7 @@ from torch.utils._sympy.value_ranges import bound_sympy
 
 from .runtime.runtime_utils import is_power_of_2
 from .utils import (
+    evaluate_expr,
     sympy_index_symbol,
     sympy_index_symbol_with_prefix,
     sympy_subs,
@@ -288,17 +289,7 @@ class SizeVarAllocator:
     # See Note - [On Statically Known]
 
     def is_expr_static_and_true(self, expr: Union[sympy.Basic, bool]) -> bool:
-        if expr in (True, False):
-            return bool(expr)
-
-        try:
-            simplified = self.shape_env._maybe_evaluate_static(expr)
-            if simplified is not None:
-                return bool(simplified)
-        except Exception:
-            log.debug("Could not simplify %s", expr)
-
-        return False
+        return evaluate_expr(self.shape_env, expr)
 
     def statically_known_equals(
         self, left: Union[Expr, int], right: Union[Expr, int]

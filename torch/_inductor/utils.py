@@ -33,6 +33,7 @@ from typing import (
     Optional,
     Protocol,
     Set,
+    Tuple,
     TypeVar,
     Union,
     ValuesView,
@@ -47,6 +48,7 @@ from torch._dynamo.device_interface import get_interface_for_device
 from torch._dynamo.utils import detect_fake_mode
 from torch.autograd import DeviceType
 from torch.autograd.profiler_util import EventList
+from torch.fx.experimental.symbolic_shapes import ShapeEnv
 from torch.fx.passes.graph_transform_observer import GraphTransformObserver
 from torch.fx.passes.shape_prop import ShapeProp
 from torch.utils._sympy.functions import (
@@ -61,7 +63,6 @@ from torch.utils._sympy.value_ranges import bound_sympy, ValueRanges
 
 from . import config
 from .runtime.runtime_utils import ceildiv as runtime_ceildiv
-
 
 log = logging.getLogger(__name__)
 
@@ -299,6 +300,29 @@ def convert_shape_to_symint(
         else V.graph.sizevars.shape_env.create_symintnode(i, hint=None)
         for i in lst
     ]
+
+
+def evaluate_expr(
+    shape_env: ShapeEnv,
+    expr: Union[sympy.Basic, bool],
+    axioms: Optional[Tuple[sympy.Expr]] = None,
+    var_to_range: Optional[Tuple[Tuple[sympy.Symbol, ValueRanges]]] = None,
+) -> bool:
+    if expr in (True, False):
+        return bool(expr)
+
+    try:
+        evaluated = shape_env._maybe_evaluate_static(
+            expr,
+            axioms=axioms,
+            var_to_range=var_to_range,
+        )
+        if evaluated is not None:
+            return bool(evaluated)
+    except Exception:
+        log.debug("Could not evaluate %s", e)
+
+    return False
 
 
 def is_view(op: torch._ops.OpOverload):
