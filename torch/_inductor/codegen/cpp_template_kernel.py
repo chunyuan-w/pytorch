@@ -188,6 +188,7 @@ class CppTemplateKernel(CppKernel):
         offsets: Optional[List[sympy.Expr]] = None,
         reindexers: Optional[List[Optional[Callable[[List[Any]], List[Any]]]]] = None,
     ) -> str:
+        # breakpoint()
         var_sizes = (tuple(dst.get_size()), ())
         var_ranges = {
             sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
@@ -215,7 +216,14 @@ class CppTemplateKernel(CppKernel):
                 assert len(args[1]) == 0
                 new_args = [arg + offset for arg, offset in zip(args[0], offsets)]  # type: ignore[arg-type]
                 if reindexers[i] is not None:
-                    new_args = reindexers[i](new_args)  # type: ignore[misc]
+                    # TODO: fix the reindexers to be like the below hard-coded on for this case
+                    # new_args = reindexers[i](new_args)  # type: ignore[misc]
+                    new_args = [
+                        0,
+                        new_args[1],
+                        0,
+                        new_args[0],
+                    ]
                 V.ops.store(
                     output_name,
                     output_index,
