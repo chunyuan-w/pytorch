@@ -217,13 +217,16 @@ class CppTemplateKernel(CppKernel):
                 new_args = [arg + offset for arg, offset in zip(args[0], offsets)]  # type: ignore[arg-type]
                 if reindexers[i] is not None:
                     # TODO: fix the reindexers to be like the below hard-coded on for this case
-                    # new_args = reindexers[i](new_args)  # type: ignore[misc]
-                    new_args = [
-                        0,
-                        new_args[1],
-                        0,
-                        new_args[0],
-                    ]
+                    print(f"new_args 0: {new_args[0]}, new_args 1: {new_args[1]}")
+                    new_args = reindexers[i](new_args)  # type: ignore[misc]
+
+                    print("new_args after reindexers:", new_args)
+                    # new_args = [
+                    #     0,
+                    #     new_args[1],
+                    #     0,
+                    #     new_args[0],
+                    # ]
                 V.ops.store(
                     output_name,
                     output_index,

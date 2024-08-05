@@ -546,6 +546,20 @@ class CppPackedGemmTemplate(CppTemplate):
             assert Y.get_numel() == epilogues[-1].get_numel()
             Y = cast(ir.Buffer, epilogues[-1])
             Y_aliases.add(template_buffer.get_name())
+
+            same_size_stride_epilogues = all(
+                (
+                    epilogue_node.get_size() == epilogue_nodes[0].get_size()
+                    and epilogue_node.get_stride() == epilogue_nodes[0].get_stride()
+                )
+                for epilogue_node in epilogue_nodes
+            )
+            assert (
+                same_size_stride_epilogues
+            ), "Epilogue nodes with different size or stride are unsupported for now"
+            epilogue_size = epilogue_nodes[0].get_size()
+            epilogue_stride = epilogue_nodes[0].get_stride()
+
             if (
                 Y.get_size() == template_buffer.get_size()
                 and Y.get_stride() == template_buffer.get_stride()
@@ -553,22 +567,49 @@ class CppPackedGemmTemplate(CppTemplate):
                 reindexers.extend([None] * len(epilogue_nodes))
                 Y_2d = Y
             else:
-                stride_reversed_order = list(
-                    reversed(ir.get_stride_order(Y.get_stride()))
-                )
-                stride_reindex = ir.same_reorder(stride_reversed_order)
-                ordered_size = [Y.get_size()[i] for i in stride_reversed_order]
-                reshape_reindex = ir.View.dynamic_reshape_indexer(
-                    ordered_size, template_buffer.get_size()
-                )
-                reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)
-                reindexers.extend([reindexer] * len(epilogue_nodes))
-                if isinstance(Y, ir.BaseView):
-                    storage = ir.StorageBox(Y.unwrap_view())
+                if Y.get_size() == epilogue_size and Y.get_stride() == epilogue_stride:
+                    stride_order = list(ir.get_stride_order(Y.get_stride()))
+                    print("Y stride order: ", stride_order)
+                    # TODO: remove the hard coded number here
+                    stride_order = [0, 3, 1, 2]
+                    stride_reindex = ir.same_reorder(stride_order)
+                    reshape_reindex = ir.View.dynamic_reshape_indexer(
+                        [1, 324, 512], template_buffer.get_size()
+                    )
+
+                    slice_reindex = ir.slice_reindex(template_buffer.get_size(), 1, 18)
+
+                    reindexer = ir.fuse_reindexing(slice_reindex, reshape_reindex)
+                    reindexer = ir.fuse_reindexing(stride_reindex, reindexer)
+                    reindexers.extend([reindexer] * len(epilogue_nodes))
+
+                    if isinstance(Y, ir.BaseView):
+                        storage = ir.StorageBox(Y.unwrap_view())
+                    else:
+                        assert isinstance(Y, ir.Buffer)
+                        storage = ir.StorageBox(Y)
+
+                    # reindexer = ir.ReinterpretView(storage, template_buffer.get_layout()).make_reindexer()
+                    # reindexers.extend([reindexer] * len(epilogue_nodes))
+
+                    Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
                 else:
-                    assert isinstance(Y, ir.Buffer)
-                    storage = ir.StorageBox(Y)
-                Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
+                    stride_reversed_order = list(
+                        reversed(ir.get_stride_order(Y.get_stride()))
+                    )
+                    stride_reindex = ir.same_reorder(stride_reversed_order)
+                    ordered_size = [Y.get_size()[i] for i in stride_reversed_order]
+                    reshape_reindex = ir.View.dynamic_reshape_indexer(
+                        ordered_size, template_buffer.get_size()
+                    )
+                    reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)
+                    reindexers.extend([reindexer] * len(epilogue_nodes))
+                    if isinstance(Y, ir.BaseView):
+                        storage = ir.StorageBox(Y.unwrap_view())
+                    else:
+                        assert isinstance(Y, ir.Buffer)
+                        storage = ir.StorageBox(Y)
+                    Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
 
         output_dtype, compute_dtype = get_gemm_template_output_and_compute_dtype(
             X.get_dtype()

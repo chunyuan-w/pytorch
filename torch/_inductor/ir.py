@@ -191,7 +191,20 @@ def same_reorder(order):
 
 def fuse_reindexing(reindex1, reindex2):
     def reindex(index):
+        print(f"orig index: {index}")
+        print(f"after the 1st step: {reindex2(index)}")
+        print(f"after the 2nd step: {reindex1(reindex2(index))}")
+
         return reindex1(reindex2(index))
+
+    return reindex
+
+# TODO: not a general one here
+def slice_reindex(size, dim, step):
+    def reindex(index):
+        output = list(index)
+        output.insert(dim, 0)
+        return output
 
     return reindex
 
@@ -2482,6 +2495,37 @@ class ReinterpretView(BaseView):
     def get_stride(self):
         return list(self.layout.stride)
 
+    def make_reindexer(self):
+        size_hint = V.graph.sizevars.size_hint
+        new_size = self.layout.size # 2D
+        old_size = self.data.layout.size # 4D
+        vars = [
+            sympy_index_symbol_with_prefix(SymT.VIEW, i) for i in range(len(new_size))
+        ]
+
+        new_index = self.layout.make_indexer()(vars)
+
+        vars_old =  [
+            sympy_index_symbol_with_prefix(SymT.INDEX, i) for i in range(len(old_size))
+        ]
+        old_index = self.data.layout.make_indexer()(vars_old)
+
+        view_expr
+
+
+        assert len(view_expr) == len(old_size)
+
+        def reindex(index):
+            assert len(index) == len(vars), (len(index), len(vars))
+            replacements = dict(zip(vars, index))
+
+            indexer = self.layout.make_indexer()
+
+            return tuple(sympy_subs(x, replacements) for x in view_expr)
+            # return indexer(index)
+
+        return reindex
+
     def make_loader(self):
         def loader(index):
             indexer = self.layout.make_indexer()
@@ -3672,6 +3716,7 @@ class TemplateBuffer(Buffer):
         self.name = V.graph.register_buffer(self)
 
     def get_read_writes(self):
+        # breakpoint()
         return self.normalized_read_writes()
 
     def normalized_read_writes(self):
