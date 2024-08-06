@@ -571,16 +571,16 @@ class CppPackedGemmTemplate(CppTemplate):
                     stride_order = list(ir.get_stride_order(Y.get_stride()))
                     print("Y stride order: ", stride_order)
                     # TODO: remove the hard coded number here
-                    stride_order = [0, 3, 1, 2]
-                    stride_reindex = ir.same_reorder(stride_order)
+                    stride_order = [0, 2, 3, 1]
+                    ordered_size = [Y.get_size()[i] for i in stride_order]
+
+                    CL_stride_order = [0, 3, 1, 2]
+                    stride_reindex = ir.same_reorder(CL_stride_order)
                     reshape_reindex = ir.View.dynamic_reshape_indexer(
-                        [1, 324, 512], template_buffer.get_size()
+                        ordered_size, template_buffer.get_size()
                     )
 
-                    slice_reindex = ir.slice_reindex(template_buffer.get_size(), 1, 18)
-
-                    reindexer = ir.fuse_reindexing(slice_reindex, reshape_reindex)
-                    reindexer = ir.fuse_reindexing(stride_reindex, reindexer)
+                    reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)
                     reindexers.extend([reindexer] * len(epilogue_nodes))
 
                     if isinstance(Y, ir.BaseView):
@@ -588,10 +588,6 @@ class CppPackedGemmTemplate(CppTemplate):
                     else:
                         assert isinstance(Y, ir.Buffer)
                         storage = ir.StorageBox(Y)
-
-                    # reindexer = ir.ReinterpretView(storage, template_buffer.get_layout()).make_reindexer()
-                    # reindexers.extend([reindexer] * len(epilogue_nodes))
-
                     Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
                 else:
                     stride_reversed_order = list(
