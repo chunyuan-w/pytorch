@@ -567,15 +567,19 @@ class CppPackedGemmTemplate(CppTemplate):
                 reindexers.extend([None] * len(epilogue_nodes))
                 Y_2d = Y
             else:
-                if Y.get_size() == epilogue_size and Y.get_stride() == epilogue_stride:
+                # if Y.get_size() == epilogue_size and Y.get_stride() == epilogue_stride:
+                # if False:
+                if True:
                     stride_order = list(ir.get_stride_order(Y.get_stride()))
-                    print("Y stride order: ", stride_order)
-                    # TODO: remove the hard coded number here
-                    stride_order = [0, 2, 3, 1]
-                    ordered_size = [Y.get_size()[i] for i in stride_order]
+                    ordered_size = [0 for i in range(len(Y.get_size()))]
+                    for i, val in enumerate(stride_order):
+                        ordered_size[val] = Y.get_size()[i]
+                    ordered_size = list(reversed(ordered_size))
 
-                    CL_stride_order = [0, 3, 1, 2]
-                    stride_reindex = ir.same_reorder(CL_stride_order)
+                    from_ordered_to_original = [0 for i in range(len(stride_order))]
+                    for i, val in enumerate(stride_order):
+                        from_ordered_to_original[i] = len(stride_order) - 1 - val
+                    stride_reindex = ir.same_reorder(from_ordered_to_original)
                     reshape_reindex = ir.View.dynamic_reshape_indexer(
                         ordered_size, template_buffer.get_size()
                     )
