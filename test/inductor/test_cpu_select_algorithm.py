@@ -425,7 +425,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 self.linear2 = torch.nn.Linear(512, 512, bias)
                 self._frozen_param400 = torch.randn(1, 512, 1, 1)
 
-            def forward(self, mul_272, _convolution_pointwise_default_31, mul_279):
+            def forward(self, mul_272, _convolution_pointwise_default_31):
                 out1 = torch.ops.prims.convert_element_type.default(
                     mul_272, torch.bfloat16
                 )
@@ -468,7 +468,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         )
         # we got nan result using CF
         # mul_279 = torch.randn(1, 512, 18, 18)
-        mul_279 = torch.randn(1, 512, 18, 18).to(memory_format=torch.channels_last)
+        # mul_279 = torch.randn(1, 512, 18, 18).to(memory_format=torch.channels_last)
 
         mod = M(bias=bias).eval()
         with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast():
@@ -477,12 +477,12 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 (
                     view_12,
                     _convolution_pointwise_default_31,
-                    mul_279,
+                    # mul_279,
                 ),
                 atol=atol,
                 rtol=rtol,
             )
-        self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 1)
+        self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 2)
         self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 2)
 
     @inductor_config.patch({"freezing": True})
