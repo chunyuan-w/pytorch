@@ -768,14 +768,29 @@ class CppPackedGemmTemplate(CppTemplate):
                 reindexers.extend([None] * len(epilogue_nodes))
                 Y_2d = Y
             else:
-                stride_reversed_order = list(
-                    reversed(ir.get_stride_order(Y.get_stride()))
-                )
-                stride_reindex = ir.same_reorder(stride_reversed_order)
-                ordered_size = [Y.get_size()[i] for i in stride_reversed_order]
+                # stride_reversed_order = list(
+                #     reversed(ir.get_stride_order(Y.get_stride()))
+                # )
+                # stride_reindex = ir.same_reorder(stride_reversed_order)
+                # ordered_size = [Y.get_size()[i] for i in stride_reversed_order]
+                # reshape_reindex = ir.View.dynamic_reshape_indexer(
+                #     ordered_size, template_buffer.get_size()
+                # )
+
+                stride_order = list(ir.get_stride_order(Y.get_stride()))
+                ordered_size = [0 for i in range(len(Y.get_size()))]
+                for i, val in enumerate(stride_order):
+                    ordered_size[val] = Y.get_size()[i]
+                ordered_size = list(reversed(ordered_size))
+
+                from_ordered_to_original = [0 for i in range(len(stride_order))]
+                for i, val in enumerate(stride_order):
+                    from_ordered_to_original[i] = len(stride_order) - 1 - val
+                stride_reindex = ir.same_reorder(from_ordered_to_original)
                 reshape_reindex = ir.View.dynamic_reshape_indexer(
                     ordered_size, template_buffer.get_size()
                 )
+
                 reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)
                 reindexers.extend([reindexer] * len(epilogue_nodes))
                 if isinstance(Y, ir.BaseView):
