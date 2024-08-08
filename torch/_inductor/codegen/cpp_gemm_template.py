@@ -652,6 +652,7 @@ class CppPackedGemmTemplate(CppTemplate):
         kernel: CppTemplateKernel,
         template_buffer_node: Optional[ir.CppTemplateBuffer] = None,
         epilogue_nodes: Optional[List[ir.IRNode]] = None,
+        template_buffer_users=None,
         **kwargs,
     ) -> str:
         assert len(self.input_nodes) >= 2
@@ -760,7 +761,18 @@ class CppPackedGemmTemplate(CppTemplate):
             epilogues.extend(epilogue_nodes)
             assert Y.get_numel() == epilogues[-1].get_numel()
             Y = cast(ir.Buffer, epilogues[-1])
-            Y_aliases.add(template_buffer.get_name())
+
+            assert template_buffer.get_name() in template_buffer_users
+            users = template_buffer_users[template_buffer.get_name()].users
+            can_alias = True
+            for user in users:
+                computed_buffer = user.node.node
+                # Has usages outside of the epilogue nodes
+                if computed_buffer not in epilogue_nodes:
+                    can_alias = False
+                    break
+            if can_alias:
+                Y_aliases.add(template_buffer.get_name())
             if (
                 Y.get_size() == template_buffer.get_size()
                 and Y.get_stride() == template_buffer.get_stride()

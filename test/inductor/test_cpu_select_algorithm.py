@@ -432,10 +432,10 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 mul_272 = None
 
                 _linear_pointwise_default_131 = self.linear(out1)
-
                 permute_188 = torch.ops.aten.permute.default(
                     _linear_pointwise_default_131, [0, 3, 1, 2]
                 )
+
                 mul_273 = torch.ops.aten.mul.Tensor(permute_188, self._frozen_param398)
                 add_187 = torch.ops.aten.add.Tensor(
                     mul_273, _convolution_pointwise_default_31

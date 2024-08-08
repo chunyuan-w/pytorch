@@ -3964,7 +3964,11 @@ class CppScheduling(BaseScheduling):
         assert all(
             isinstance(n, ir.ComputedBuffer) for n in epilogue_ir_nodes
         ), "Epilogue nodes must all be instances of ir.ComputedBuffer"
-        kernel, render = ctb.make_kernel_render(ctb, epilogue_nodes=epilogue_ir_nodes)
+        kernel, render = ctb.make_kernel_render(
+            ctb,
+            epilogue_nodes=epilogue_ir_nodes,
+            template_buffer_users=template_node.outputs_by_name,
+        )
         with kernel:
             for node in [template_node, *epilogue_nodes]:
                 node.mark_run()  # type: ignore[attr-defined]

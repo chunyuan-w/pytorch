@@ -83,6 +83,7 @@ class CppTemplate(KernelTemplate):
         def make_kernel_render(
             template_node: ir.CppTemplateBuffer,
             epilogue_nodes: Optional[List[ir.IRNode]] = None,
+            template_buffer_users=None,  # TODO: add type
         ):
             kernel = CppTemplateKernel(
                 kernel_name=str(Placeholder.KERNEL_NAME), num_threads=self.num_threads
@@ -92,6 +93,7 @@ class CppTemplate(KernelTemplate):
                 self,
                 template_buffer_node=template_node,
                 epilogue_nodes=epilogue_nodes,
+                template_buffer_users=template_buffer_users,
                 **kwargs,
             )
             return kernel, render
