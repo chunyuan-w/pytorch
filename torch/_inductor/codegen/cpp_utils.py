@@ -599,6 +599,7 @@ class LocalBufferContext:
                 )
                 self.global_buffers[global_buffer_name] = global_buffer
                 self.global_to_local[global_buffer_name] = local_buffer
+                # TODO: may need to comment this out
                 V.graph.removed_buffers.add(global_buffer_name)
 
     def localize_function(

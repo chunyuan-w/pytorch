@@ -14,6 +14,8 @@ import torch._inductor.select_algorithm as select_algorithm
 from torch._dynamo.utils import counters
 from torch._inductor.cpu_vec_isa import VecAMX
 from torch._inductor.test_case import run_tests, TestCase
+from torch._inductor.utils import run_and_get_cpp_code
+from torch.testing import FileCheck
 from torch.testing._internal.common_device_type import (
     dtypes,
     instantiate_device_type_tests,
@@ -308,14 +310,29 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
     @parametrize("in_features", (16,))
     @parametrize("image_size", (18,))
     @parametrize("out_features", (32,))
-    @parametrize("bias", (True,))
+    @parametrize("bias", (False,))
+    # @parametrize("bias", (True,))
+    @parametrize(
+        "inplace_update",
+        (
+            # True,
+            False,
+        ),
+    )
     @dtypes(torch.bfloat16)
     def test_linear_with_permute(
-        self, batch_size, in_features, image_size, out_features, bias, dtype
+        self,
+        batch_size,
+        in_features,
+        image_size,
+        out_features,
+        bias,
+        inplace_update,
+        dtype,
     ):
         # Reproducer from the convnext model in timm
         class M(torch.nn.Module):
-            def __init__(self, bias):
+            def __init__(self, bias, inplace_update):
                 super().__init__()
                 self.linear = torch.nn.Linear(in_features, out_features, bias)
                 self._frozen_param398 = torch.randn(batch_size, out_features, 1, 1)
@@ -328,6 +345,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 )
                 self.linear2 = torch.nn.Linear(out_features, out_features, bias)
                 self._frozen_param400 = torch.randn(batch_size, out_features, 1, 1)
+                self.inplace_update = inplace_update
 
             def forward(self, mul_272, _convolution_pointwise_default_31):
                 out1 = torch.ops.prims.convert_element_type.default(
@@ -356,22 +374,42 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 permute_189 = torch.ops.aten.mul.Tensor(
                     permute_189, self._frozen_param400
                 )
-                add_191 = torch.ops.aten.add.Tensor(permute_189, add_187)
-                return add_191
+                if not self.inplace_update:
+                    add_191 = torch.ops.aten.add.Tensor(permute_189, add_187)
+                    return add_191
+                return permute_189
 
         view_12 = torch.randn(batch_size, image_size, image_size, in_features)
         _convolution_pointwise_default_31 = torch.randn(
             batch_size, out_features, image_size, image_size
         ).to(memory_format=torch.channels_last)
 
-        mod = M(bias=bias).eval()
+        mod = M(bias=bias, inplace_update=inplace_update).eval()
+
+        args = (
+            view_12,
+            _convolution_pointwise_default_31,
+        )
+
+        with torch.cpu.amp.autocast():
+            _, code = run_and_get_cpp_code(torch.compile(mod), *args)
+
+        if inplace_update:
+            FileCheck().check_count(
+                "in_out_ptr",
+                3,
+                exactly=True,
+            ).run(code)
+        else:
+            FileCheck().check_not(
+                "in_out_ptr",
+            ).run(code)
+
+        counters.clear()
         with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast():
             self.common(
                 mod,
-                (
-                    view_12,
-                    _convolution_pointwise_default_31,
-                ),
+                args,
                 atol=atol,
                 rtol=rtol,
             )

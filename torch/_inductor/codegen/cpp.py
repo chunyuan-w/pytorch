@@ -4147,6 +4147,7 @@ class CppScheduling(BaseScheduling):
         )
         with kernel:
             for node in [template_node, *epilogue_nodes]:
+                node.decide_inplace_update()
                 node.mark_run()  # type: ignore[attr-defined]
             src_code = render()
 

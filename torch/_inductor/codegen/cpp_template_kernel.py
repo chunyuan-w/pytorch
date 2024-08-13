@@ -55,19 +55,12 @@ class CppTemplateKernel(CppKernel):
         self,
         inputs: Dict[str, ir.Buffer],
         outputs: Dict[str, ir.Buffer],
-        aliases: Optional[Dict[str, str]] = None,
     ) -> str:
         for name, inp in inputs.items():
             if inp is not None:
                 self.args.input_buffers[inp.get_name()] = name
         for name, out in outputs.items():
             self.args.output_buffers[out.get_name()] = name
-        if aliases is not None:
-            for alias, orig in aliases.items():
-                if orig in self.args.input_buffers:
-                    self.args.input_buffers[alias] = self.args.input_buffers[orig]
-                if orig in self.args.output_buffers:
-                    self.args.output_buffers[alias] = self.args.output_buffers[orig]
 
         unique_sizevars = {
             s
@@ -89,13 +82,6 @@ class CppTemplateKernel(CppKernel):
             self.args.sizevars[sizevar] = f"k{sizevar}"
 
         def hook():
-            # remove all aliases before generate function definition
-            if aliases is not None:
-                for alias in aliases:
-                    if alias in self.args.input_buffers:
-                        self.args.input_buffers[alias] = "REMOVED"
-                    if alias in self.args.output_buffers:
-                        self.args.output_buffers[alias] = "REMOVED"
             cpp_argdefs, _, _ = self.args.cpp_argdefs()
             return f"void {self.kernel_name}({', '.join(cpp_argdefs)})"
 

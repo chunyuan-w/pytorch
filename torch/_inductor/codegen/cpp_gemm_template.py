@@ -3,7 +3,7 @@ import contextlib
 import logging
 import math
 from functools import lru_cache
-from typing import Any, Callable, cast, Dict, List, Optional, Set, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Union
 from unittest.mock import patch
 
 import torch
@@ -12,7 +12,7 @@ import torch.utils
 from ..._dynamo.utils import counters
 from .. import config, ir, lowering as L
 from ..kernel.mm_common import mm_args
-from ..scheduler import BaseSchedulerNode, SchedulerBuffer
+from ..scheduler import SchedulerBuffer
 from ..select_algorithm import DataProcessorTemplateWrapper
 from ..utils import cache_on_self, has_free_symbols, parallel_num_threads
 from ..virtualized import ops, V
@@ -41,7 +41,7 @@ GEMM_TEMPLATE = r"""
 {%- endif %}
 
 extern "C" {{export_declaration}}
-{{kernel.def_kernel(inputs=kernel_args, outputs={"Y": Y}, aliases=aliases)}}
+{{kernel.def_kernel(inputs=kernel_args, outputs={"Y": Y})}}
 {
     {{kernel.maybe_codegen_profile()}}
     constexpr int64_t num_threads = {{num_threads}};
@@ -696,7 +696,6 @@ class CppPackedGemmTemplate(CppTemplate):
         reindexers: List[Optional[Callable[[List[Any]], List[Any]]]] = []
         epilogue_creators: List[Callable[[ir.Buffer], ir.Pointwise]] = []
         fake_buffers: List[ir.Buffer] = []
-        Y_aliases: Set[str] = set()
         # TODO(jgong5): for int8 gemm, bias-add is handled outside of gemm template,
         # but we'd better move it here to align with fp.
         if inp is not None and self.beta != 0 and not int8_gemm:
@@ -750,7 +749,6 @@ class CppPackedGemmTemplate(CppTemplate):
                     )
                 )
                 fake_buffers.append(current_input_buffer)
-                Y_aliases.add(current_input_buffer.get_name())
                 reindexers.append(None)
                 if i < len(epilogue_creators) - 1:
                     current_input_buffer = ir.Buffer(
@@ -765,26 +763,10 @@ class CppPackedGemmTemplate(CppTemplate):
             or self.maybe_k_slicing()
         )
 
-        def can_alias(template_buffer, outputs_by_name, epilogue_nodes):
-            assert template_buffer.get_name() in outputs_by_name
-            users = outputs_by_name[template_buffer.get_name()].users
-            for user in users:
-                assert isinstance(user.node, BaseSchedulerNode)
-                computed_buffer = user.node.node
-                # If template_buffer is used by nodes other than the epilogue nodes,
-                # we can't set template_buffer and Y as alias.
-                # Both template_buffer and Y need to be kept.
-                if computed_buffer not in epilogue_nodes:
-                    return False
-            return True
-
         if epilogue_nodes:
             epilogues.extend(epilogue_nodes)
             assert Y.get_numel() == epilogues[-1].get_numel()
             Y = cast(ir.Buffer, epilogues[-1])
-
-            if can_alias(template_buffer, outputs_by_name, epilogue_nodes):
-                Y_aliases.add(template_buffer.get_name())
 
             if (
                 Y.get_size() == template_buffer.get_size()
@@ -862,7 +844,6 @@ class CppPackedGemmTemplate(CppTemplate):
             K=self.k,
             PADDED_N=self.padded_n,
             GemmOut=gemm_output_buffer,
-            aliases={alias: Y.get_name() for alias in Y_aliases},
             beta=self.beta,
             alpha=self.alpha,
             num_threads=self.num_threads,
