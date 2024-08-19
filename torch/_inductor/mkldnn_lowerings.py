@@ -341,12 +341,19 @@ def register_onednn_fusion_ops():
                         **kwargs,  # type: ignore[arg-type]
                     )
             if len(choices) == 0 or use_aten_gemm_kernels():
+                # Empty array is not supported in C (ABI compatible mode)
+                if len(scalars) == 0:
+                    scalars = [None]
+                    
                 kwargs = dict(attr=attr, scalars=scalars, algorithm=algorithm)
                 if b is None:
                     kwargs["B"] = None
+                bind_list = [torch.ops.mkldnn._linear_pointwise.default, x, w]
+                if b is not None:
+                    bind_list.append(b)
                 choices.append(
                     aten_mkldnn_linear_unary.bind(
-                        [x, w] if b is None else [x, w, b],
+                        bind_list,
                         layout,
                         **kwargs,
                     )

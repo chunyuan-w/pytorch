@@ -2164,6 +2164,7 @@ if (custom_op_wrapper.get() == NULL) {
         raw_args=None,
         output_args: Optional[List[str]] = None,
     ):
+        # if V.graph.aot_mode and not config.abi_compatible:
         if V.graph.aot_mode or not config.abi_compatible:
             # Will update this to use an OSS version ProxyExecutor
             if cpp_kernel_key not in self.extern_call_ops:
@@ -2282,8 +2283,11 @@ if (py_{buf_name}.get() == NULL) {{
             type_, (torch.BoolType, torch.SymBoolType, torch.EnumType)
         ) or repr(type_) in ("ScalarType", "Layout"):
             return "int32_t"
-        elif isinstance(type_, torch.FloatType):
+        # TODO: we assum NumberType to be Floats (no dedicated type for NumberType)
+        elif isinstance(type_, (torch.FloatType, torch.NumberType)):
             return "double"
+        elif isinstance(type_, torch.torch.StringType):
+            return "char*"        
         else:
             raise AssertionError(f"Unexpected type in c_type_for_prim_type: {type_=}")
 
@@ -2402,8 +2406,10 @@ if (py_{buf_name}.get() == NULL) {{
                         )
                         base_handle = tmp_var_name
                     var_name = f"var_{next(self.arg_var_id)}"
+                    # TODO: fix the get() here
                     self.writeline(
-                        f"AtenTensorHandle {var_name} = {base_handle}.get();"
+                        # f"AtenTensorHandle {var_name} = {base_handle}.get();"
+                        f"AtenTensorHandle {var_name} = {base_handle};"
                     )
                     return f"&{var_name}"
             else:

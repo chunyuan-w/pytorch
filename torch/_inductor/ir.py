@@ -5425,6 +5425,7 @@ has_c_shim = {
     aten.nonzero.default,
     aten.view.dtype,
     aten.view_as_real.default,
+    torch.ops.mkldnn._linear_pointwise.default,
 }
 
 
@@ -5768,9 +5769,12 @@ class FallbackKernel(ExternKernelAlloc):
 
     def codegen(self, wrapper):
         kernel = self.op_overload
+        # breakpoint()
+        
         if kernel.namespace == "aten":  # type: ignore[union-attr]
             # Aten Fallback Ops
             assert isinstance(kernel, torch._ops.OpOverload)
+            # breakpoint()
             if V.graph.cpp_wrapper:
                 if (
                     config.is_fbcode()
@@ -5810,10 +5814,11 @@ class FallbackKernel(ExternKernelAlloc):
 
             exported_args = None
             args = None
-            if config.abi_compatible:
-                exported_args = self.export_extern_kernel_node()
-            else:
+            # same as in cpp_wrapper_cpu.py: generate_extern_kernel_alloc_and_find_schema_if_needed_oss: if V.graph.aot_mode or not config.abi_compatible:
+            if V.graph.aot_mode or not config.abi_compatible:
                 args = [*self.codegen_args(), *self.codegen_kwargs()]
+            else:
+                exported_args = self.export_extern_kernel_node()
 
             wrapper.generate_extern_kernel_alloc_and_find_schema_if_needed(
                 self.get_name(),
