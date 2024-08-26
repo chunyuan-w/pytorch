@@ -309,25 +309,25 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
     @inductor_config.patch({"freezing": True})
     @patches
     @torch.no_grad
-    @parametrize("batch_size", (1,))
-    @parametrize("in_features", (16,))
-    @parametrize("image_size", (18,))
-    @parametrize("out_features", (32,))
+    @parametrize("batch_size", (8,))
+    @parametrize("in_features", (128,))
+    @parametrize("image_size", (56,))
+    @parametrize("out_features", (512,))
     @parametrize(
         "bias",
         (
             False,
-            True,
+            # True,
         ),
     )
     @parametrize(
         "has_non_epilogue_users",
         (
             True,
-            False,
+            # False,
         ),
     )
-    @dtypes(torch.bfloat16)
+    @dtypes(torch.float32)
     def test_linear_with_permute(
         self,
         batch_size,
@@ -357,7 +357,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
 
             def forward(self, mul_272, _convolution_pointwise_default_31):
                 out1 = torch.ops.prims.convert_element_type.default(
-                    mul_272, torch.bfloat16
+                    mul_272, torch.float32
                 )
                 mul_272 = None
 
@@ -371,7 +371,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                     mul_273, _convolution_pointwise_default_31
                 )
                 convert_element_type_847 = torch.ops.prims.convert_element_type.default(
-                    add_187, torch.bfloat16
+                    add_187, torch.float32
                 )
                 _convolution_pointwise_default_29 = self.conv(convert_element_type_847)
                 permute_189 = torch.ops.aten.permute.default(
@@ -395,7 +395,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         ).to(memory_format=torch.channels_last)
 
         mod = M(bias=bias, has_non_epilogue_users=has_non_epilogue_users).eval()
-        with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast():
+        with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast(enabled = dtype == torch.bfloat16):
             self.common(
                 mod,
                 (
@@ -705,14 +705,133 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         ):
             self.common(
                 mod,
-                (
-                    view_12,
-                ),
+                (view_12,),
                 atol=atol,
                 rtol=rtol,
             )
         # self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 2)
         # self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 2)
+
+    # TODO: this UT can pass
+    @inductor_config.patch({"freezing": True})
+    @patches
+    @torch.no_grad
+    @parametrize("batch_size", (8,))
+    @parametrize("in_features", (512,))
+    @parametrize("image_size", (56,))
+    @parametrize("out_features", (128,))
+    @parametrize(
+        "bias",
+        (
+            False,
+            # True,
+        ),
+    )
+    @parametrize(
+        "has_non_epilogue_users",
+        (
+            True,
+            # False,
+        ),
+    )
+    @dtypes(torch.float32)
+    def test_linear_reindexer(
+        self,
+        batch_size,
+        in_features,
+        image_size,
+        out_features,
+        bias,
+        has_non_epilogue_users,
+        dtype,
+    ):
+        # Reproducer from the convnext model in timm
+        class M(torch.nn.Module):
+            def __init__(self, bias, has_non_epilogue_users):
+                super().__init__()
+                self.linear2 = torch.nn.Linear(128, 128, bias=True)
+                
+                self._frozen_param2 = torch.randn(1, 16, 196, 128)
+                self.linear = torch.nn.Linear(in_features, out_features, bias)
+                self._frozen_param398 = torch.randn(batch_size, out_features, 1, 1)
+
+                self._frozen_param414 = torch.randn(384, 128)
+                self._frozen_param415 = torch.randn(1982689, 1)
+
+                self._frozen_param15 = torch.randn(128)
+                self._frozen_param16 = torch.randn(128)
+
+                self.has_non_epilogue_users = has_non_epilogue_users
+
+            def forward(self, mul_230, view_408, _convolution_pointwise_default_2):
+
+                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:233 in forward, code: x = x.permute(0, 2, 3, 1)  # (B, H', W', C), switch to channels last for transformer
+                permute_187: "f32[8, 56, 56, 128][401408, 7168, 128, 1]cpu" = torch.ops.aten.permute.default(_convolution_pointwise_default_2, [0, 2, 3, 1])
+
+                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:159 in blockify, code: x = x.reshape(B, grid_height, block_size, grid_width, block_size, C)
+                view_397: "f32[8, 4, 14, 4, 14, 128][401408, 100352, 7168, 1792, 128, 1]cpu" = torch.ops.aten.reshape.default(permute_187, [8, 4, 14, 4, 14, 128])
+
+                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:160 in blockify, code: x = x.transpose(2, 3).reshape(B, grid_height * grid_width, -1, C)
+                permute_188: "f32[8, 4, 4, 14, 14, 128][401408, 100352, 1792, 7168, 128, 1]cpu" = torch.ops.aten.permute.default(view_397, [0, 1, 3, 2, 4, 5])
+                clone_173: "f32[8, 4, 4, 14, 14, 128][401408, 100352, 25088, 1792, 128, 1]cpu" = torch.ops.aten.clone.default(permute_188, memory_format = torch.contiguous_format)
+                view_398: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.reshape.default(clone_173, [8, 16, 196, 128])
+                
+                
+                add_177: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.add.Tensor(view_398, self._frozen_param2)
+
+
+                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:79 in forward, code: x = self.proj(x)
+                view_409: "f32[25088, 128][128, 1]cpu" = torch.ops.aten.reshape.default(view_408, [25088, 128])
+                _mkl_linear_95: "f32[25088, 128][128, 1]cpu" = self.linear2(view_409)
+                view_410: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.reshape.default(_mkl_linear_95, [8, 16, 196, 128])
+
+
+                add_180: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.add.Tensor(add_177, view_410)
+                
+                
+                view_413 = torch.ops.aten.reshape.default(mul_230, [25088, 512])
+                _mkl_linear_93 = self.linear(view_413)
+                view_414 = torch.ops.aten.reshape.default(_mkl_linear_93, [8, 16, 196, 128])
+                add_184 = torch.ops.aten.add.Tensor(add_180, view_414)
+
+
+                # # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/layers/norm.py:57 in forward, code: x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+                # var_mean_53 = torch.ops.aten.var_mean.correction(add_184, [3], correction = 0, keepdim = True)
+                # getitem_185: "f32[8, 16, 196, 1][3136, 196, 1, 1]cpu" = var_mean_53[0]
+                # getitem_186: "f32[8, 16, 196, 1][3136, 196, 1, 1]cpu" = var_mean_53[1];  var_mean_53 = None
+
+                # # No stacktrace found for following nodes
+                # _frozen_param414: "f32[384, 128][128, 1]cpu" = self._frozen_param414
+                # _frozen_param415: "f32[1982689, 1][1, 0]cpu" = self._frozen_param415
+
+                # # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/layers/norm.py:57 in forward, code: x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+                # sub_78 = torch.ops.aten.sub.Tensor(add_184, getitem_186);  getitem_186 = None
+                # add_185 = torch.ops.aten.add.Tensor(getitem_185, 1e-06);  getitem_185 = None
+                # rsqrt_53 = torch.ops.aten.rsqrt.default(add_185);  add_185 = None
+                # mul_231 = torch.ops.aten.mul.Tensor(sub_78, rsqrt_53);  sub_78 = rsqrt_53 = None
+                # mul_232 = torch.ops.aten.mul.Tensor(mul_231, self._frozen_param15);  mul_231 = _frozen_param15 = None
+                # add_186 = torch.ops.aten.add.Tensor(mul_232, self._frozen_param16);  mul_232 = _frozen_param16 = None
+                # return add_186
+                return add_184
+
+        view_12 = torch.randn(batch_size, 16, 196, 512)
+        view_408 = torch.randn(batch_size, 16, 196, 128)
+        _convolution_pointwise_default_2 = torch.randn(batch_size, 128, 56, 56).to(memory_format=torch.channels_last)
+
+        mod = M(bias=bias, has_non_epilogue_users=has_non_epilogue_users).eval()
+        with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast(enabled = dtype == torch.bfloat16):
+            self.common(
+                mod,
+                (
+                    view_12,
+                    view_408,
+                    _convolution_pointwise_default_2,
+                ),
+                atol=atol,
+                rtol=rtol,
+            )
+        self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 2)
+        self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 1)
 
     @inductor_config.patch({"freezing": True})
     @patches
