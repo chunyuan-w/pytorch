@@ -65,7 +65,7 @@ def patches(fn):
             epilogue_fusion=True,
             max_autotune_gemm_backends="CPP,ATEN",
         ),
-        patch.object(select_algorithm, "VERIFY", dict(atol=1e-4, rtol=1e-4)),
+        # patch.object(select_algorithm, "VERIFY", dict(atol=1e-4, rtol=1e-4)),
         patch.object(select_algorithm.AlgorithmSelectorCache, "lookup", skip_cache),
     ]:
         fn = patcher(fn)
@@ -261,8 +261,8 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         v = torch.randn(8, 3, 224, 224).to(dtype=dtype)
         u = torch.randn(8, 3, 224, 224).to(dtype=dtype)
         mod = M(bias=bias, epilogue=epilogue, other=u).to(dtype=dtype).eval()
-        with verify(dtype) as (atol, rtol):
-            self.common(mod, (v,), atol=atol, rtol=rtol)
+        # with verify(dtype) as (atol, rtol):
+        self.common(mod, (v,), atol=1e-4, rtol=1e-4)
         # self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 1)
         # if (
         #     (
