@@ -741,6 +741,9 @@ class CppPackedGemmTemplate(CppTemplate):
         template_buffer_has_other_users = None
 
         if template_buffer_node is not None:
+            if template_buffer_node.name == "buf16":
+                # breakpoint()
+                print("hit")
             # Use the updated prepacked weight buffer
             W = template_buffer_node.inputs[1]
             Y = template_buffer_node
@@ -763,6 +766,7 @@ class CppPackedGemmTemplate(CppTemplate):
             or self.padded_n != self.n
             or self.maybe_k_slicing()
         )
+        # use_local_acc = True
 
         # TODO(jgong5): for int8 gemm, bias-add is handled outside of gemm template,
         # but we'd better move it here to align with fp.
@@ -833,6 +837,8 @@ class CppPackedGemmTemplate(CppTemplate):
         #   template_buffer
         #     --> zero or more out-of-template epilogues (`epilogue_nodes`) -->
         #   Y
+        if template_buffer_node is not None and template_buffer_node.name == "buf16":
+            print("hit2")
         if epilogue_creators:
             gemm_output_name = "buf_GemmOut"
             gemm_output_buffer = ir.Buffer(gemm_output_name, template_buffer.layout)
@@ -850,6 +856,7 @@ class CppPackedGemmTemplate(CppTemplate):
                     )
                 )
                 fake_buffers.append(current_input_buffer)
+                print("adding current_input_buffer: ", current_input_buffer.get_name())
                 Y_aliases.add(current_input_buffer.get_name())
                 reindexers.append(None)
                 if i < len(epilogue_creators) - 1:
@@ -874,38 +881,47 @@ class CppPackedGemmTemplate(CppTemplate):
                 reindexers.extend([None] * len(epilogue_nodes))
                 Y_2d = Y
             else:
-                # From template_buffer to Y_ordered (ordered by stride decreasingly, in dense format), for example:
-                #   template_buffer:
-                #       size (324, 512), stride (512, 1)
-                #   Y_ordered (ordered by stride decreasingly, in dense format):
-                #       size (1, 18, 18, 512), stride (165888, 9216, 512, 1)
-                stride_order = list(
-                    ir.get_stride_order(V.graph.sizevars.size_hints(Y.get_stride()))
-                )
-                fill_order = ir.stride_order2fill_order(stride_order)
-                reversed_fill_order = list(reversed(fill_order))
-                size_with_stride_ordered_decreasingly = [
-                    Y.get_size()[i] for i in reversed_fill_order
-                ]
-                reshape_reindex = ir.View.dynamic_reshape_indexer(
-                    size_with_stride_ordered_decreasingly, template_buffer.get_size()
-                )
 
-                # From Y_ordered (ordered by stride decreasingly, in dense format) to Y, for example:
-                #   Y_ordered (ordered by stride decreasingly, in dense format):
-                #       size (1, 18, 18, 512), stride (165888, 9216, 512, 1)
-                #   Y:
-                #       size (1, 18, 18, 512), stride (165888, 1, 9216, 512)
-                from_stride_ordered_decreasingly_to_Y_order = [
-                    (len(stride_order) - 1) - stride_order[i]
-                    for i in range(len(stride_order))
-                ]
-                stride_reindex = ir.same_reorder(
-                    from_stride_ordered_decreasingly_to_Y_order
-                )
+                def get_reindexer(Y):
+                    # From template_buffer to Y_ordered (ordered by stride decreasingly, in dense format), for example:
+                    #   template_buffer:
+                    #       size (324, 512), stride (512, 1)
+                    #   Y_ordered (ordered by stride decreasingly, in dense format):
+                    #       size (1, 18, 18, 512), stride (165888, 9216, 512, 1)
+                    stride_order = list(
+                        ir.get_stride_order(V.graph.sizevars.size_hints(Y.get_stride()))
+                    )
+                    fill_order = ir.stride_order2fill_order(stride_order)
+                    reversed_fill_order = list(reversed(fill_order))
+                    size_with_stride_ordered_decreasingly = [
+                        Y.get_size()[i] for i in reversed_fill_order
+                    ]
+                    reshape_reindex = ir.View.dynamic_reshape_indexer(
+                        size_with_stride_ordered_decreasingly,
+                        template_buffer.get_size(),
+                    )
 
-                reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)
-                reindexers.extend([reindexer] * len(epilogue_nodes))  # type: ignore[list-item]
+                    # From Y_ordered (ordered by stride decreasingly, in dense format) to Y, for example:
+                    #   Y_ordered (ordered by stride decreasingly, in dense format):
+                    #       size (1, 18, 18, 512), stride (165888, 9216, 512, 1)
+                    #   Y:
+                    #       size (1, 18, 18, 512), stride (165888, 1, 9216, 512)
+                    from_stride_ordered_decreasingly_to_Y_order = [
+                        (len(stride_order) - 1) - stride_order[i]
+                        for i in range(len(stride_order))
+                    ]
+                    stride_reindex = ir.same_reorder(
+                        from_stride_ordered_decreasingly_to_Y_order
+                    )
+
+                    # if len(epilogue_nodes) > 1:
+                    #     breakpoint()
+
+                    reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)
+                    return reindexer
+
+                # reindexers.extend([reindexer] * len(epilogue_nodes))  # type: ignore[list-item]
+                reindexers.extend([get_reindexer(epilogue_node) for epilogue_node in epilogue_nodes])  # type: ignore[list-item]
                 if isinstance(Y, ir.BaseView):
                     storage = ir.StorageBox(Y.unwrap_view())
                 else:
