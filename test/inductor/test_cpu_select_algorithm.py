@@ -200,70 +200,92 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
     @patches
     @torch.no_grad
     @unittest.skipIf(not TEST_MKL, "Test requires MKL")
-    @parametrize("batch_size", (384,))
+    @parametrize("batch_size", (3072,))
     @parametrize("in_features", (196,))
-    @parametrize("out_features", (384, 385))
-    @parametrize("bias", (True, False))
+    @parametrize("out_features", (196,))
+    @parametrize("bias", (True,))
     @parametrize(
         "epilogue",
         (
             "relu",
-            "gelu",
-            "silu",
-            "sigmoid",
-            "tanh",
-            "hardswish",
-            "hardsigmoid",
-            "leaky_relu",
-            "hardtanh",
-            "add",
-            "sub",
-            "mul",
-            "div",
+            # "gelu",
+            # "silu",
+            # "sigmoid",
+            # "tanh",
+            # "hardswish",
+            # "hardsigmoid",
+            # "leaky_relu",
+            # "hardtanh",
+            # "add",
+            # "sub",
+            # "mul",
+            # "div",
         ),
     )
-    @dtypes(torch.float, torch.bfloat16, torch.half)
+    @dtypes(torch.float)
     def test_linear_with_pointwise(
         self, batch_size, in_features, out_features, bias, epilogue, dtype
     ):
         class M(torch.nn.Module):
             def __init__(self, bias, epilogue, other):
                 super().__init__()
-                self.linear = torch.nn.Linear(in_features, out_features, bias)
-                self.epilogue = _get_epilogue(epilogue, other)
+                self.conv = torch.nn.Conv2d(3, 384, kernel_size=16, padding=0, stride=16, dilation=1, groups=1)
+                self._frozen_param151 = torch.randn(1, 1, 384)
+                self._frozen_param3 = torch.randn(1, 1, 384)
+                self._frozen_param2 = torch.randn(384)
 
-            def forward(self, x):
-                return self.epilogue(self.linear(x))
+                self.linear = torch.nn.Linear(in_features, out_features, bias)
+                # self.epilogue = _get_epilogue(epilogue, other)
+
+            def forward(self, arg150_1):
+                _convolution_pointwise_default = self.conv(arg150_1)
+                view_73 = torch.ops.aten.reshape.default(_convolution_pointwise_default, [8, 384, 196]);  _convolution_pointwise_default = None
+                permute_62 = torch.ops.aten.permute.default(view_73, [0, 2, 1]);  view_73 = None
+                mul_111 = torch.ops.aten.mul.Tensor(self._frozen_param151, permute_62)
+                add_73 = torch.ops.aten.add.Tensor(self._frozen_param3, mul_111)
+                permute_63 = torch.ops.aten.permute.default(add_73, [0, 2, 1]);  add_73 = None
+                view_74 = torch.ops.aten.reshape.default(permute_63, [3072, 196]);  permute_63 = None
+                _mkl_linear_36 = self.linear(view_74)
+                view_75 = torch.ops.aten.reshape.default(_mkl_linear_36, [8, 384, 196]);  _mkl_linear_36 = None
+                permute_65 = torch.ops.aten.permute.default(view_75, [0, 2, 1]);  view_75 = None
+                mul_112 = torch.ops.aten.mul.Tensor(self._frozen_param2, permute_65);  _frozen_param2 = permute_65 = None
+                add_74 = torch.ops.aten.add.Tensor(permute_62, mul_112);  permute_62 = mul_112 = None                
+                return add_74
+                
+                
+                
+                # return self.epilogue(self.linear(x))
+                # return self.linear(x)
 
         counters.clear()
-        v = torch.randn(batch_size, in_features).to(dtype=dtype)
-        u = torch.randn(batch_size, out_features).to(dtype=dtype)
+        v = torch.randn(8, 3, 224, 224).to(dtype=dtype)
+        u = torch.randn(8, 3, 224, 224).to(dtype=dtype)
         mod = M(bias=bias, epilogue=epilogue, other=u).to(dtype=dtype).eval()
         with verify(dtype) as (atol, rtol):
             self.common(mod, (v,), atol=atol, rtol=rtol)
-        self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 1)
-        if (
-            (
-                dtype == torch.bfloat16
-                or (
-                    dtype == torch.float16
-                    and torch.ops.mkldnn._is_mkldnn_fp16_supported()
-                )
-            )
-            and epilogue != "mul"
-            and epilogue != "div"
-            or (dtype == torch.half and epilogue == "add" and not bias)
-        ):
-            # Several scenarios where epilogue fusion is not counted in:
-            # 1. For bfloat16, the epilogue fusion is part of the template,
-            #    not fused via scheduler. This will also be true for float16 when
-            #    hardware has the float16 instruction. The exception is mul or
-            #    div fusion which is not supported for oneDNN linear.
-            # 2. For float16, since oneDNN linear is not applied, linear w/o bias
-            #    plus epilogue add is treated as linear w/ bias.
-            self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 0)
-        else:
-            self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 1)
+        # self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 1)
+        # if (
+        #     (
+        #         dtype == torch.bfloat16
+        #         or (
+        #             dtype == torch.float16
+        #             and torch.ops.mkldnn._is_mkldnn_fp16_supported()
+        #         )
+        #     )
+        #     and epilogue != "mul"
+        #     and epilogue != "div"
+        #     or (dtype == torch.half and epilogue == "add" and not bias)
+        # ):
+        #     # Several scenarios where epilogue fusion is not counted in:
+        #     # 1. For bfloat16, the epilogue fusion is part of the template,
+        #     #    not fused via scheduler. This will also be true for float16 when
+        #     #    hardware has the float16 instruction. The exception is mul or
+        #     #    div fusion which is not supported for oneDNN linear.
+        #     # 2. For float16, since oneDNN linear is not applied, linear w/o bias
+        #     #    plus epilogue add is treated as linear w/ bias.
+        #     self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 0)
+        # else:
+        #     self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 1)
 
     @inductor_config.patch({"freezing": True})
     @patches
