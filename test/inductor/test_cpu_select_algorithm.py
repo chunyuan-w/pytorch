@@ -745,8 +745,8 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
     @parametrize(
         "bias",
         (
-            False,
-            # True,
+            # False,
+            True,
         ),
     )
     @parametrize(
@@ -767,14 +767,26 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         has_non_epilogue_users,
         dtype,
     ):
-        # Reproducer from the convnext model in timm
+        # Reproducer from the jx_nest_base model in timm
         class M(torch.nn.Module):
             def __init__(self, bias, has_non_epilogue_users):
                 super().__init__()
-                self.linear2 = torch.nn.Linear(128, 128, bias=True)
+                # self.linear2 = torch.nn.Linear(128, 128, bias=True)
                 
                 self._frozen_param2 = torch.randn(1, 16, 196, 128)
-                self.linear = torch.nn.Linear(in_features, out_features, bias)
+                
+                self.linear = torch.nn.Linear(512, 128, bias=True)
+                self.linear2 = torch.nn.Linear(128, 128, bias=True)
+                self.conv = torch.nn.Conv2d(
+                    128,
+                    256,
+                    kernel_size=3,
+                    padding=1,
+                    stride=1,
+                    dilation=1,
+                    groups=1,
+                )
+
                 self._frozen_param398 = torch.randn(batch_size, out_features, 1, 1)
 
                 self._frozen_param414 = torch.randn(384, 128)
@@ -785,69 +797,65 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
 
                 self.has_non_epilogue_users = has_non_epilogue_users
 
-            def forward(self, mul_230, view_408, _convolution_pointwise_default_2):
-
-                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:233 in forward, code: x = x.permute(0, 2, 3, 1)  # (B, H', W', C), switch to channels last for transformer
-                permute_187: "f32[8, 56, 56, 128][401408, 7168, 128, 1]cpu" = torch.ops.aten.permute.default(_convolution_pointwise_default_2, [0, 2, 3, 1])
-
-                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:159 in blockify, code: x = x.reshape(B, grid_height, block_size, grid_width, block_size, C)
-                view_397: "f32[8, 4, 14, 4, 14, 128][401408, 100352, 7168, 1792, 128, 1]cpu" = torch.ops.aten.reshape.default(permute_187, [8, 4, 14, 4, 14, 128])
-
-                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:160 in blockify, code: x = x.transpose(2, 3).reshape(B, grid_height * grid_width, -1, C)
-                permute_188: "f32[8, 4, 4, 14, 14, 128][401408, 100352, 1792, 7168, 128, 1]cpu" = torch.ops.aten.permute.default(view_397, [0, 1, 3, 2, 4, 5])
-                clone_173: "f32[8, 4, 4, 14, 14, 128][401408, 100352, 25088, 1792, 128, 1]cpu" = torch.ops.aten.clone.default(permute_188, memory_format = torch.contiguous_format)
-                view_398: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.reshape.default(clone_173, [8, 16, 196, 128])
+            # def forward(self, mul_239, view_426, view_414, view_410, view_398):
+            def forward(self, mul_239, view_425, view_414, view_410, view_398, add_180, add_177, add_184):
+                # add_177 = torch.ops.aten.add.Tensor(view_398, self._frozen_param2);  view_398 = _frozen_param2 = None
                 
                 
-                add_177: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.add.Tensor(view_398, self._frozen_param2)
+                # add_180 = torch.ops.aten.add.Tensor(add_177, view_410);  add_177 = view_410 = None
+
+                _mkl_linear_91 = self.linear2(view_425)
+                view_426 = torch.ops.aten.reshape.default(_mkl_linear_91, [8, 16, 196, 128]);  _mkl_linear_91 = None
+
+                # add_184 = torch.ops.aten.add.Tensor(add_180, view_414);  add_180 = view_414 = None
 
 
-                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/nest.py:79 in forward, code: x = self.proj(x)
-                view_409: "f32[25088, 128][128, 1]cpu" = torch.ops.aten.reshape.default(view_408, [25088, 128])
-                _mkl_linear_95: "f32[25088, 128][128, 1]cpu" = self.linear2(view_409)
-                view_410: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.reshape.default(_mkl_linear_95, [8, 16, 196, 128])
+                # add_184
+                add_187 = torch.ops.aten.add.Tensor(add_184, view_426);  add_184 = view_426 = None
 
 
-                add_180: "f32[8, 16, 196, 128][401408, 25088, 128, 1]cpu" = torch.ops.aten.add.Tensor(add_177, view_410)
+                view_429 = torch.ops.aten.reshape.default(mul_239, [25088, 512]);  mul_239 = None
                 
+                _mkl_linear_89 = self.linear(view_429)
                 
-                view_413 = torch.ops.aten.reshape.default(mul_230, [25088, 512])
-                _mkl_linear_93 = self.linear(view_413)
-                view_414 = torch.ops.aten.reshape.default(_mkl_linear_93, [8, 16, 196, 128])
-                add_184 = torch.ops.aten.add.Tensor(add_180, view_414)
+                view_430 = torch.ops.aten.reshape.default(_mkl_linear_89, [8, 16, 196, 128]);  _mkl_linear_89 = None
+                
+                # add_187
+                add_191 = torch.ops.aten.add.Tensor(add_187, view_430);  add_187 = view_430 = None
+                
+                view_431 = torch.ops.aten.reshape.default(add_191, [8, 4, 4, 14, 14, 128]);  add_191 = None
+                permute_203 = torch.ops.aten.permute.default(view_431, [0, 1, 3, 2, 4, 5]);  view_431 = None
+                clone_188 = torch.ops.aten.clone.default(permute_203, memory_format = torch.contiguous_format);  permute_203 = None
+                view_432 = torch.ops.aten.reshape.default(clone_188, [8, 56, 56, 128]);  clone_188 = None
+                permute_204 = torch.ops.aten.permute.default(view_432, [0, 3, 1, 2]);  view_432 = None
 
+                _convolution_pointwise_default_1 = self.conv(permute_204)
+                                
+                return _convolution_pointwise_default_1 
 
-                # # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/layers/norm.py:57 in forward, code: x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
-                # var_mean_53 = torch.ops.aten.var_mean.correction(add_184, [3], correction = 0, keepdim = True)
-                # getitem_185: "f32[8, 16, 196, 1][3136, 196, 1, 1]cpu" = var_mean_53[0]
-                # getitem_186: "f32[8, 16, 196, 1][3136, 196, 1, 1]cpu" = var_mean_53[1];  var_mean_53 = None
-
-                # # No stacktrace found for following nodes
-                # _frozen_param414: "f32[384, 128][128, 1]cpu" = self._frozen_param414
-                # _frozen_param415: "f32[1982689, 1][1, 0]cpu" = self._frozen_param415
-
-                # # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/layers/norm.py:57 in forward, code: x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
-                # sub_78 = torch.ops.aten.sub.Tensor(add_184, getitem_186);  getitem_186 = None
-                # add_185 = torch.ops.aten.add.Tensor(getitem_185, 1e-06);  getitem_185 = None
-                # rsqrt_53 = torch.ops.aten.rsqrt.default(add_185);  add_185 = None
-                # mul_231 = torch.ops.aten.mul.Tensor(sub_78, rsqrt_53);  sub_78 = rsqrt_53 = None
-                # mul_232 = torch.ops.aten.mul.Tensor(mul_231, self._frozen_param15);  mul_231 = _frozen_param15 = None
-                # add_186 = torch.ops.aten.add.Tensor(mul_232, self._frozen_param16);  mul_232 = _frozen_param16 = None
-                # return add_186
-                return add_184
-
-        view_12 = torch.randn(batch_size, 16, 196, 512)
-        view_408 = torch.randn(batch_size, 16, 196, 128)
-        _convolution_pointwise_default_2 = torch.randn(batch_size, 128, 56, 56).to(memory_format=torch.channels_last)
+        mul_239 = torch.randn(batch_size, 16, 196, 512)
+        view_425 = torch.randn(25088, 128)
+        view_414 = torch.randn(batch_size, 16, 196, 128)
+        view_410 = torch.randn(batch_size, 16, 196, 128)
+        view_398 = torch.randn(batch_size, 16, 196, 128)
+        add_180 = torch.randn(batch_size, 16, 196, 128)
+        add_177 = torch.randn(batch_size, 16, 196, 128)
+        add_184 = torch.randn(batch_size, 16, 196, 128)
+        # view_414 = torch.randn(batch_size, 128, 56, 56).to(memory_format=torch.channels_last)
 
         mod = M(bias=bias, has_non_epilogue_users=has_non_epilogue_users).eval()
         with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast(enabled = dtype == torch.bfloat16):
             self.common(
                 mod,
                 (
-                    view_12,
-                    view_408,
-                    _convolution_pointwise_default_2,
+                    mul_239,
+                    view_425,
+                    view_414,
+                    view_410,
+                    view_398,
+                    add_180,
+                    add_177,
+                    add_184,
                 ),
                 atol=atol,
                 rtol=rtol,
