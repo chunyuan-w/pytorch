@@ -771,14 +771,10 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         class M(torch.nn.Module):
             def __init__(self, bias, has_non_epilogue_users):
                 super().__init__()
-                # self.linear2 = torch.nn.Linear(128, 128, bias=True)
-                
-                self._frozen_param2 = torch.randn(1, 16, 196, 128)
-                
-                self.linear = torch.nn.Linear(512, 128, bias=True)
-                self.linear2 = torch.nn.Linear(128, 128, bias=True)
+                self.linear = torch.nn.Linear(in_features, out_features, bias=True)
+                self.linear2 = torch.nn.Linear(out_features, out_features, bias=True)
                 self.conv = torch.nn.Conv2d(
-                    128,
+                    out_features,
                     256,
                     kernel_size=3,
                     padding=1,
@@ -786,62 +782,39 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                     dilation=1,
                     groups=1,
                 )
-
-                self._frozen_param398 = torch.randn(batch_size, out_features, 1, 1)
-
-                self._frozen_param414 = torch.randn(384, 128)
-                self._frozen_param415 = torch.randn(1982689, 1)
-
-                self._frozen_param15 = torch.randn(128)
-                self._frozen_param16 = torch.randn(128)
-
                 self.has_non_epilogue_users = has_non_epilogue_users
 
-            # def forward(self, mul_239, view_426, view_414, view_410, view_398):
             def forward(self, mul_239, view_425, view_414, view_410, view_398, add_180, add_177, add_184):
-                # add_177 = torch.ops.aten.add.Tensor(view_398, self._frozen_param2);  view_398 = _frozen_param2 = None
-                
-                
-                # add_180 = torch.ops.aten.add.Tensor(add_177, view_410);  add_177 = view_410 = None
-
                 _mkl_linear_91 = self.linear2(view_425)
-                view_426 = torch.ops.aten.reshape.default(_mkl_linear_91, [8, 16, 196, 128]);  _mkl_linear_91 = None
-
-                # add_184 = torch.ops.aten.add.Tensor(add_180, view_414);  add_180 = view_414 = None
-
-
-                # add_184
+                view_426 = torch.ops.aten.reshape.default(_mkl_linear_91, [8, 16, 196, out_features]);  _mkl_linear_91 = None
                 add_187 = torch.ops.aten.add.Tensor(add_184, view_426);  add_184 = view_426 = None
 
-
-                view_429 = torch.ops.aten.reshape.default(mul_239, [25088, 512]);  mul_239 = None
+                view_429 = torch.ops.aten.reshape.default(mul_239, [25088, in_features]);  mul_239 = None
                 
                 _mkl_linear_89 = self.linear(view_429)
                 
-                view_430 = torch.ops.aten.reshape.default(_mkl_linear_89, [8, 16, 196, 128]);  _mkl_linear_89 = None
+                view_430 = torch.ops.aten.reshape.default(_mkl_linear_89, [8, 16, 196, out_features]);  _mkl_linear_89 = None
                 
-                # add_187
                 add_191 = torch.ops.aten.add.Tensor(add_187, view_430);  add_187 = view_430 = None
                 
-                view_431 = torch.ops.aten.reshape.default(add_191, [8, 4, 4, 14, 14, 128]);  add_191 = None
+                view_431 = torch.ops.aten.reshape.default(add_191, [8, 4, 4, 14, 14, out_features]);  add_191 = None
                 permute_203 = torch.ops.aten.permute.default(view_431, [0, 1, 3, 2, 4, 5]);  view_431 = None
                 clone_188 = torch.ops.aten.clone.default(permute_203, memory_format = torch.contiguous_format);  permute_203 = None
-                view_432 = torch.ops.aten.reshape.default(clone_188, [8, 56, 56, 128]);  clone_188 = None
+                view_432 = torch.ops.aten.reshape.default(clone_188, [8, 56, 56, out_features]);  clone_188 = None
                 permute_204 = torch.ops.aten.permute.default(view_432, [0, 3, 1, 2]);  view_432 = None
 
                 _convolution_pointwise_default_1 = self.conv(permute_204)
                                 
                 return _convolution_pointwise_default_1 
 
-        mul_239 = torch.randn(batch_size, 16, 196, 512)
-        view_425 = torch.randn(25088, 128)
-        view_414 = torch.randn(batch_size, 16, 196, 128)
-        view_410 = torch.randn(batch_size, 16, 196, 128)
-        view_398 = torch.randn(batch_size, 16, 196, 128)
-        add_180 = torch.randn(batch_size, 16, 196, 128)
-        add_177 = torch.randn(batch_size, 16, 196, 128)
-        add_184 = torch.randn(batch_size, 16, 196, 128)
-        # view_414 = torch.randn(batch_size, 128, 56, 56).to(memory_format=torch.channels_last)
+        mul_239 = torch.randn(batch_size, 16, 196, in_features)
+        view_425 = torch.randn(25088, out_features)
+        view_414 = torch.randn(batch_size, 16, 196, out_features)
+        view_410 = torch.randn(batch_size, 16, 196, out_features)
+        view_398 = torch.randn(batch_size, 16, 196, out_features)
+        add_180 = torch.randn(batch_size, 16, 196, out_features)
+        add_177 = torch.randn(batch_size, 16, 196, out_features)
+        add_184 = torch.randn(batch_size, 16, 196, out_features)
 
         mod = M(bias=bias, has_non_epilogue_users=has_non_epilogue_users).eval()
         with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast(enabled = dtype == torch.bfloat16):
