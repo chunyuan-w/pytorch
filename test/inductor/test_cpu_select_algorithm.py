@@ -834,6 +834,86 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 2)
         self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 1)
 
+    # TODO: this UT can pass
+    @inductor_config.patch({"freezing": True})
+    @patches
+    @torch.no_grad
+    @parametrize("batch_size", (1,))
+    @parametrize("in_features", (4,))
+    @parametrize("out_features", (16,))
+    @parametrize("bias", (True,),)
+    @dtypes(torch.float32)
+    def test_linear_multi_reindexer(
+        self,
+        batch_size,
+        in_features,
+        out_features,
+        bias,
+        dtype,
+    ):
+        size_0 = 2
+        size_1 = 2
+        conv_shape = int(size_0 * size_1)
+
+        img_size_0 = int(size_0 * size_0)
+        img_size_1 = int(size_1 * size_1)
+        flatten_BS = int(batch_size * size_0 * size_0 * size_1 * size_1)
+        
+        # Reproducer from the levit_128 model in timm
+        class M(torch.nn.Module):
+            def __init__(self, bias):
+                super().__init__()
+                self.conv = torch.nn.Conv2d(
+                    64,
+                    128,
+                    kernel_size=3,
+                    padding=1,
+                    stride=2,
+                    dilation=1,
+                    groups=1,
+                )                
+                self.linear = torch.nn.Linear(128, 256, bias=False)
+                self._frozen_param221 = torch.randn(256)
+                self._frozen_param389 = torch.randn(256)
+                self._frozen_param20 = torch.randn(256)
+                self._frozen_param21 = torch.randn(256)
+
+            def forward(self, view_368):
+                _mkl_linear_57: "f32[1568, 256][256, 1]cpu" = self.linear(view_368)
+                view_369: "f32[8, 196, 256][50176, 256, 1]cpu" = torch.ops.aten.reshape.default(_mkl_linear_57, [8, 196, 256]);  _mkl_linear_57 = None
+
+                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/levit.py:90 in forward, code: return self.bn(x.flatten(0, 1)).reshape_as(x)
+                view_370: "f32[1568, 256][256, 1]cpu" = torch.ops.aten.reshape.default(view_369, [1568, 256]);  view_369 = None
+                sub_85: "f32[1568, 256][256, 1]cpu" = torch.ops.aten.sub.Tensor(view_370, self._frozen_param221);  view_370 = _frozen_param221 = None
+                mul_261: "f32[1568, 256][256, 1]cpu" = torch.ops.aten.mul.Tensor(sub_85, self._frozen_param389);  sub_85 = _frozen_param389 = None
+                mul_262: "f32[1568, 256][256, 1]cpu" = torch.ops.aten.mul.Tensor(mul_261, self._frozen_param20);  mul_261 = _frozen_param20 = None
+                add_219: "f32[1568, 256][256, 1]cpu" = torch.ops.aten.add.Tensor(mul_262, self._frozen_param21);  mul_262 = _frozen_param21 = None
+                view_371: "f32[8, 196, 256][50176, 256, 1]cpu" = torch.ops.aten.reshape.default(add_219, [8, 196, 256]);  add_219 = None
+
+                # File: /home/chunyuan/miniforge3/envs/inductor/lib/python3.10/site-packages/timm/models/levit.py:370 in forward, code: x = self.act(x)
+                add_220: "f32[8, 196, 256][50176, 256, 1]cpu" = torch.ops.aten.add.Tensor(view_371, 3)
+                clamp_min_35: "f32[8, 196, 256][50176, 256, 1]cpu" = torch.ops.aten.clamp_min.default(add_220, 0);  add_220 = None
+                clamp_max_35: "f32[8, 196, 256][50176, 256, 1]cpu" = torch.ops.aten.clamp_max.default(clamp_min_35, 6);  clamp_min_35 = None
+                mul_263: "f32[8, 196, 256][50176, 256, 1]cpu" = torch.ops.aten.mul.Tensor(view_371, clamp_max_35);  view_371 = clamp_max_35 = None
+                div_51: "f32[8, 196, 256][50176, 256, 1]cpu" = torch.ops.aten.div.Tensor(mul_263, 6);  mul_263 = None
+
+                return div_51
+        
+        view_368 = torch.randn(1568, 128)
+
+        mod = M(bias=bias).eval()
+        with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast(enabled = dtype == torch.bfloat16):
+            self.common(
+                mod,
+                (
+                    view_368,
+                ),
+                atol=atol,
+                rtol=rtol,
+            )
+        self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 1)
+        self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 2)
+
     @inductor_config.patch({"freezing": True})
     @patches
     @torch.no_grad
