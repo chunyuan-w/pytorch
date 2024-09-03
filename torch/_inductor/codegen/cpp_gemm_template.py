@@ -766,6 +766,9 @@ class CppPackedGemmTemplate(CppTemplate):
             or self.padded_n != self.n
             or self.maybe_k_slicing()
         )
+        print("use_local_acc:", use_local_acc)
+        print("self.layout.dtype: ", self.layout.dtype)
+        print("self.padded_n != self.n:", self.padded_n != self.n)
         # use_local_acc = True
 
         # TODO(jgong5): for int8 gemm, bias-add is handled outside of gemm template,
@@ -812,6 +815,7 @@ class CppPackedGemmTemplate(CppTemplate):
         if need_copy_from_local_to_global_buffer_epilogue(
             use_local_acc, template_buffer_has_other_users, epilogue_creators
         ):
+        # if True:
 
             def copy_from_local_to_global_buffer_epilogue(input_buffer: ir.Buffer):
                 dtype = self.layout.dtype
@@ -871,6 +875,7 @@ class CppPackedGemmTemplate(CppTemplate):
             assert Y.get_numel() == epilogues[-1].get_numel()
             Y = cast(ir.Buffer, epilogues[-1])
 
+            
             if not template_buffer_has_other_users:
                 Y_aliases.add(template_buffer.get_name())
 
@@ -881,6 +886,10 @@ class CppPackedGemmTemplate(CppTemplate):
                 reindexers.extend([None] * len(epilogue_nodes))
                 Y_2d = Y
             else:
+                if len(Y.get_stride()) == 6:
+                    print("len node: ", len(epilogue_nodes))
+                    # breakpoint()
+
 
                 def get_reindexer(Y):
                     # From template_buffer to Y_ordered (ordered by stride decreasingly, in dense format), for example:
@@ -888,13 +897,25 @@ class CppPackedGemmTemplate(CppTemplate):
                     #       size (324, 512), stride (512, 1)
                     #   Y_ordered (ordered by stride decreasingly, in dense format):
                     #       size (1, 18, 18, 512), stride (165888, 9216, 512, 1)
+                    
+                    
+                    target_size = Y.get_size()
+                    target_stride = Y.get_stride()
+
+                    # target_size = [8, 4, 4, 14, 14, 128]
+                    # target_stride = [401408, 100352, 25088, 1792, 128, 1]
+
+
+                    
+                    # if len(target_stride) == 6:
+                        # breakpoint()
                     stride_order = list(
-                        ir.get_stride_order(V.graph.sizevars.size_hints(Y.get_stride()))
+                        ir.get_stride_order(V.graph.sizevars.size_hints(target_stride))
                     )
                     fill_order = ir.stride_order2fill_order(stride_order)
                     reversed_fill_order = list(reversed(fill_order))
                     size_with_stride_ordered_decreasingly = [
-                        Y.get_size()[i] for i in reversed_fill_order
+                        target_size[i] for i in reversed_fill_order
                     ]
                     reshape_reindex = ir.View.dynamic_reshape_indexer(
                         size_with_stride_ordered_decreasingly,
