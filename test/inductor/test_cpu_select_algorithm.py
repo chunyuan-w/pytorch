@@ -1256,6 +1256,105 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         self._check_amx_counter(vec_amx)
 
     @inductor_config.patch({"freezing": True})
+    @patches
+    @torch.no_grad
+    @unittest.skipIf(not TEST_MKL, "Test requires MKL")
+    @parametrize("batch_size", (1,))
+    @parametrize("in_features", (4,))
+    @parametrize("out_features", (16,))
+    @parametrize(
+        "bias",
+        (True,),
+    )
+    @dtypes(torch.float32)
+    def test_linear_reindexer(
+        self,
+        batch_size,
+        in_features,
+        out_features,
+        bias,
+        dtype,
+    ):
+        size_0 = 2
+        size_1 = 2
+
+        img_size_0 = int(size_0 * size_0)
+        img_size_1 = int(size_1 * size_1)
+        flatten_BS = int(batch_size * size_0 * size_0 * size_1 * size_1)
+
+        # Reproducer from the jx_nest_base model in timm
+        class M(torch.nn.Module):
+            def __init__(self, bias):
+                super().__init__()
+                self.linear = torch.nn.Linear(in_features, out_features, bias=False)
+                self.linear2 = torch.nn.Linear(out_features, out_features, bias=False)
+                self.conv = torch.nn.Conv2d(
+                    out_features,
+                    1,
+                    kernel_size=3,
+                    padding=1,
+                    stride=1,
+                    dilation=1,
+                    groups=1,
+                )
+
+            def forward(self, mul_239, view_425, add_184, add_187, view_429):
+                buffer_shape = [batch_size, img_size_0, img_size_1, out_features]
+
+                _mkl_linear_89 = self.linear(view_429)
+
+                view_430 = torch.ops.aten.reshape.default(_mkl_linear_89, buffer_shape)
+                _mkl_linear_89 = None
+
+                add_191 = torch.ops.aten.add.Tensor(add_187, view_430)
+                add_187 = view_430 = None
+
+                view_431 = torch.ops.aten.reshape.default(
+                    add_191, [batch_size, size_0, size_0, size_1, size_1, out_features]
+                )
+                add_191 = None
+                permute_203 = torch.ops.aten.permute.default(
+                    view_431, [0, 1, 3, 2, 4, 5]
+                )
+                view_431 = None
+                clone_188 = torch.ops.aten.clone.default(
+                    permute_203, memory_format=torch.contiguous_format
+                )
+                permute_203 = None
+                return clone_188
+
+        # [8, 16, 196,        128]
+        # [8, 4, 4, 14, 14,   128]
+
+        # [25088,             128]
+
+        # [8, 4, 14, 4, 14,   128]
+        mul_239 = torch.randn(batch_size, img_size_0, img_size_1, in_features)
+        view_425 = torch.randn(flatten_BS, out_features)
+        add_184 = torch.randn(batch_size, img_size_0, img_size_1, out_features)
+        add_187 = torch.randn(batch_size, img_size_0, img_size_1, out_features)
+        view_429 = torch.randn(flatten_BS, in_features)
+
+        mod = M(bias=bias).eval()
+        with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast(
+            enabled=dtype == torch.bfloat16
+        ):
+            self.common(
+                mod,
+                (
+                    mul_239,
+                    view_425,
+                    add_184,
+                    add_187,
+                    view_429,
+                ),
+                atol=atol,
+                rtol=rtol,
+            )
+        self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 1)
+        self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 1)
+
+    @inductor_config.patch({"freezing": True})
     @inductor_config.patch({"cpp.gemm_max_k_slices": 0})
     @patches
     @torch.no_grad
