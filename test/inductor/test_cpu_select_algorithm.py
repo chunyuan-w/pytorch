@@ -674,6 +674,41 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
     @inductor_config.patch({"freezing": True})
     @patches
     @torch.no_grad
+    @unittest.skipIf(not TEST_MKL, "Test requires MKL")
+    @parametrize("batch_size", (384,))
+    @parametrize("in_features", (196,))
+    @parametrize("out_features", (384,))
+    @parametrize("bias", (True,))
+    @dtypes(torch.float32)
+    def test_linear_share_weight_with_embedding(
+        self, batch_size, in_features, out_features, bias, dtype
+    ):
+        class M(torch.nn.Module):
+            def __init__(self, bias):
+                super().__init__()
+                self.linear = torch.nn.Linear(in_features, out_features, bias).to(
+                    dtype=dtype
+                )
+                self.linear.weight.data.normal_(mean=0.0, std=0.02)
+
+                self.emb = torch.nn.Embedding(out_features, in_features, 3)
+                self.emb.weight.data = self.linear.weight.data
+
+            def forward(self, idx):
+                x = self.emb(idx)
+                x = self.linear(x)
+                return x
+
+        idx = torch.randint(0, 64, (1, in_features))
+        mod = M(bias=bias).eval()
+        with verify(dtype) as (atol, rtol):
+            self.common(mod, (idx,), atol=atol, rtol=rtol)
+        self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 1)
+        self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 1)
+
+    @inductor_config.patch({"freezing": True})
+    @patches
+    @torch.no_grad
     @parametrize("batch_size", (2,))
     @parametrize("in_features", (16,))
     @parametrize("seq_lens", (128,))

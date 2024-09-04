@@ -668,6 +668,15 @@ class CppPackedGemmTemplate(CppTemplate):
                 new_input_nodes, _ = reorder_and_filter(input_nodes, layout)
 
                 W_node = new_input_nodes[1]
+
+                is_fp32_gemm = W_node.dtype == torch.float32
+                # We want to delete the packed weight.
+                # For FP32 gemm, packed weight will be input_nodes[1]. new_input_nodes[1] is the original weight.
+                # For other dtypes, packed weight will be new_input_nodes[1]
+                W_node_to_delete = (
+                    input_nodes[1] if is_fp32_gemm else new_input_nodes[1]
+                )
+
                 assert W_node.get_name() in V.graph.constants
                 W = V.graph.constants[W_node.get_name()]
                 new_input_nodes[1] = W
@@ -681,7 +690,10 @@ class CppPackedGemmTemplate(CppTemplate):
                 # FX graph. For example:
                 # mkldnn._linear_pointwise <- repack_linear_wgt <- packed_wgt_for_template
                 for node in reversed(V.graph.graph.nodes):
-                    if node.name == W_node.get_name() and len(node.users) == 1:
+                    if (
+                        node.name == W_node_to_delete.get_name()
+                        and len(node.users) == 1
+                    ):
                         del V.graph.constants[node.name]
                         delattr(V.graph.module, node.name)
                         delattr(V.graph.graph.owning_module, node.name)
