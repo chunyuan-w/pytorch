@@ -493,7 +493,11 @@ def rewrite_index_for_nodes(
     # TODO: assert both global and local are contiguous
     # Get size and strides for global buffer
     assert len(local_buf.get_size()) == len(global_buffer.get_size())
-    
+    print("my local buf size: ", local_buf.get_size())
+    print("my local buf stride: ", local_buf.get_stride())
+    print("my global_buffer size: ", global_buffer.get_size())
+    print("my global_buffer stride: ", global_buffer.get_stride())
+
     global_stride = global_buffer.get_stride()
     local_strides = local_buf.get_stride()
 

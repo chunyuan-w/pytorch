@@ -1470,6 +1470,8 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 # add_180 = torch.ops.aten.add.Tensor(add_177, view_410);  add_177 = view_410 = None
 
                 _mkl_linear_91 = self.linear2(view_425)
+                # return _mkl_linear_91
+                
                 view_426 = torch.ops.aten.reshape.default(_mkl_linear_91, [8, 16, 196, 128]);  _mkl_linear_91 = None
 
                 # add_184 = torch.ops.aten.add.Tensor(add_180, view_414);  add_180 = view_414 = None
@@ -1477,6 +1479,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
 
                 # add_184
                 add_187 = torch.ops.aten.add.Tensor(add_184, view_426);  add_184 = view_426 = None
+                # return add_187
 
 
                 view_429 = torch.ops.aten.reshape.default(mul_239, [25088, 512]);  mul_239 = None
