@@ -491,8 +491,9 @@ def rewrite_index_for_nodes(
     global_buffer_offset = global_buffers_offsets[global_buf_name]
 
     # TODO: assert both global and local are contiguous
-    # TODO: assert global and local have the same ndim
     # Get size and strides for global buffer
+    assert len(local_buf.get_size()) == len(global_buffer.get_size())
+    
     global_stride = global_buffer.get_stride()
     local_strides = local_buf.get_stride()
 
