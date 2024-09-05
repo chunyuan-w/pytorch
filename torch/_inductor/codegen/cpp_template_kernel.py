@@ -294,6 +294,7 @@ class CppTemplateKernel(CppKernel):
                         [
                             orig_src,
                         ],
+                        offsets=offsets,
                     )
                     epilogue_nodes = scope.localize_nodes(epilogue_nodes)
                 return self.store_pointwise_nodes(
@@ -304,7 +305,10 @@ class CppTemplateKernel(CppKernel):
                 # src is local
                 copy = L.copy(dst, src).data.data
                 with LocalBufferContext(self.args) as scope:
-                    scope.add_local_buffer(src)
+                    scope.add_local_buffer(
+                        src,
+                        offsets=offsets,
+                    )
                     return self.store_pointwise_nodes(dst, [copy])
             else:
                 assert dst.layout == src.layout, f"{dst=}, {src=}"

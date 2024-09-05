@@ -481,31 +481,30 @@ def rewrite_index_for_nodes(
     localize_buffer_handler: "LocalizeBufferHandler",
     index: sympy.Expr,
     global_buf_name: str,
+    global_buffers,
+    global_buffers_offsets,
 ):
     used_vars = {s for s in index.free_symbols if symbol_is_type(s, SymT.INDEX)}
     index_vars = []
     local_buf = localize_buffer_handler.global_to_local[global_buf_name]
 
     # add a reindexer from template_buffer.size() to local_buf.size()
-    col_size = 64
+    # TODO: Generalize for arbitary ndims
+    global_buffer = global_buffers[global_buf_name]
+    global_buffer.get_size()[1]
+
+    global_buffer_offset = global_buffers_offsets[global_buf_name]
+
+    col_size = global_buffer.get_size()[1]
     from torch.utils._sympy.functions import FloorDiv, Mod
 
     row = FloorDiv(index, col_size)
     col = Mod(index, col_size)
 
-    m_start = None
-    n_start = None
-    for idx in list(index.free_symbols):
-        if str(idx) == "m_start":
-            m_start = idx
-            continue
-        if str(idx) == "n_start":
-            n_start = idx
-            continue
-    assert m_start is not None
-    assert n_start is not None
+    row_offset = global_buffer_offset[0]
+    col_offset = global_buffer_offset[1]
 
-    new_index = (row - m_start) * local_buf.get_stride()[0] + (col - n_start)
+    new_index = (row - row_offset) * local_buf.get_stride()[0] + (col - col_offset)
     print("my input idx:", index)
     print("my calculate idx: ", new_index)
     return new_index
@@ -525,15 +524,21 @@ class LocalizeBufferHandler(V.WrapperHandler):  # type: ignore[name-defined]
         inner,
         global_to_local: Dict[str, ir.Buffer],
         rewrite_index: Callable[["LocalizeBufferHandler", sympy.Expr, str], sympy.Expr],
+        global_buffers,
+        global_buffers_offsets,
     ) -> None:
         super().__init__(inner)
         self.global_to_local = global_to_local
         self.rewrite_index = rewrite_index
+        self.global_buffers = global_buffers
+        self.global_buffers_offsets = global_buffers_offsets
 
     def localize(self, name: str, index: sympy.Expr):
         if self.global_to_local and name in self.global_to_local:
             assert self.rewrite_index is not None
-            index = self.rewrite_index(self, index, name)
+            index = self.rewrite_index(
+                self, index, name, self.global_buffers, self.global_buffers_offsets
+            )
             name = self.global_to_local[name].get_name()
         return name, index
 
@@ -576,6 +581,7 @@ class LocalBufferContext:
         self.global_buffers: Dict[str, ir.Buffer] = {}
         # map global buffer name to local buffer
         self.global_to_local: Dict[str, ir.Buffer] = {}
+        self.global_buffers_offsets = {}
 
     def __enter__(self):
         self.exit_stack.__enter__()
@@ -616,7 +622,10 @@ class LocalBufferContext:
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
     def add_local_buffer(
-        self, local_buffer: ir.Buffer, global_buffers: Optional[List[ir.Buffer]] = None
+        self,
+        local_buffer: ir.Buffer,
+        global_buffers: Optional[List[ir.Buffer]] = None,
+        offsets=None,
     ):
         assert local_buffer.get_name() not in self.local_buffers
         self.local_buffers[local_buffer.get_name()] = local_buffer
@@ -629,6 +638,7 @@ class LocalBufferContext:
                 )
                 self.global_buffers[global_buffer_name] = global_buffer
                 self.global_to_local[global_buffer_name] = local_buffer
+                self.global_buffers_offsets[global_buffer_name] = offsets
                 V.graph.removed_buffers.add(global_buffer_name)
 
     def localize_function(
@@ -644,6 +654,8 @@ class LocalBufferContext:
                     V.get_ops_handler(),
                     global_to_local=self.global_to_local,
                     rewrite_index=rewrite_index,
+                    global_buffers=self.global_buffers,
+                    global_buffers_offsets=self.global_buffers_offsets,
                 )
             ):
                 return fn(*args, **kwargs)
