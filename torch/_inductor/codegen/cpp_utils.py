@@ -12,11 +12,11 @@ import sympy
 
 import torch
 from torch._prims_common import is_integer_dtype
-from torch.utils._sympy.symbol import symbol_is_type, SymT
+from torch.utils._sympy.functions import FloorDiv, Mod
 from torch.utils._sympy.value_ranges import ValueRanges
 
 from .. import ir
-from ..utils import IndentedBuffer, sympy_index_symbol_with_prefix, sympy_subs
+from ..utils import IndentedBuffer, sympy_subs
 from ..virtualized import ops, OpsValue, V
 from .common import (
     CSEVariable,
@@ -454,6 +454,8 @@ def rewrite_index_for_function(
     localize_buffer_handler: "LocalizeBufferHandler",
     index: sympy.Expr,
     global_buf_name: str,
+    global_buffers,
+    global_buffers_offsets,
 ):
     # Local buffer at the inner dimensions
     snode = V.graph.scheduler.name_to_buf[global_buf_name].defining_op
@@ -484,38 +486,36 @@ def rewrite_index_for_nodes(
     global_buffers,
     global_buffers_offsets,
 ):
-    used_vars = {s for s in index.free_symbols if symbol_is_type(s, SymT.INDEX)}
-    index_vars = []
     local_buf = localize_buffer_handler.global_to_local[global_buf_name]
-
-    # add a reindexer from template_buffer.size() to local_buf.size()
-    # TODO: Generalize for arbitary ndims
     global_buffer = global_buffers[global_buf_name]
-    global_buffer.get_size()[1]
-
     global_buffer_offset = global_buffers_offsets[global_buf_name]
 
-    col_size = global_buffer.get_size()[1]
-    from torch.utils._sympy.functions import FloorDiv, Mod
+    # TODO: assert both global and local are contiguous
+    # TODO: assert global and local have the same ndim
+    # Get size and strides for global buffer
+    global_stride = global_buffer.get_stride()
+    local_strides = local_buf.get_stride()
 
-    row = FloorDiv(index, col_size)
-    col = Mod(index, col_size)
+    # Calculate the new index for each dimension
+    new_index = 0
+    remaining_index = index
 
-    row_offset = global_buffer_offset[0]
-    col_offset = global_buffer_offset[1]
+    for dim in range(len(global_stride)):
+        # Divide by the size of the current dimension to get the "coordinate" for this dimension
+        current_index = FloorDiv(remaining_index, global_stride[dim])
 
-    new_index = (row - row_offset) * local_buf.get_stride()[0] + (col - col_offset)
+        # Modulo to find the remainder (next dimension's index will be calculated from this)
+        remaining_index = Mod(remaining_index, global_stride[dim])
+
+        # Subtract the offset for this dimension
+        offset_index = current_index - global_buffer_offset[dim]
+
+        # Calculate the new index using the stride for the local buffer
+        new_index += offset_index * local_strides[dim]
+
     print("my input idx:", index)
-    print("my calculate idx: ", new_index)
+    print("my calculated idx: ", new_index)
     return new_index
-
-    for i in range(len(local_buf.get_size())):
-        var = sympy_index_symbol_with_prefix(SymT.INDEX, i)
-        index_vars.append(var if var in used_vars else 0)
-    index = local_buf.layout.make_indexer()(index_vars)
-    print("my new idx:", index)
-
-    return index
 
 
 class LocalizeBufferHandler(V.WrapperHandler):  # type: ignore[name-defined]
