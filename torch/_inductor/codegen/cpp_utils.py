@@ -485,10 +485,37 @@ def rewrite_index_for_nodes(
     used_vars = {s for s in index.free_symbols if symbol_is_type(s, SymT.INDEX)}
     index_vars = []
     local_buf = localize_buffer_handler.global_to_local[global_buf_name]
+
+    # add a reindexer from template_buffer.size() to local_buf.size()
+    col_size = 64
+    from torch.utils._sympy.functions import FloorDiv, Mod
+
+    row = FloorDiv(index, col_size)
+    col = Mod(index, col_size)
+
+    m_start = None
+    n_start = None
+    for idx in list(index.free_symbols):
+        if str(idx) == "m_start":
+            m_start = idx
+            continue
+        if str(idx) == "n_start":
+            n_start = idx
+            continue
+    assert m_start is not None
+    assert n_start is not None
+
+    new_index = (row - m_start) * local_buf.get_stride()[0] + (col - n_start)
+    print("my input idx:", index)
+    print("my calculate idx: ", new_index)
+    return new_index
+
     for i in range(len(local_buf.get_size())):
         var = sympy_index_symbol_with_prefix(SymT.INDEX, i)
         index_vars.append(var if var in used_vars else 0)
     index = local_buf.layout.make_indexer()(index_vars)
+    print("my new idx:", index)
+
     return index
 
 
