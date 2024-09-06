@@ -921,6 +921,7 @@ class CppPackedGemmTemplate(CppTemplate):
                 else:
                     assert isinstance(Y, ir.Buffer)
                     storage = ir.StorageBox(Y)
+                # TODO: reindexer template_buffer and Y
                 Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
 
         output_dtype, compute_dtype = get_gemm_template_output_and_compute_dtype(
