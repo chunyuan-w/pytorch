@@ -30,6 +30,7 @@ from .virtualized import ops, V
 
 
 def require_contiguous_input(x):
+    return x
     req_stride_order = list(reversed(range(len(x.get_size()))))
     x = ir.ExternKernel.require_stride_order(x, req_stride_order)
     return x
