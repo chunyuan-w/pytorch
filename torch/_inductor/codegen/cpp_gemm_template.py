@@ -198,6 +198,7 @@ extern "C" {{export_declaration}}
                 } else
 {%- endif %}
                 {
+
 {%- set tile_Y = kernel.slice_nd(Y_2d, [("m_start", "m_end"), ("n_start", "n_end")]) %}
 {%- set tile_acc = kernel.slice_nd(acc, [("0", "m_end - m_start"), ("0", "n_end - n_start")]) %}
                     {{ kernel.store_output(
@@ -764,6 +765,7 @@ class CppPackedGemmTemplate(CppTemplate):
                 template_buffer.inputs[1] = ir.InputsKernel.unwrap_storage_for_input(
                     W_packed_constant
                 )
+                template_buffer.inputs[0] = ir.ExternKernel.require_contiguous(new_input_nodes[0])
             return output
 
         template = DataProcessorTemplateWrapper(
@@ -837,6 +839,8 @@ class CppPackedGemmTemplate(CppTemplate):
             or self.padded_n != self.n
             or self.maybe_k_slicing()
         )
+
+        use_local_acc = True
 
         # TODO(jgong5): for int8 gemm, bias-add is handled outside of gemm template,
         # but we'd better move it here to align with fp.
@@ -981,6 +985,7 @@ class CppPackedGemmTemplate(CppTemplate):
                     ]
                     stride_reindex = ir.same_reorder(
                         from_stride_ordered_decreasingly_to_epilogue_node_order
+                        # [0,1,3,2,4,5]
                     )
 
                     reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)
@@ -992,6 +997,8 @@ class CppPackedGemmTemplate(CppTemplate):
                 else:
                     assert isinstance(Y, ir.Buffer)
                     storage = ir.StorageBox(Y)
+
+                # layout_2d = 
                 Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
 
         output_dtype, compute_dtype = get_gemm_template_output_and_compute_dtype(

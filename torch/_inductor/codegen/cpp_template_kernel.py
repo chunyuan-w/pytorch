@@ -216,7 +216,34 @@ class CppTemplateKernel(CppKernel):
         if not reindexers:
             reindexers = [None] * len(nodes)
         assert len(offsets) == len(var_sizes[0])
+
+        # # Based on the below one, add another reindexer to view it into 2D.
+        # if len(reindexers) == 1 and reindexers[0] is not None:
+        #     reindexers[0](var_ranges.keys())
+
+        #     reshape_reindex = ir.View.dynamic_reshape_indexer(
+        #         [8, 4, 4, 14, 14, 128], # input index
+        #         [25088, 128], # output index
+        #     )
+        #     # dst: 2D
+
+        #     two_d_gemm_index = var_ranges.keys()
+        #     six_d_gemm_index = reshape_reindex(two_d_gemm_index) # From 2D GEMM out to 6D GEMM out
+        #     # transpose
+        #     stride_reindex = ir.same_reorder([0, 1, 3, 2, 4, 5])
+        #     six_d_epilogue_index = stride_reindex(six_d_gemm_index)
+
+        #     reshape_reindex2 = ir.View.dynamic_reshape_indexer(
+        #         [25088, 128], # input index
+        #         [8, 4, 14, 4, 14, 128], # output index
+        #     )
+
+        #     dst_index = reshape_reindex2(six_d_epilogue_index)
+        #     # dst: a slice of Y_2d
+        #     output_index = dst.get_layout().make_indexer()(dst_index)
+        # else:
         output_index = dst.get_layout().make_indexer()(var_ranges.keys())
+
         kernel_group = KernelGroup()
         kernel_group.args = self.args
         cpp_kernel_proxy = CppKernelProxy(kernel_group)
