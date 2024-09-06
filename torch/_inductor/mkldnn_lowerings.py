@@ -29,12 +29,12 @@ from .utils import use_aten_gemm_kernels, use_cpp_packed_gemm_template, use_max_
 from .virtualized import ops, V
 
 
+
 def require_contiguous_input(x):
+    return x
     req_stride_order = list(reversed(range(len(x.get_size()))))
     x = ir.ExternKernel.require_stride_order(x, req_stride_order)
     return x
-
-
 def register_onednn_fusion_ops():
     if torch._C._has_mkldnn:
         from . import mkldnn_ir
@@ -188,9 +188,7 @@ def register_onednn_fusion_ops():
             if use_max_autotune():
                 transposed_w = permute(w, [1, 0])
                 *_, layout, x, transposed_w = mm_args(x, transposed_w, layout=layout)
-
                 x = require_contiguous_input(x)
-
                 if use_cpp_packed_gemm_template(layout, x, transposed_w):
 
                     def epilogue_creator(buf):
@@ -256,9 +254,7 @@ def register_onednn_fusion_ops():
                 *_, layout, x, transposed_w, y = mm_args(
                     x, transposed_w, y, layout=layout
                 )
-
                 x = require_contiguous_input(x)
-
                 if use_cpp_packed_gemm_template(layout, x, transposed_w):
 
                     def epilogue_creator(buf):
@@ -538,9 +534,7 @@ def register_onednn_fusion_ops():
                 *_, layout, x, packed_weight = mm_args(
                     x, packed_weight, layout=layout, out_dtype=output_dtype
                 )
-
                 x = require_contiguous_input(x)
-
                 if (
                     isinstance(
                         ir.InputsKernel.unwrap_storage_for_input(x_zp),
@@ -820,9 +814,7 @@ def register_onednn_fusion_ops():
                 *_, layout, x, packed_weight, x2 = mm_args(
                     x, packed_weight, x2, layout=layout, out_dtype=output_dtype
                 )
-
                 x = require_contiguous_input(x)
-
                 if (
                     isinstance(
                         ir.InputsKernel.unwrap_storage_for_input(x_zp),
@@ -1065,9 +1057,7 @@ def register_onednn_fusion_ops():
                     *_, layout, x, transposed_w = mm_args(
                         x, transposed_w, layout=layout
                     )
-
                     x = require_contiguous_input(x)
-
                     if use_cpp_packed_gemm_template(layout, x, transposed_w):
                         CppPackedGemmTemplate.add_choices(
                             choices,
