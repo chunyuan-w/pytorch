@@ -765,7 +765,6 @@ class CppPackedGemmTemplate(CppTemplate):
                 template_buffer.inputs[1] = ir.InputsKernel.unwrap_storage_for_input(
                     W_packed_constant
                 )
-                template_buffer.inputs[0] = ir.ExternKernel.require_contiguous(new_input_nodes[0])
             return output
 
         template = DataProcessorTemplateWrapper(
