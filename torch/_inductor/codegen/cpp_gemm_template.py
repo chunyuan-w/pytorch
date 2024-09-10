@@ -973,9 +973,11 @@ class CppPackedGemmTemplate(CppTemplate):
                         size_with_stride_ordered_decreasingly,
                     )
 
+                    # TODO: how to get the hardcoded size_with_stride_ordered_decreasingly and from_stride_ordered_decreasingly_to_epilogue_node_order
+                    # from Y
                     reshape_reindex = ir.View.dynamic_reshape_indexer(
-                        size_with_stride_ordered_decreasingly,
-                        # [8, 4, 4, 14, 14, 128],
+                        # size_with_stride_ordered_decreasingly,
+                        [8, 4, 4, 14, 14, 128],
                         template_buffer.get_size(),
                     )
 
@@ -988,9 +990,10 @@ class CppPackedGemmTemplate(CppTemplate):
                         (len(stride_order) - 1) - stride_order[i]
                         for i in range(len(stride_order))
                     ]
+                    print("my from_stride_ordered_decreasingly_to_epilogue_node_order:", from_stride_ordered_decreasingly_to_epilogue_node_order)
                     stride_reindex = ir.same_reorder(
-                        from_stride_ordered_decreasingly_to_epilogue_node_order
-                        # [0,1,3,2,4,5]
+                        # from_stride_ordered_decreasingly_to_epilogue_node_order
+                        [0,1,3,2,4,5]
                     )
 
                     reindexer = ir.fuse_reindexing(stride_reindex, reshape_reindex)

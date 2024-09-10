@@ -431,8 +431,8 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         mul_239 = torch.randn(batch_size, 16, 196, 512)
         
         # TODO: don't use zeros after fixing the index of these two buffers
-        view_425 = torch.zeros(25088, 128)
-        add_184 = torch.zeros(batch_size, 16, 196, 128)
+        view_425 = torch.randn(25088, 128)
+        add_184 = torch.randn(batch_size, 16, 196, 128)
         # view_414 = torch.randn(batch_size, 128, 56, 56).to(memory_format=torch.channels_last)
 
         mod = M(bias=bias, has_non_epilogue_users=has_non_epilogue_users).eval()
