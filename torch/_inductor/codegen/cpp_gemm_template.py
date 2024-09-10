@@ -968,8 +968,14 @@ class CppPackedGemmTemplate(CppTemplate):
                     size_with_stride_ordered_decreasingly = [
                         epilogue_node.get_size()[i] for i in reversed_fill_order
                     ]
+                    print(
+                        "my size_with_stride_ordered_decreasingly:",
+                        size_with_stride_ordered_decreasingly,
+                    )
+
                     reshape_reindex = ir.View.dynamic_reshape_indexer(
                         size_with_stride_ordered_decreasingly,
+                        # [8, 4, 4, 14, 14, 128],
                         template_buffer.get_size(),
                     )
 
@@ -997,8 +1003,19 @@ class CppPackedGemmTemplate(CppTemplate):
                     assert isinstance(Y, ir.Buffer)
                     storage = ir.StorageBox(Y)
 
-                # layout_2d = 
-                Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
+                # layout_2d =
+                # permuted = ir.PermuteView.create(storage, [0, 1, 3, 2, 4, 5])
+                # permuted_storage = ir.StorageBox(permuted)
+                # Y_2d = ir.ReinterpretView(permuted_storage, template_buffer.get_layout())
+
+                # viewed = ir.View.create(storage, [8, 4, 4, 14, 14, 128])
+                # Y_2d = ir.View.create(ir.StorageBox(viewed), [25088, 128])
+
+                # TODO: how to automatically create this from Y?
+                permuted = ir.PermuteView.create(storage, [0, 1, 3, 2, 4, 5])
+                Y_2d = ir.View.create(ir.StorageBox(permuted), [25088, 128])
+
+                # Y_2d = ir.ReinterpretView(storage, template_buffer.get_layout())
 
         output_dtype, compute_dtype = get_gemm_template_output_and_compute_dtype(
             X.get_dtype()

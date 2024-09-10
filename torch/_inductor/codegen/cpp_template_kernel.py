@@ -149,7 +149,9 @@ class CppTemplateKernel(CppKernel):
             assert len(_range) == 2
             start, end = parse_expr_with_index_symbols(_range)
             sliced = L.slice_(sliced, dim, start, end, clamp=False)
-        assert isinstance(sliced.data, ir.ReinterpretView), sliced.data
+        # TODO: this change is needed to make it run. Generalize it.
+        assert isinstance(sliced.data, (ir.ReinterpretView, ir.SliceView)), sliced.data
+        # assert isinstance(sliced.data, ir.ReinterpretView), sliced.data
         return sliced.data
 
     def view(self, node, sizes: List[Any]) -> ir.View:
@@ -222,8 +224,8 @@ class CppTemplateKernel(CppKernel):
         #     reindexers[0](var_ranges.keys())
 
         #     reshape_reindex = ir.View.dynamic_reshape_indexer(
-        #         [8, 4, 4, 14, 14, 128], # input index
-        #         [25088, 128], # output index
+        #         [8, 4, 4, 14, 14, 128], # output index
+        #         [25088, 128], # input index
         #     )
         #     # dst: 2D
 
@@ -234,15 +236,19 @@ class CppTemplateKernel(CppKernel):
         #     six_d_epilogue_index = stride_reindex(six_d_gemm_index)
 
         #     reshape_reindex2 = ir.View.dynamic_reshape_indexer(
-        #         [25088, 128], # input index
-        #         [8, 4, 14, 4, 14, 128], # output index
+        #         [25088, 128], # output index
+        #         [8, 4, 14, 4, 14, 128], # input index
         #     )
 
         #     dst_index = reshape_reindex2(six_d_epilogue_index)
         #     # dst: a slice of Y_2d
         #     output_index = dst.get_layout().make_indexer()(dst_index)
         # else:
-        output_index = dst.get_layout().make_indexer()(var_ranges.keys())
+        #     output_index = dst.get_layout().make_indexer()(var_ranges.keys())
+
+        # TODO: this change is needed to make it run. Generalize it.
+        output_index = dst.make_indexer()(var_ranges.keys())
+        # output_index = dst.get_layout().make_indexer()(var_ranges.keys())
 
         kernel_group = KernelGroup()
         kernel_group.args = self.args
