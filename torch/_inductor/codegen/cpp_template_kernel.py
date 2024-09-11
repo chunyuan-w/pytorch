@@ -261,6 +261,8 @@ class CppTemplateKernel(CppKernel):
             assert isinstance(node, ir.Pointwise), node
 
             def fn(*args):
+                dst_loader = dst.make_loader()
+
                 assert len(args) == 2
                 assert len(args[0]) == len(var_sizes[0])
                 assert len(args[1]) == 0
@@ -272,6 +274,14 @@ class CppTemplateKernel(CppKernel):
                     output_index,
                     node.make_loader()(new_args).value,
                 )
+
+            # local_buf: []
+            # Y_2d:      [8,4, 4,14, 14,128] -> [25088, 128] new_args
+            
+            # Y:         [8,4, 14,4, 14,128]
+
+            # reindexer: [8,4, 14,4, 14,128] <- [25088, 128]
+
 
             body = LoopBody(
                 fn,

@@ -367,8 +367,8 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 self._frozen_param2 = torch.randn(1, 16, 196, 128)
                 
                 # TODO: support bias = True as well after fixing the index
-                self.linear = torch.nn.Linear(512, 128, bias=False)
-                self.linear2 = torch.nn.Linear(128, 128, bias=False)
+                self.linear = torch.nn.Linear(512, 128, bias=True)
+                self.linear2 = torch.nn.Linear(128, 128, bias=True)
                 self.conv = torch.nn.Conv2d(
                     128,
                     256,

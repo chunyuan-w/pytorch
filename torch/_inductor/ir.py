@@ -3565,7 +3565,10 @@ class ShapeAsConstantBuffer(IRNode):
 
 @dataclasses.dataclass
 class ComputedBuffer(OperationBuffer):
-    data: Loops
+    # data: Loops
+    def __init__(self, name, layout, data):        
+        super().__init__(name, layout)
+        self.data: Loops = data
 
     def get_computed_buffer_name(self):
         """
