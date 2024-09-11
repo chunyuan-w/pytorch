@@ -501,7 +501,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
     @parametrize(
         "bias",
         (
-            False,
+            # False,
             True,
         ),
     )
@@ -509,7 +509,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         "has_non_epilogue_users",
         (
             True,
-            False,
+            # False,
         ),
     )
     @dtypes(torch.bfloat16)

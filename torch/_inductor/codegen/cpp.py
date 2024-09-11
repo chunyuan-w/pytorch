@@ -4146,11 +4146,34 @@ class CppScheduling(BaseScheduling):
             return 0
 
     def can_fuse_vertical(self, node1, node2):
+        
+        def same_storage_between_template_and_epilogue(template, epilogue):
+            # assert template.is_template()
+            # template_buf_name = template.node.get_name()
+
+            # # TODO: remove list()
+            # epilogue_reads = list(epilogue.node.get_reads())
+            # index_of_template_buf_read_in_epilogue = None
+            # for read in epilogue_reads:
+            #     if read.name == template_buf_name:
+            #         index_of_template_buf_read_in_epilogue = read.index
+            #         break
+            # assert index_of_template_buf_read_in_epilogue is not None
+            
+            # # TODO: remove list()
+            # epilogue_writes = list(epilogue.node.get_read_writes().writes)
+            # for epilogue_write in epilogue_writes:
+            #     epilogue_write_index = epilogue_write.index
+            #     if epilogue_write_index != index_of_template_buf_read_in_epilogue:
+            #         return False
+            
+            return True
+
         if node2.is_template():
             # TODO(jgong5): support pre-op fusion with template
             return False
         if node1.is_template():
-            return not node2.is_reduction()
+            return not node2.is_reduction() and same_storage_between_template_and_epilogue(node1, node2)
         return (
             self._can_fuse_horizontal_impl(node1, node2) and not node1.is_reduction()
         ) or self.can_fuse_vertical_outer_loop(node1, node2)

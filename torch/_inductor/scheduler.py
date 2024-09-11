@@ -1853,6 +1853,8 @@ class Scheduler:
         if node.is_no_op():
             return NopKernelSchedulerNode(self, node)
         elif isinstance(node, (ir.ComputedBuffer, ir.TemplateBuffer)):
+            if node.get_name() == 'buf2':
+                print("hit")
             return SchedulerNode(self, node)
         elif isinstance(node, ir.ExternKernel):
             return ExternKernelSchedulerNode(self, node)
