@@ -20,6 +20,7 @@ from .cpp_micro_gemm import CppMicroGemmAMX, create_micro_gemm, LayoutType
 from .cpp_template import CppTemplate
 from .cpp_template_kernel import CppTemplateKernel
 from .cpp_utils import (
+    _template_fusion_supported,
     create_epilogue_with_attr,
     DTYPE_TO_CPP,
     GemmBlocking,
@@ -830,12 +831,24 @@ class CppPackedGemmTemplate(CppTemplate):
         fake_buffers: List[ir.Buffer] = []
         Y_aliases: Set[str] = set()
 
+        def local_acc_is_needed_in_epilogue_fusion(template_buffer, epilogues):
+            if not epilogue_nodes:
+                return False
+
+            (
+                template_fusion_supported,
+                same_index_for_template_read_and_epilogue_write_in_epilogue,
+            ) = _template_fusion_supported(template_buffer, epilogue_nodes)
+            assert template_fusion_supported
+            return not same_index_for_template_read_and_epilogue_write_in_epilogue
+
         use_local_acc = (
             self.layout.dtype != torch.float
             or template_buffer_has_other_users
             or int8_gemm
             or self.padded_n != self.n
             or self.maybe_k_slicing()
+            or local_acc_is_needed_in_epilogue_fusion(template_buffer, epilogues)
         )
 
         # TODO(jgong5): for int8 gemm, bias-add is handled outside of gemm template,

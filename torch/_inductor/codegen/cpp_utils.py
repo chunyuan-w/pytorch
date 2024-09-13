@@ -940,6 +940,7 @@ def _template_fusion_supported(template_node, epilogue_nodes):
 
     supported = []
     same_indexes = []
+    # TODO: Add a utility function for each epilogue node
     for i, index_of_template_buf_read in enumerate(indexes_of_template_buf_reads):
         epilogue_writes = epilogue_nodes_writes[i]
         num_indexes_of_template_buf_read = len(list(set(index_of_template_buf_read)))
@@ -960,9 +961,7 @@ def _template_fusion_supported(template_node, epilogue_nodes):
                 for epilogue_write in epilogue_writes
             )
             same_indexes.append(same_index)
-            # TODO: Add support of fusion when the read of template buffer and the write of epilogue output
-            # in the epilogue node don't have the same index.
-            supported.append(same_index)
+            supported.append(True)
         else:
             raise AssertionError("Should not reach here")
 

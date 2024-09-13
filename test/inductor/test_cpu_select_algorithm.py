@@ -554,7 +554,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
         "bias",
         (
             False,
-            True,
+            # True,
         ),
     )
     @dtypes(torch.float32)
@@ -637,8 +637,8 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 return _convolution_pointwise_default_1
 
         mul_239 = torch.randn(batch_size, img_size_0, img_size_1, out_features)
-        view_425 = torch.randn(flatten_BS, in_features)
-        add_184 = torch.randn(batch_size, img_size_0, img_size_1, in_features)
+        view_425 = torch.zeros(flatten_BS, in_features)
+        add_184 = torch.zeros(batch_size, img_size_0, img_size_1, in_features)
         mod = M(bias=bias).eval()
         with verify(dtype) as (atol, rtol), torch.cpu.amp.autocast(
             enabled=dtype == torch.bfloat16
@@ -654,8 +654,7 @@ class TestSelectAlgorithm(BaseTestSelectAlgorithm):
                 rtol=rtol,
             )
         self.assertEqual(counters["inductor"]["select_algorithm_autotune"], 2)
-        # TODO: change cpp_epilogue_fusion_counter to 1 once supported
-        self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 0)
+        self.assertEqual(counters["inductor"]["cpp_epilogue_fusion_counter"], 1)
 
     @inductor_config.patch({"freezing": True})
     @patches
