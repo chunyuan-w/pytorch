@@ -1499,3 +1499,12 @@ if __name__ == "__main__":
 
     if HAS_CPU and not IS_MACOS:
         run_tests()
+
+
+# /tmp/torchinductor_user/v6/cv6il2qk4kyd2n4bg4b5o6clru5zfhmqhwfqajupndbhx6p6ouzw.cpp: In function ‘void kernel(const bfloat16*, const bfloat16*, const bfloat16*, bfloat16*, int64_t)’:
+# /tmp/torchinductor_user/v6/cv6il2qk4kyd2n4bg4b5o6clru5zfhmqhwfqajupndbhx6p6ouzw.cpp:239:41: error: the value of ‘Mr_blocks’ is not usable in a constant expression
+#   239 |         constexpr int64_t m_block_end = Mr_blocks;
+#       |                                         ^~~~~~~~~
+# /tmp/torchinductor_user/v6/cv6il2qk4kyd2n4bg4b5o6clru5zfhmqhwfqajupndbhx6p6ouzw.cpp:197:19: note: ‘Mr_blocks’ was not initialized with a constant expression
+#   197 |     const int64_t Mr_blocks = (M + Mr - 1) / Mr;
+#       |                   ^~~~~~~~~
