@@ -99,15 +99,28 @@ def convert_arg_type(arg: torch.Argument) -> str:
         return cpp_type
 
     # Convert args of container types e.g. Optional[*]
+    
+    # TODO: handle multi-level container: List[Optional[number]]
+    if python_type == "List[Optional[number]]":
+        return "torch::List<std::optional<at::Scalar>>"
+    
     for py_container, cpp_container in CONTAINER_PYTHON_TO_CPP.items():
         container_match = re.findall(py_container + r"\[([a-zA-Z_]+)]", python_type)
         if len(container_match) == 1:
             contained_type = container_match[0]
-            assert (
-                contained_type in PYTHON_TO_CPP
-            ), f"unsupported {py_container} type in convert_arg_type: {contained_type}"
-            cpp_contained_type = PYTHON_TO_CPP[contained_type]
-            return f"{cpp_container}<{cpp_contained_type}>"
+            
+            # TODO: duplicated with above codes
+            if contained_type == "Tensor":
+                if arg.alias_info is not None and arg.alias_info.is_write:
+                    return f"{cpp_container}<at::{contained_type}>&"
+                else:
+                    return f"{cpp_container}<at::{contained_type}> const&"
+            else:
+                assert (
+                    contained_type in PYTHON_TO_CPP
+                ), f"unsupported {py_container} type in convert_arg_type: {contained_type}"
+                cpp_contained_type = PYTHON_TO_CPP[contained_type]
+                return f"{cpp_container}<{cpp_contained_type}>"
 
     raise AssertionError(f"unsupport python_type: {python_type}")
 
