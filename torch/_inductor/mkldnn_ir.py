@@ -1277,6 +1277,11 @@ class QLinearPointwisePT2E(ExternKernelAlloc):
                 if x_scale_zp_are_tensors
                 else torch.ops.onednn.qlinear_pointwise.default
             ),
+            cpp_kernel_name=(
+                "aoti_torch_cpu__qlinear_pointwise_tensor"
+                if x_scale_zp_are_tensors
+                else "aoti_torch_cpu__qlinear_pointwise"
+            ),            
         )
         x_scale_type_str, x_zp_type_str = (
             ("at::Tensor", "at::Tensor")
@@ -1387,17 +1392,23 @@ class QLinearPointwisePT2E(ExternKernelAlloc):
             unary_scalars_raw,
             unary_algorithm_raw,
         )
-        wrapper.generate_extern_kernel_alloc_and_find_schema_if_needed(
-            self.get_name(),
-            self.python_kernel_name,
-            self.cpp_kernel_name,
-            codegen_args,
-            self.cpp_op_schema,
-            self.cpp_kernel_key,
-            self.cpp_kernel_overload_name,
-            self.op_overload,
-            raw_args,
+        wrapper.include_extra_header(
+            "torch/csrc/inductor/aoti_torch/c/shim_mkldnn.h"
         )
+        super().codegen(wrapper)
+        # TODO: check codegen_args and raw_args
+        # other IR uses: self.codegen_args() and [*self.inputs, *self.constant_args]
+        # wrapper.generate_extern_kernel_alloc_and_find_schema_if_needed(
+        #     self.get_name(),
+        #     self.python_kernel_name,
+        #     self.cpp_kernel_name,
+        #     codegen_args,
+        #     self.cpp_op_schema,
+        #     self.cpp_kernel_key,
+        #     self.cpp_kernel_overload_name,
+        #     self.op_overload,
+        #     raw_args,
+        # )
         if isinstance(self.layout, Layout):
             self.codegen_size_asserts(wrapper)
 
