@@ -1257,37 +1257,6 @@ class QLinearOnednn final {
     TORCH_CHECK(false, "Unimplemented (int8 linear with packed weight and bias)");
   }
 
-//   static Tensor run_pointwise_tensor(
-//       Tensor act, // int8 CPU tensor, not QTensor
-//       Tensor act_scale,
-//       Tensor act_zero_point,
-//       Tensor onednn_weight, // int8 tensor from MkldnnCPU
-//       Tensor weight_scales,
-//       Tensor weight_zero_points,
-//       std::optional<Tensor> bias,
-//       double output_scale,
-//       int64_t output_zero_point,
-//       std::optional<c10::ScalarType> output_dtype,
-//       c10::string_view post_op_name,
-//       torch::List<std::optional<at::Scalar>> post_op_args,
-//       c10::string_view post_op_algorithm) {
-// #if AT_MKLDNN_ENABLED()
-//     TORCH_CHECK(act_scale.numel() == 1 && act_zero_point.numel() == 1,
-//         "onednn int8 linear: act scale/zp size should be 1");
-//     static std::optional<at::Tensor> other = std::nullopt;
-//     static const c10::string_view binary_post_op = "none";
-//     return linear_int8_with_onednn_weight(
-//         act, act_scale.item().toDouble(), act_zero_point.item().toLong(),
-//         onednn_weight, weight_scales, weight_zero_points,
-//         bias, output_scale, output_zero_point, output_dtype,
-//         other, /*other scale*/1.0, /*other zp*/0,
-//         binary_post_op, /*binary alpha*/1.0,
-//         post_op_name, post_op_args, post_op_algorithm
-//     );
-// #endif
-//     TORCH_CHECK(false, "Unimplemented (int8 linear with packed weight and bias)");
-//   }
-
   static Tensor run_pointwise_binary(
       Tensor act, // int8 CPU tensor, not QTensor
       double act_scale,
