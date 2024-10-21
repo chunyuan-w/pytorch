@@ -187,6 +187,10 @@ def _prepare_linear_fusion_create(
     x: "TensorBox",
     weight: "TensorBox",
     bias: "TensorBox",
+    w_scale = None,
+    w_zero_point = None,
+    x_scale = None,
+    x_zero_point = None,
 ):
     """
     This function is a helper function to prepare inputs, layout and constant args
@@ -209,6 +213,16 @@ def _prepare_linear_fusion_create(
     x = cls.require_stride_order(x, req_stride_order)
     assert x.get_device().type == "cpu" and weight.get_device().type == "cpu"
     inputs = [x, weight]
+
+    if w_scale and w_zero_point:
+        w_scale.realize()
+        w_zero_point.realize()
+        inputs = inputs + [w_scale, w_zero_point]
+    
+    if x_scale and x_zero_point:
+        x_scale.realize()
+        x_zero_point.realize()
+        inputs = inputs + [x_scale, x_zero_point]
 
     output_stride = FlexibleLayout.contiguous_strides(output_size)
     kernel_layout = FixedLayout(
@@ -1434,20 +1448,24 @@ class QLinearPointwisePT2E(ExternKernelAlloc):
             qx,
             qw,
             bias,
+            w_scale,
+            w_zero_point,
+            x_scale,
+            x_zero_point,
         )
 
         if isinstance(x_scale, TensorBox) and isinstance(x_zero_point, TensorBox):
-            x_scale.realize()
-            x_zero_point.realize()
-            inputs = inputs + [x_scale, x_zero_point]
+        #     x_scale.realize()
+        #     x_zero_point.realize()
+        #     inputs = inputs + [x_scale, x_zero_point]
             x_scale_zp_are_tensors = True
+            print("my is tensor")
         else:
-            assert isinstance(x_scale, float) and isinstance(x_zero_point, int)
-            constant_args = constant_args + [x_scale, x_zero_point]
+        #     assert isinstance(x_scale, float) and isinstance(x_zero_point, int)
+        #     constant_args = [x_scale, x_zero_point] + constant_args
+            print("my not tensors")
             x_scale_zp_are_tensors = False
-        w_scale.realize()
-        w_zero_point.realize()
-        inputs = inputs + [w_scale, w_zero_point]
+        
         constant_args = constant_args + [
             output_scale,
             output_zero_point,
