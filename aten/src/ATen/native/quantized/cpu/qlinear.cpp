@@ -1107,11 +1107,11 @@ namespace native {
 
   Tensor QLinearOnednn::run_pointwise_tensor(
       Tensor act, // int8 CPU tensor, not QTensor
-      Tensor onednn_weight, // int8 tensor from MkldnnCPU
-      Tensor weight_scales,
-      Tensor weight_zero_points,     
       Tensor act_scale,
       Tensor act_zero_point,
+      Tensor onednn_weight, // int8 tensor from MkldnnCPU
+      Tensor weight_scales,
+      Tensor weight_zero_points,
       std::optional<Tensor> bias,
       double output_scale,
       int64_t output_zero_point,

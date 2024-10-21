@@ -131,11 +131,11 @@ AOTI_TORCH_EXPORT AOTITorchError aoti_torch_cpu__linear_pointwise_binary(
 
 AOTI_TORCH_EXPORT AOTITorchError aoti_torch_cpu__qlinear_pointwise_tensor(
     AtenTensorHandle X,
-    AtenTensorHandle onednn_weight,
-    AtenTensorHandle weight_scales,
-    AtenTensorHandle weight_zero_points,    
     AtenTensorHandle act_scale,
     AtenTensorHandle act_zero_point,
+    AtenTensorHandle onednn_weight,
+    AtenTensorHandle weight_scales,
+    AtenTensorHandle weight_zero_points,
     AtenTensorHandle* B,
     double output_scale,
     int64_t output_zero_point,
