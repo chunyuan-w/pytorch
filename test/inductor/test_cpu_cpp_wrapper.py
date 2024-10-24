@@ -143,6 +143,7 @@ def make_test_case(
 
 if RUN_CPU:
     config.abi_compatible = True
+    # config.abi_compatible = False
 
     class BaseTest(NamedTuple):
         name: str
@@ -384,3 +385,6 @@ if __name__ == "__main__":
 
     if RUN_CPU:
         run_tests(needs="filelock")
+
+
+# TORCH_LOGS="+output_code" numactl --physcpubind=0 --membind=0   pytest -v -srf test/inductor/test_cpu_cpp_wrapper.py -k test_qconv2d_relu_cpu_cpp_wrapper 

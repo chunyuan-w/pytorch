@@ -583,6 +583,7 @@ TORCH_IMPL_FUNC(cat_out_cpu)
  bool all_same_sizes_and_stride,
  MemoryFormat memory_format,
  const Tensor& result) {
+   std::cout << "my in cat: " << result.sizes() << "\n";
   if (result.numel() == 0) {
     return;
   }
@@ -626,9 +627,13 @@ TORCH_IMPL_FUNC(cat_out_cpu)
       .build();
 
     for (const Tensor& tensor : materialized) {
+      
       if (cat_should_skip_tensor(tensor)) {
+        printf("my skip 1\n");
         continue;
       }
+      std::cout << "my sub tensor shape in cat 1: " << tensor.sizes() << "\n";
+
       auto source_data = static_cast<const char*>(tensor.const_data_ptr());
       auto result_data = static_cast<char*>(result_slice_data) + offset * result_stride_bytes;
       iter.unsafe_replace_operand(0, result_data);
@@ -639,8 +644,13 @@ TORCH_IMPL_FUNC(cat_out_cpu)
   } else {
     for (const Tensor& tensor: materialized) {
       if (cat_should_skip_tensor(tensor)) {
+        printf("my skip 2\n");
+
         continue;
       }
+
+      std::cout << "my sub tensor shape in cat 2: " << tensor.sizes() << "\n";
+
       auto slice_dim_size = tensor.sizes()[dim];
       auto result_slice = result.narrow(dim, offset, slice_dim_size);
 

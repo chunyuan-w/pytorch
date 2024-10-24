@@ -1647,6 +1647,19 @@ static at::Tensor _quantized_convolution_onednn(
   op_attr.set_scratchpad_mode(dnnl::scratchpad_mode::user);
   auto engine = ideep::engine::cpu_engine();
   auto dilates_dnnl = ideep::utils::get_compatible_dilates(dilation.vec());
+  
+  
+  printf("my before create pd\n");
+  std::cout << src_desc.get_dims() << "\n";
+  std::cout << weights_desc.get_dims() << "\n";
+  std::cout << dst_desc.get_dims() << "\n";
+  std::cout << stride.vec() << "\n";
+  std::cout << dilates_dnnl << "\n";
+  std::cout << padding.vec() << "\n";
+  // std::cout << op_attr << "\n";
+  printf("my with_bias: %d\n", with_bias);  
+  
+  
   auto primitive_desc = with_bias ?
       dnnl::convolution_forward::primitive_desc(
         engine, dnnl::prop_kind::forward_inference, dnnl::algorithm::convolution_direct,

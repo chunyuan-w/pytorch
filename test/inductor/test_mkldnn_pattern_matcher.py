@@ -731,33 +731,61 @@ class TestPatternMatcher(TestPatternMatcherBase):
         unary_op=torch.nn.ReLU(),
         qconv2d_unary_matcher_nodes=None,
     ):
-        class M(torch.nn.Module):
+        # class M(torch.nn.Module):
+        #     def __init__(
+        #         self,
+        #         **kwargs,
+        #     ):
+        #         super().__init__()
+        #         self.conv = torch.nn.Conv2d(3, 128, kernel_size=3, stride=1)
+        #         self.unary_fn = copy.deepcopy(unary_op)
+        #         self.conv2 = torch.nn.Conv2d(
+        #             128, 128, kernel_size=3, stride=1, bias=False
+        #         )
+        #         self.unary_fn2 = copy.deepcopy(unary_op)
+
+        #     def forward(self, x):
+        #         tmp = self.unary_fn(self.conv(x))
+        #         return self.unary_fn2(self.conv2(tmp))
+
+
+        class Model(torch.nn.Module):
             def __init__(
                 self,
-                **kwargs,
             ):
                 super().__init__()
-                self.conv = torch.nn.Conv2d(3, 128, kernel_size=3, stride=1)
-                self.unary_fn = copy.deepcopy(unary_op)
-                self.conv2 = torch.nn.Conv2d(
-                    128, 128, kernel_size=3, stride=1, bias=False
-                )
-                self.unary_fn2 = copy.deepcopy(unary_op)
+                self.conv1 = torch.nn.Conv2d(512, 256, 1, stride=1, dilation=1, padding=0)
+                self.conv2 = torch.nn.Conv2d(512, 256, 1, stride=1, dilation=1, padding=0)
+                self.conv3 = torch.nn.Conv2d(256, 128, 3, stride=1, dilation=1, padding=1)
+                self.conv4 = torch.nn.Conv2d(128, 128, 3, stride=1, dilation=1, padding=1)
+                self.conv5 = torch.nn.Conv2d(128, 128, 3, stride=1, dilation=1, padding=1)
+                self.conv6 = torch.nn.Conv2d(128, 128, 3, stride=1, dilation=1, padding=1)
+                
+                self.conv = torch.nn.Conv2d(1024, 256, 1, stride=1, dilation=1, padding=0)
 
-            def forward(self, x):
-                tmp = self.unary_fn(self.conv(x))
-                return self.unary_fn2(self.conv2(tmp))
+            def forward(self, x: torch.Tensor):
+                x1 = self.conv1(x)
+                x2 = self.conv2(x)
+                x3 = self.conv3(x2)
+                x4 = self.conv4(x3)
+                x5 = self.conv5(x4)
+                x6 = self.conv6(x5)
 
-        mod = M().eval()
-        v = torch.randn((1, 3, 8, 8), dtype=torch.float32, requires_grad=False).add(1)
+                res = torch.cat([x1, x2, x3, x4, x5, x6], dim=1)
+
+                res = self.conv(res)
+                return res
+
+        mod = Model().eval()
+        v = torch.randn((40, 512, 40, 40), dtype=torch.float32, requires_grad=False)
 
         def matcher_check_fn():
             # 1. Dequant-Conv2D pattern matched in quantization weight prepack * 2
             self.assertEqual(
-                counters["inductor"]["qconv2d_weight_prepack_matcher_count"], 2
+                counters["inductor"]["qconv2d_weight_prepack_matcher_count"], 7
             )
             # 2. QConv2D Unary fusion in post-grad fusion pass * 2
-            self.assertEqual(counters["inductor"]["qconv2d_unary_matcher_count"], 2)
+            self.assertEqual(counters["inductor"]["qconv2d_unary_matcher_count"], 6)
             if qconv2d_unary_matcher_nodes:
                 self.assertEqual(
                     counters["inductor"]["qconv2d_unary_matcher_nodes"],
