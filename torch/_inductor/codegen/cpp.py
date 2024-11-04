@@ -4568,6 +4568,12 @@ class CppScheduling(BaseScheduling):
         # not use BracesBuffer, so we have no good indicator of a C++ buffer atm.
         src_code = src_code.replace("#pragma CMT", "//")
 
+        
+        # For profile name:
+        if len(nodes) > 0 and hasattr(nodes[0], "node") and isinstance(nodes[0].node, ir.CppTemplateBuffer):
+            src_code = re.sub(r'(RECORD_FUNCTION\("template[^"]*?)(_\d+)"', r'\1"', src_code)
+        
+
         compile_wrapper = IndentedBuffer()
         args = self.kernel_group.args if kernel_args is None else kernel_args
         _, _, arg_types = args.cpp_argdefs()

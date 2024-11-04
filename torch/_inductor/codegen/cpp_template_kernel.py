@@ -169,7 +169,7 @@ class CppTemplateKernel(CppKernel):
         if config.cpp.enable_kernel_profile:
             graph_id = V.graph.graph_id
             prefix = "graph_" + str(graph_id) + "_" if graph_id is not None else ""
-            return f'RECORD_FUNCTION("{prefix}{self.kernel_name}", c10::ArrayRef<c10::IValue>({{}}));'
+            return f'RECORD_FUNCTION("template_{prefix}{self.kernel_name}", c10::ArrayRef<c10::IValue>({{}}));'
         else:
             return ""
 
