@@ -129,6 +129,11 @@ def addmm_patterns_init():
         if "w3" in match.kwargs:
             weight_inputs.append("w3")
 
+        # TODO: temporarily disable linear-silu and linear-mul fusion
+        if "w3" not in match.kwargs:
+            print(match.kwargs["w1"].meta["val"].shape)
+            return False
+
         equal_shape_inputs = [weight_inputs]
 
         if "b1" in match.kwargs:
