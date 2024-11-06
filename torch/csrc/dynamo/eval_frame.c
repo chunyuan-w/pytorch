@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 PyObject* guard_error_hook = NULL;
-const char* cache_lookup_profiler_str = "TorchDynamo Cache Lookup";
+const char* cache_lookup_profiler_str = "TorchDynamo-Cache-Lookup";
 
 static int active_dynamo_threads = 0;
 
