@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <ATen/record_function.h>
 
 // WARNING: Be careful when adding new includes here. This header will be used
 // in model.so, and should not refer to any aten/c10 headers except the stable
@@ -81,6 +82,7 @@ class RAIIAtenTensorHandle {
   }
 
   AtenTensorHandle release() {
+    RECORD_FUNCTION("overhead_release", c10::ArrayRef<c10::IValue>());     
     return handle_.release();
   }
 
@@ -89,6 +91,7 @@ class RAIIAtenTensorHandle {
   }
 
   void reset() {
+    RECORD_FUNCTION("overhead_reset", c10::ArrayRef<c10::IValue>());     
     handle_.reset();
   }
 

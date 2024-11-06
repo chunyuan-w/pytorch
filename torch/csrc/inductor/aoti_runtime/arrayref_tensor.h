@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <ATen/record_function.h>
 
 namespace torch::aot_inductor {
 
@@ -222,6 +223,7 @@ class ArrayRefTensor {
   // We need to look the same as RAIIAtenTensorHandle, which returns
   // an owning AtenTensorHandle from release(). So, we allocate one!
   AtenTensorHandle release() {
+    RECORD_FUNCTION("overhead_expensiveCopyToTensor", c10::ArrayRef<c10::IValue>());     
     return expensiveCopyToTensor();
   }
 
@@ -341,18 +343,23 @@ inline ArrayRefTensor<T>& unwrap_raii_handle_if_needed(
 
 inline RAIIAtenTensorHandle wrap_with_raii_handle_if_needed(
     AtenTensorHandle handle) {
+  RECORD_FUNCTION("overhead_wrap_with_raii_handle_if_needed1", c10::ArrayRef<c10::IValue>());          
   return RAIIAtenTensorHandle(handle);
 }
 
 template <typename T>
 inline const ArrayRefTensor<T>& wrap_with_raii_handle_if_needed(
     const ArrayRefTensor<T>& tensor) {
+  RECORD_FUNCTION("overhead_wrap_with_raii_handle_if_needed2", c10::ArrayRef<c10::IValue>());          
+
   return tensor;
 }
 
 template <typename T>
 inline ArrayRefTensor<T>& wrap_with_raii_handle_if_needed(
     ArrayRefTensor<T>& tensor) {
+  RECORD_FUNCTION("overhead_wrap_with_raii_handle_if_needed3", c10::ArrayRef<c10::IValue>());          
+
   return tensor;
 }
 

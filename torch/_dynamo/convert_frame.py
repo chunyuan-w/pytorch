@@ -842,7 +842,7 @@ def _compile(
         )
 
         compile_id_str = str(compile_id) if compile_id is not None else "Unknown"
-        annotation_str = "Torch-Compiled Region: " + compile_id_str
+        annotation_str = "Torch-Compiled-Region:" + compile_id_str
         guarded_code = GuardedCode(
             out_code, check_fn.guard_manager, compile_id, annotation_str  # type: ignore[arg-type]
         )

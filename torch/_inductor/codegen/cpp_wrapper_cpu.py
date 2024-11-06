@@ -1805,6 +1805,7 @@ class CppWrapperCpu(PythonWrapperCodegen):
 
         scoped_lines.writeline("{")
         with scoped_lines.indent():
+            scoped_lines.writeline('RECORD_FUNCTION("overhead_load_custom_op", c10::ArrayRef<c10::IValue>());')
             scoped_lines.writeline("py::gil_scoped_acquire acquire;")
             scoped_lines.writelines(lines_in_scope.split("\n"))
         scoped_lines.writelines("}")
