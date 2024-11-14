@@ -402,13 +402,17 @@ class CppMHATemplate(CppTemplate):
         class PlaceholderSubstitution(V.WrapperHandler):  # type: ignore[name-defined]
             self.name = name
 
+            # TODO: we didn't change the load store here
+            #       just leave the code here in case we
+            #       need to override it
             def load(self, name: str, index: sympy.Expr):
-                return f"({fixed_inputs[name]})"
+                # return f"({fixed_inputs[name]})"
+                return self._inner.load(name, index)
 
-            def indirect_indexing(self, index_var, size, check, wrap_neg=True):
-                return sympy_index_symbol(str(index_var))
+            def store(self, name, index, value, mode=None):
+                return self._inner.store(name, index, value, mode)
 
-        with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
+        # with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
         #     assert isinstance(
         #         subgraph_buffer, ir.ComputedBuffer
         #     ), f"Expected the subgraph to be a ComputedBuffer, got {type(subgraph_buffer)}"
@@ -426,52 +430,55 @@ class CppMHATemplate(CppTemplate):
         # subgraph_buffer.operation_name = subgraph_buffer.name
         # scheduler = Scheduler([subgraph_buffer])
 
-            from ..loop_body import LoopBody
-            #TODO: what should be the output name??
-            output_name = "arg0_1"
-            # output_name = "buf0"
+        from ..loop_body import LoopBody
+        #TODO: what should be the output name??
+        output_name = "arg0_1"
+        # output_name = "buf0"
 
-            from .cpp import CppKernel, CppKernelProxy, KernelGroup
-            kernel_group = KernelGroup()
-            # kernel_group.args = self.args
-            cpp_kernel_proxy = CppKernelProxy(kernel_group)
-            bodies = []
-            var_sizes_list = []
+        from .cpp import CppKernel, CppKernelProxy, KernelGroup
+        kernel_group = KernelGroup()
+        # kernel_group.args = self.args
+        cpp_kernel_proxy = CppKernelProxy(kernel_group)
+        bodies = []
+        var_sizes_list = []
 
-            # var_sizes = (tuple([]), ())
-            var_sizes = (tuple([]))
-            output_index = 0
-            var_ranges = {
-                sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
-                # for i, sz in enumerate(var_sizes[0])
-                for i, sz in enumerate(var_sizes)
-            }        
-            def fn(*args):
-                # assert len(args) == 5
-                # assert len(args[0]) == len(var_sizes[0])
-                # assert len(args[1]) == 0
+        # var_sizes = (tuple([]), ())
+        var_sizes = (tuple([]))
+        output_index = 0
+        var_ranges = {
+            sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
+            # for i, sz in enumerate(var_sizes[0])
+            for i, sz in enumerate(var_sizes)
+        }        
+        def fn(*args):
+            # assert len(args) == 5
+            # assert len(args[0]) == len(var_sizes[0])
+            # assert len(args[1]) == 0
+            # TODO: this ops handler could be removed
+            #       if no need to overrider the load and store
+            with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
                 V.ops.store(
                     output_name,
                     output_index,
                     subgraph_buffer_data.make_loader()(args).value,
                 )
-            
-            body = LoopBody(
-                fn,
-                # (list(var_ranges.keys()), ()),
-                (list(var_ranges.keys())),
-                var_ranges,
-                list(var_ranges.keys()),
-                tuple(),
-            )
+        
+        body = LoopBody(
+            fn,
+            # (list(var_ranges.keys()), ()),
+            (list(var_ranges.keys())),
+            var_ranges,
+            list(var_ranges.keys()),
+            tuple(),
+        )
 
-            bodies.append(body)
-            # var_sizes_list.append(var_sizes)
-            var_sizes_list.append((var_sizes, ()))
+        bodies.append(body)
+        # var_sizes_list.append(var_sizes)
+        var_sizes_list.append((var_sizes, ()))
 
 
-            cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
-            kernel_group.finalize_kernel(cpp_kernel_proxy, [])
+        cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
+        kernel_group.finalize_kernel(cpp_kernel_proxy, [])
         return kernel_group.loops_code.getvalue()
 
         # return "//my test 5;"

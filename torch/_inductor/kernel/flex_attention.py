@@ -730,6 +730,7 @@ def flex_attention(
     score_mod_other_buffers = maybe_realize(score_mod_other_buffers)
     mask_mod_other_buffers = maybe_realize(mask_mod_other_buffers)
 
+    # TODO: name is hard-coded here for the subgraph
     placeholder_inps = [
         create_placeholder(name, dtype, query.get_device())
         for name, dtype in [
