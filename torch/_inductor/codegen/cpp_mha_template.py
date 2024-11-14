@@ -377,7 +377,7 @@ class CppMHATemplate(CppTemplate):
         template.maybe_append_choice(choices)
         return template
     def apply_score_mod(self, score, b, h, q_idx, kv_idx):
-        breakpoint()
+        # breakpoint()
         return self.score_mod.graph_module(score, b, h, q_idx, kv_idx).item()
     def render(  # type: ignore[override,return]
         self,
