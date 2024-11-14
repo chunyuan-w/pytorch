@@ -774,6 +774,7 @@ def flex_attention(
         layout=layout,
         scale=scale,
         score_mod=subgraph,
+        subgraph_buffer=subgraph_buffer,
         block_mask=block_mask)
 
     inputs_for_autotuning = (

@@ -177,6 +177,8 @@ GEMM_TEMPLATE = r"""
               qk_data,
               kvBlockSize);
             
+            {{template.modification(subgraph_buffer)}}
+            
             // Apply causal mask, fill unused with -inf
             if (is_causal && num_keys - n <= kvSplitSize) {
               for (const auto row : c10::irange(qBlockSize)) {
@@ -338,6 +340,7 @@ class CppMHATemplate(CppTemplate):
         layout: ir.Layout,
         scale,
         score_mod,
+        subgraph_buffer,
         block_mask
     ) -> None:
         assert layout.dtype in [torch.float, torch.bfloat16, torch.half, torch.uint8]
@@ -349,6 +352,7 @@ class CppMHATemplate(CppTemplate):
         )
         self.scale = scale
         self.score_mod = score_mod
+        self.subgraph_buffer=subgraph_buffer
         self.block_mask = block_mask
     @staticmethod
     def add_choices(
@@ -357,6 +361,7 @@ class CppMHATemplate(CppTemplate):
         layout,
         scale,
         score_mod,
+        subgraph_buffer,
         block_mask
     ):
         def preprocessor(input_nodes, layout):
@@ -372,10 +377,14 @@ class CppMHATemplate(CppTemplate):
             layout=layout,
             scale= scale,
             score_mod=score_mod,
+            subgraph_buffer=subgraph_buffer,
             block_mask=block_mask
         )
         template.maybe_append_choice(choices)
         return template
+    def modification(self, subgraph_buffer):
+        return "//my test 3;"
+    
     def apply_score_mod(self, score, b, h, q_idx, kv_idx):
         # breakpoint()
         return self.score_mod.graph_module(score, b, h, q_idx, kv_idx).item()
@@ -441,6 +450,7 @@ class CppMHATemplate(CppTemplate):
             output = buf_out,
             kernel=kernel,
             num_thread=num_threads,
+            subgraph_buffer=self.subgraph_buffer,
         )
         with contextlib.ExitStack() as stack:
             return self._template_from_string(GEMM_TEMPLATE).render(**options)
