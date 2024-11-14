@@ -409,13 +409,13 @@ class CppMHATemplate(CppTemplate):
                 return sympy_index_symbol(str(index_var))
 
         with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
-            assert isinstance(
-                subgraph_buffer, ir.ComputedBuffer
-            ), f"Expected the subgraph to be a ComputedBuffer, got {type(subgraph_buffer)}"
-            if isinstance(subgraph_buffer.data, ir.InputBuffer):
-                out = subgraph_buffer.data.make_loader()(())
-            else:
-                out = subgraph_buffer.data.inner_fn(())
+        #     assert isinstance(
+        #         subgraph_buffer, ir.ComputedBuffer
+        #     ), f"Expected the subgraph to be a ComputedBuffer, got {type(subgraph_buffer)}"
+        #     if isinstance(subgraph_buffer.data, ir.InputBuffer):
+        #         out = subgraph_buffer.data.make_loader()(())
+        #     else:
+        #         out = subgraph_buffer.data.inner_fn(())
 
 
         # _, body, _ = subgraph_buffer.get_default_sizes_body()
@@ -426,34 +426,55 @@ class CppMHATemplate(CppTemplate):
         # subgraph_buffer.operation_name = subgraph_buffer.name
         # scheduler = Scheduler([subgraph_buffer])
 
-        # from ..loop_body import LoopBody
-        # output_name = "tmp_name"
-        # var_sizes = (tuple([]), ())
-        # output_index = 0
-        # var_ranges = {
-        #     sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
-        #     for i, sz in enumerate(var_sizes[0])
-        # }        
-        # def fn(*args):
-        #     # assert len(args) == 5
-        #     # assert len(args[0]) == len(var_sizes[0])
-        #     # assert len(args[1]) == 0
-        #     V.ops.store(
-        #         output_name,
-        #         output_index,
-        #         subgraph_buffer_data.make_loader()(args).value,
-        #     )
-        
-        # body = LoopBody(
-        #     fn,
-        #     (list(var_ranges.keys()), ()),
-        #     var_ranges,
-        #     list(var_ranges.keys()),
-        #     tuple(),
-        # )
+            from ..loop_body import LoopBody
+            #TODO: what should be the output name??
+            output_name = "arg0_1"
+            # output_name = "buf0"
+
+            from .cpp import CppKernel, CppKernelProxy, KernelGroup
+            kernel_group = KernelGroup()
+            # kernel_group.args = self.args
+            cpp_kernel_proxy = CppKernelProxy(kernel_group)
+            bodies = []
+            var_sizes_list = []
+
+            # var_sizes = (tuple([]), ())
+            var_sizes = (tuple([]))
+            output_index = 0
+            var_ranges = {
+                sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
+                # for i, sz in enumerate(var_sizes[0])
+                for i, sz in enumerate(var_sizes)
+            }        
+            def fn(*args):
+                # assert len(args) == 5
+                # assert len(args[0]) == len(var_sizes[0])
+                # assert len(args[1]) == 0
+                V.ops.store(
+                    output_name,
+                    output_index,
+                    subgraph_buffer_data.make_loader()(args).value,
+                )
+            
+            body = LoopBody(
+                fn,
+                # (list(var_ranges.keys()), ()),
+                (list(var_ranges.keys())),
+                var_ranges,
+                list(var_ranges.keys()),
+                tuple(),
+            )
+
+            bodies.append(body)
+            # var_sizes_list.append(var_sizes)
+            var_sizes_list.append((var_sizes, ()))
 
 
-        return "//my test 4;"
+            cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
+            kernel_group.finalize_kernel(cpp_kernel_proxy, [])
+        return kernel_group.loops_code.getvalue()
+
+        # return "//my test 5;"
     
     def apply_score_mod(self, score, b, h, q_idx, kv_idx):
         # breakpoint()
