@@ -172,6 +172,7 @@ def deduce_dtype_for_cpp_cse_variable(name, *args, **kwargs):
         return functools.reduce(
             torch.promote_types,  # type: ignore[arg-type]
             [arg.dtype for arg in args if isinstance(arg, CppCSEVariable)],
+            torch.int, # TODO: fix me for the m - n sub OP
         )
 
 

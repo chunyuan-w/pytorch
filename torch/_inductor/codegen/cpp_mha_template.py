@@ -383,7 +383,77 @@ class CppMHATemplate(CppTemplate):
         template.maybe_append_choice(choices)
         return template
     def modification(self, subgraph_buffer):
-        return "//my test 3;"
+        fixed_inputs = {
+            "score": "qk_data",
+            "b": "off_z",
+            "h": "off_h",
+            "m": "m",
+            "n": "n",
+        }
+        
+        assert isinstance(subgraph_buffer, ir.ComputedBuffer)
+        subgraph_buffer_data = subgraph_buffer.data
+        assert isinstance(subgraph_buffer_data, ir.Pointwise), subgraph_buffer_data
+        
+
+        import sympy
+        subgraph_number = 0
+        name = f"PlaceholderSubstitution_{subgraph_number}"
+        class PlaceholderSubstitution(V.WrapperHandler):  # type: ignore[name-defined]
+            self.name = name
+
+            def load(self, name: str, index: sympy.Expr):
+                return f"({fixed_inputs[name]})"
+
+            def indirect_indexing(self, index_var, size, check, wrap_neg=True):
+                return sympy_index_symbol(str(index_var))
+
+        with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
+            assert isinstance(
+                subgraph_buffer, ir.ComputedBuffer
+            ), f"Expected the subgraph to be a ComputedBuffer, got {type(subgraph_buffer)}"
+            if isinstance(subgraph_buffer.data, ir.InputBuffer):
+                out = subgraph_buffer.data.make_loader()(())
+            else:
+                out = subgraph_buffer.data.inner_fn(())
+
+
+        # _, body, _ = subgraph_buffer.get_default_sizes_body()
+        # subgraph_buffer.data.inner_fn([])
+        
+        # from ..scheduler import Scheduler
+        # subgraph_buffer.name = "score"
+        # subgraph_buffer.operation_name = subgraph_buffer.name
+        # scheduler = Scheduler([subgraph_buffer])
+
+        # from ..loop_body import LoopBody
+        # output_name = "tmp_name"
+        # var_sizes = (tuple([]), ())
+        # output_index = 0
+        # var_ranges = {
+        #     sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
+        #     for i, sz in enumerate(var_sizes[0])
+        # }        
+        # def fn(*args):
+        #     # assert len(args) == 5
+        #     # assert len(args[0]) == len(var_sizes[0])
+        #     # assert len(args[1]) == 0
+        #     V.ops.store(
+        #         output_name,
+        #         output_index,
+        #         subgraph_buffer_data.make_loader()(args).value,
+        #     )
+        
+        # body = LoopBody(
+        #     fn,
+        #     (list(var_ranges.keys()), ()),
+        #     var_ranges,
+        #     list(var_ranges.keys()),
+        #     tuple(),
+        # )
+
+
+        return "//my test 4;"
     
     def apply_score_mod(self, score, b, h, q_idx, kv_idx):
         # breakpoint()

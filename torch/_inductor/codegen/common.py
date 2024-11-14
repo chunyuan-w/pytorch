@@ -2255,8 +2255,13 @@ class Kernel(CodeGen):
                 Else, if the variable when codegen'ing another op, we try to compute its bounds
                 """
                 from ..select_algorithm import TritonTemplateKernel
+                from .cpp_template_kernel import CppTemplateKernel
 
                 if isinstance(V.kernel, TritonTemplateKernel):
+                    return ValueRanges.unknown()
+
+                # TODO: V.interpreter is Nullhandler
+                if isinstance(V.kernel, CppTemplateKernel):
                     return ValueRanges.unknown()
 
                 fx_node = V.interpreter.current_node
