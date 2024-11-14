@@ -411,6 +411,7 @@ class TritonTemplateKernel(TritonKernel):
             return texpr(self.rename_indexing(val[index]))
         return ", ".join([texpr(self.rename_indexing(i)) for i in val])
 
+    # Triton modification for the score function
     def modification(
         self, subgraph_number: int, output_name: str, **fixed_inputs
     ) -> str:
