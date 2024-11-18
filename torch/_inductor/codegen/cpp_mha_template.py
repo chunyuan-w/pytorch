@@ -176,7 +176,16 @@ GEMM_TEMPLATE = r"""
               static_cast<accum_t>(0),
               qk_data,
               kvBlockSize);
-            
+
+
+            // TODO: hard-code the buffer here
+            std::vector<int64_t> a = {0};
+            std::vector<int64_t> b = {0};
+            accum_t* in_ptr0 = qk_data;
+            int64_t* in_ptr1 = a.data();
+            int64_t* in_ptr2 = b.data();
+            accum_t* out_ptr0 = in_ptr0;
+
             {{template.modification(subgraph_buffer)}}
             
             // Apply causal mask, fill unused with -inf
