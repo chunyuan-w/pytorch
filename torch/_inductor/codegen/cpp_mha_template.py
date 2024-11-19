@@ -390,36 +390,12 @@ class CppMHATemplate(CppTemplate):
         return template
 
     def modification(self, subgraph_buffer):
-        fixed_inputs = {
-            "score": "qk_data",
-            "b": "off_z",
-            "h": "off_h",
-            "m": "m",
-            "n": "n",
-        }
-
         assert isinstance(subgraph_buffer, ir.ComputedBuffer)
         subgraph_buffer_data = subgraph_buffer.data
         assert isinstance(subgraph_buffer_data, ir.Pointwise), subgraph_buffer_data
 
-        import sympy
-        subgraph_number = 0
-        name = f"PlaceholderSubstitution_{subgraph_number}"
-        class PlaceholderSubstitution(V.WrapperHandler):  # type: ignore[name-defined]
-            self.name = name
-
-            # TODO: we didn't change the load store here
-            #       just leave the code here in case we
-            #       need to override it
-            def load(self, name: str, index: sympy.Expr):
-                # return f"({fixed_inputs[name]})"
-                return self._inner.load(name, index)
-
-            def store(self, name, index, value, mode=None):
-                return self._inner.store(name, index, value, mode)
-
         from ..loop_body import LoopBody
-        #TODO: what should be the output name??
+        # TODO: what should be the output name??
         output_name = "arg0_1"
 
         from .cpp import CppKernel, CppKernelProxy, KernelGroup
@@ -435,16 +411,14 @@ class CppMHATemplate(CppTemplate):
             for i, sz in enumerate(var_sizes)
         }        
         def fn(*args):
-            with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
-                V.ops.store(
-                    output_name,
-                    output_index,
-                    subgraph_buffer_data.make_loader()(args).value,
-                )
+            V.ops.store(
+                output_name,
+                output_index,
+                subgraph_buffer_data.make_loader()(args).value,
+            )
 
         body = LoopBody(
             fn,
-            # (list(var_ranges.keys()), ()),
             (list(var_ranges.keys())),
             var_ranges,
             list(var_ranges.keys()),
