@@ -732,11 +732,11 @@ def flex_attention(
     placeholder_inps = [
         create_placeholder(name, dtype, query.get_device())
         for name, dtype in [
-            ("score", query.get_dtype()),
-            ("b", torch.int32),
-            ("h", torch.int32),
-            ("m", torch.int32),
-            ("n", torch.int32),
+            ("arg0_1", query.get_dtype()),
+            ("arg1_1", torch.int32),
+            ("arg2_1", torch.int32),
+            ("arg3_1", torch.int32),
+            ("arg4_1", torch.int32),
         ]
     ]
     subgraph_buffer = build_subgraph_buffer(
@@ -771,6 +771,7 @@ def flex_attention(
         layout=layout,
         scale=scale,
         score_mod=subgraph,
+        subgraph_buffer=subgraph_buffer,
         block_mask=block_mask)
 
     inputs_for_autotuning = (

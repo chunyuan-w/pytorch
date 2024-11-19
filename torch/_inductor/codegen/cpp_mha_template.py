@@ -176,7 +176,15 @@ GEMM_TEMPLATE = r"""
               static_cast<accum_t>(0),
               qk_data,
               kvBlockSize);
-            
+
+            std::vector<int64_t> a = {0};
+            std::vector<int64_t> b = {0};
+            accum_t* in_ptr0 = qk_data;
+            int64_t* in_ptr1 = a.data();
+            int64_t* in_ptr2 = b.data();
+            accum_t* out_ptr0 = in_ptr0;
+            {{template.modification(subgraph_buffer)}}
+
             // Apply causal mask, fill unused with -inf
             if (is_causal && num_keys - n <= kvSplitSize) {
               for (const auto row : c10::irange(qBlockSize)) {
@@ -338,6 +346,7 @@ class CppMHATemplate(CppTemplate):
         layout: ir.Layout,
         scale,
         score_mod,
+        subgraph_buffer,
         block_mask
     ) -> None:
         assert layout.dtype in [torch.float, torch.bfloat16, torch.half, torch.uint8]
@@ -349,6 +358,7 @@ class CppMHATemplate(CppTemplate):
         )
         self.scale = scale
         self.score_mod = score_mod
+        self.subgraph_buffer=subgraph_buffer
         self.block_mask = block_mask
     @staticmethod
     def add_choices(
@@ -357,6 +367,7 @@ class CppMHATemplate(CppTemplate):
         layout,
         scale,
         score_mod,
+        subgraph_buffer,
         block_mask
     ):
         def preprocessor(input_nodes, layout):
@@ -372,10 +383,81 @@ class CppMHATemplate(CppTemplate):
             layout=layout,
             scale= scale,
             score_mod=score_mod,
+            subgraph_buffer=subgraph_buffer,
             block_mask=block_mask
         )
         template.maybe_append_choice(choices)
         return template
+
+    def modification(self, subgraph_buffer):
+        fixed_inputs = {
+            "score": "qk_data",
+            "b": "off_z",
+            "h": "off_h",
+            "m": "m",
+            "n": "n",
+        }
+
+        assert isinstance(subgraph_buffer, ir.ComputedBuffer)
+        subgraph_buffer_data = subgraph_buffer.data
+        assert isinstance(subgraph_buffer_data, ir.Pointwise), subgraph_buffer_data
+
+        import sympy
+        subgraph_number = 0
+        name = f"PlaceholderSubstitution_{subgraph_number}"
+        class PlaceholderSubstitution(V.WrapperHandler):  # type: ignore[name-defined]
+            self.name = name
+
+            # TODO: we didn't change the load store here
+            #       just leave the code here in case we
+            #       need to override it
+            def load(self, name: str, index: sympy.Expr):
+                # return f"({fixed_inputs[name]})"
+                return self._inner.load(name, index)
+
+            def store(self, name, index, value, mode=None):
+                return self._inner.store(name, index, value, mode)
+
+        from ..loop_body import LoopBody
+        #TODO: what should be the output name??
+        output_name = "arg0_1"
+
+        from .cpp import CppKernel, CppKernelProxy, KernelGroup
+        kernel_group = KernelGroup()
+        cpp_kernel_proxy = CppKernelProxy(kernel_group)
+        bodies = []
+        var_sizes_list = []
+
+        var_sizes = (tuple([]))
+        output_index = 0
+        var_ranges = {
+            sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
+            for i, sz in enumerate(var_sizes)
+        }        
+        def fn(*args):
+            with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
+                V.ops.store(
+                    output_name,
+                    output_index,
+                    subgraph_buffer_data.make_loader()(args).value,
+                )
+
+        body = LoopBody(
+            fn,
+            # (list(var_ranges.keys()), ()),
+            (list(var_ranges.keys())),
+            var_ranges,
+            list(var_ranges.keys()),
+            tuple(),
+        )
+
+        bodies.append(body)
+        var_sizes_list.append((var_sizes, ()))
+
+        cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
+        kernel_group.finalize_kernel(cpp_kernel_proxy, [])
+        return kernel_group.loops_code.getvalue()    
+    
     def apply_score_mod(self, score, b, h, q_idx, kv_idx):
         # breakpoint()
         return self.score_mod.graph_module(score, b, h, q_idx, kv_idx).item()
@@ -441,6 +523,7 @@ class CppMHATemplate(CppTemplate):
             output = buf_out,
             kernel=kernel,
             num_thread=num_threads,
+            subgraph_buffer=self.subgraph_buffer,
         )
         with contextlib.ExitStack() as stack:
             return self._template_from_string(GEMM_TEMPLATE).render(**options)
