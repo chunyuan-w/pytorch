@@ -147,6 +147,8 @@ ATTENTION_TEMPLATE = r"""
               qk_data,
               kvBlockSize);
 
+            printf("my qBlockSize :%ld  ", qBlockSize);
+            printf("my rkvBlockSize :%ld  ", rkvBlockSize);
             // apply score mod function
             for (int64_t row = 0; row < qBlockSize; ++row) {
               for(int col = 0; col< rkvBlockSize; col++){
@@ -185,7 +187,7 @@ ATTENTION_TEMPLATE = r"""
                 {%- endif %}
                 std::vector<int64_t> temp = {0};
                 int64_t* out_ptr0 = temp.data();
-                {{template.modification(mask_mod)}}
+                // TODO: add template.modification(mask_mod) back
                 *qk_block = *out_ptr0!=0 ?  *qk_block : -std::numeric_limits<accum_t>::infinity();
                 }
             }
@@ -333,12 +335,24 @@ class CppMHATemplate(CppTemplate):
         bodies = []
         var_sizes_list = []
 
-        var_sizes = (tuple([]))
-        output_index = 0
+        # TODO: hard-code for test
+        qBlockSize = 16
+        rkvBlockSize = 128
+        dst_size = [qBlockSize, rkvBlockSize]
+
+        var_sizes = (tuple(dst_size))
         var_ranges = {
             sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
             for i, sz in enumerate(var_sizes)
-        }        
+        }
+
+        # TODO: fix hard-coded device and dtype
+        device = torch.device("cpu")
+        dtype = torch.float32
+
+        dst_layout = ir.FixedLayout(device, dtype, dst_size, ir.FlexibleLayout.contiguous_strides(dst_size))
+        output_index = dst_layout.make_indexer()(var_ranges.keys())
+
         def fn(*args):
             # with V.set_ops_handler(PlaceholderSubstitution(V.ops)):
             V.ops.store(

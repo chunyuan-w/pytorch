@@ -67,10 +67,10 @@ def flex_attention_grid(batch_size, q_heads, num_queries, d_model, meta):
 
 
 def create_placeholder(
-    name: str, dtype: torch.dtype, device: torch.device
+    name: str, dtype: torch.dtype, device: torch.device, size: Optional[List[int]] = None,
 ) -> TensorBox:
     """Creates a placeholder input buffers for producing subgraph_output."""
-    input_buffer = InputBuffer(name=name, layout=FixedLayout(device, dtype, [], []))
+    input_buffer = InputBuffer(name=name, layout=FixedLayout(device, dtype, size if size else [], FlexibleLayout.contiguous_strides(size) if size else []))
     return TensorBox.create(input_buffer)
 
 
@@ -743,21 +743,28 @@ def flex_attention(
     ) = block_mask
 
     if query.get_device().type == "cpu":
+        # TODO: hard-code for test
+        qBlockSize = 16
+        rkvBlockSize = 128
+        
+        
         score_mod_other_buffers = maybe_realize(score_mod_other_buffers)
         mask_mod_other_buffers = maybe_realize(mask_mod_other_buffers)
         placeholder_inps = [
-            create_placeholder(name, dtype, query.get_device())
-            for name, dtype in [
-                ("arg0_1", query.get_dtype()),
-                ("arg1_1", torch.int32),
-                ("arg2_1", torch.int32),
-                ("arg3_1", torch.int32),
-                ("arg10_1", torch.int32), # TODO: fix the random picked name here: arg10_1
+            create_placeholder(name, dtype, query.get_device(), size)
+            for name, dtype, size in [
+                ("arg0_1", query.get_dtype(), [qBlockSize, rkvBlockSize]),
+                # ("arg0_1", query.get_dtype()),
+                ("arg1_1", torch.int32, []), # TODO: add size
+                ("arg2_1", torch.int32, []), # TODO: add size
+                ("arg3_1", torch.int32, [qBlockSize, 1]),
+                ("arg10_1", torch.int32, [1, rkvBlockSize]), # TODO: fix the random picked name here: arg10_1
             ]
         ]
         subgraph_buffer = build_subgraph_buffer(
             placeholder_inps + list(score_mod_other_buffers), subgraph
         )
+        # TODO: add size for the below buffer
         mask_graph_placeholder_inps = [
             create_placeholder(name, dtype, query.get_device())
             for name, dtype in [
