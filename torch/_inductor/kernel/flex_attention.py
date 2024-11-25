@@ -759,10 +759,10 @@ def flex_attention(
         mask_graph_placeholder_inps = [
             create_placeholder(name, dtype, query.get_device())
             for name, dtype in [
-                ("b_mask", torch.int32),
-                ("h_mask", torch.int32),
-                ("q_idx_mask", torch.int32),
-                ("kv_idx_mask", torch.int32),
+                ("b", torch.int32),
+                ("h", torch.int32),
+                ("q_idx", torch.int32),
+                ("kv_idx", torch.int32),
             ]
         ]
         mask_graph_buffer = build_subgraph_buffer(

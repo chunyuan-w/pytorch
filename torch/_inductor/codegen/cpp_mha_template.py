@@ -180,7 +180,7 @@ ATTENTION_TEMPLATE = r"""
                 auto in_ptr3 = q_idx.data();
                 auto in_ptr4 = kv_idx.data();
                 {%- if mask_mod_other_buffers %}
-                auto in_ptr9 = mask_other;
+                auto in_ptr5 = mask_other;
                 {%- endif %}
                 accum_t* out_ptr0 = in_ptr0;
                 {{template.modification(score_mod)}}
@@ -195,12 +195,12 @@ ATTENTION_TEMPLATE = r"""
                 int64_t phisical_kv_idx = *kv_logical_data * kvBlockSize + col;
                 std::vector<int64_t> kv_idx = {phisical_kv_idx};
                 accum_t* qk_block = qk_data + row * cur_kvSplitSize + col;
-                auto in_ptr5 = b_idx.data();
-                auto in_ptr6 = h_idx.data();
-                auto in_ptr7 = q_idx.data();
-                auto in_ptr8 = kv_idx.data();
+                auto in_ptr1 = b_idx.data();
+                auto in_ptr2 = h_idx.data();
+                auto in_ptr3 = q_idx.data();
+                auto in_ptr4 = kv_idx.data();
                 {%- if mask_mod_other_buffers %}
-                auto in_ptr9 = mask_other;
+                auto in_ptr5 = mask_other;
                 {%- endif %}                
                 std::vector<int64_t> temp = {0};
                 int64_t* out_ptr0 = temp.data();
@@ -331,15 +331,11 @@ class CppMHATemplate(CppTemplate):
             "h": "in_ptr2",
             "q_idx": "in_ptr3",
             "kv_idx": "in_ptr4",
-            "b_mask": "in_ptr5",
-            "h_mask": "in_ptr6",
-            "q_idx_mask": "in_ptr7",
-            "kv_idx_mask": "in_ptr8",            
         }
         if has_other_buf:
             kernel_input_args.update({
-                score_other_buf_name: "in_ptr9",
-                mask_other_buf_name: "in_ptr9",
+                score_other_buf_name: "in_ptr5",
+                mask_other_buf_name: "in_ptr5",
             })
 
         kernel_output_args = {
