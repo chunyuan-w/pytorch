@@ -195,10 +195,10 @@ ATTENTION_TEMPLATE = r"""
                 int64_t phisical_kv_idx = *kv_logical_data * kvBlockSize + col;
                 std::vector<int64_t> kv_idx = {phisical_kv_idx};
                 accum_t* qk_block = qk_data + row * cur_kvSplitSize + col;
-                auto in_ptr1 = b_idx.data();
-                auto in_ptr2 = h_idx.data();
-                auto in_ptr3 = q_idx.data();
-                auto in_ptr10 = kv_idx.data();
+                auto in_ptr5 = b_idx.data();
+                auto in_ptr6 = h_idx.data();
+                auto in_ptr7 = q_idx.data();
+                auto in_ptr8 = kv_idx.data();
                 {%- if mask_mod_other_buffers %}
                 auto in_ptr4 = mask_other;
                 {%- endif %}                
@@ -327,6 +327,10 @@ class CppMHATemplate(CppTemplate):
             "q_idx": "in_ptr3",
             "kv_idx": "in_ptr10",
             "arg4_1": "in_ptr4",
+            "b_mask": "in_ptr5",
+            "h_mask": "in_ptr6",
+            "q_idx_mask": "in_ptr7",
+            "kv_idx_mask": "in_ptr8",            
         }
 
         kernel_output_args = {
