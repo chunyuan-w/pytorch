@@ -178,9 +178,9 @@ ATTENTION_TEMPLATE = r"""
                 auto in_ptr1 = b_idx.data();
                 auto in_ptr2 = h_idx.data();
                 auto in_ptr3 = q_idx.data();
-                auto in_ptr10 = kv_idx.data();
+                auto in_ptr4 = kv_idx.data();
                 {%- if mask_mod_other_buffers %}
-                auto in_ptr4 = mask_other;
+                auto in_ptr9 = mask_other;
                 {%- endif %}
                 accum_t* out_ptr0 = in_ptr0;
                 {{template.modification(score_mod)}}
@@ -200,7 +200,7 @@ ATTENTION_TEMPLATE = r"""
                 auto in_ptr7 = q_idx.data();
                 auto in_ptr8 = kv_idx.data();
                 {%- if mask_mod_other_buffers %}
-                auto in_ptr4 = mask_other;
+                auto in_ptr9 = mask_other;
                 {%- endif %}                
                 std::vector<int64_t> temp = {0};
                 int64_t* out_ptr0 = temp.data();
@@ -309,6 +309,11 @@ class CppMHATemplate(CppTemplate):
         self.fake_buffers = fake_buffers
 
     def modification(self, subgraph_buffer):
+        has_other_buf = len(self.input_nodes) == 6
+        if has_other_buf:
+            score_other_buf_name = self.input_nodes[4].get_name()
+            mask_other_buf_name = self.input_nodes[5].get_name()
+
         assert isinstance(subgraph_buffer, ir.ComputedBuffer)
         subgraph_buffer_data = subgraph_buffer.data
         from ..loop_body import LoopBody
@@ -325,13 +330,17 @@ class CppMHATemplate(CppTemplate):
             "b": "in_ptr1",
             "h": "in_ptr2",
             "q_idx": "in_ptr3",
-            "kv_idx": "in_ptr10",
-            "arg4_1": "in_ptr4",
+            "kv_idx": "in_ptr4",
             "b_mask": "in_ptr5",
             "h_mask": "in_ptr6",
             "q_idx_mask": "in_ptr7",
             "kv_idx_mask": "in_ptr8",            
         }
+        if has_other_buf:
+            kernel_input_args.update({
+                score_other_buf_name: "in_ptr9",
+                mask_other_buf_name: "in_ptr9",
+            })
 
         kernel_output_args = {
             "buf0": "out_ptr0"
