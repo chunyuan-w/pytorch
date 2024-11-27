@@ -21,13 +21,17 @@ ATTENTION_TEMPLATE = r"""
 #include <ATen/native/CPUBlas.h>
 
 {%- set kernel_args = {"query": query, "key": key, "value": value, "kv_num_blocks": kv_num_blocks, "kv_indices": kv_indices, "full_kv_num_blocks": full_kv_num_blocks} %}
+{%- if score_mod_other_buffers is not none %}
 {%- for i in range(score_mod_other_buffers | length) %}
 {%- set _ = kernel_args.update({"score_others_" ~ i: score_mod_other_buffers[i]}) %}
 {%- endfor %}
+{%- endif %}
 
+{%- if mask_mod_other_buffers is not none %}
 {%- for i in range(mask_mod_other_buffers | length) %}
 {%- set _ = kernel_args.update({"mask_others_" ~ i: mask_mod_other_buffers[i]}) %}
 {%- endfor %}
+{%- endif %}
 {{kernel.def_kernel(inputs=kernel_args, outputs={"output": output})}}
 {
   // kv block size, q and kv split size
@@ -393,6 +397,8 @@ class CppMHATemplate(CppTemplate):
                 f"auto {ptr} = {name};"
                 for ptr, name in self.other_ptr_to_name.items()
             )
+        else:
+            return ""
 
     def modification(self, subgraph_buffer, output_name, output_idx):
         if self.has_other_buffer:
