@@ -208,7 +208,7 @@ ATTENTION_TEMPLATE = r"""
                 auto in_ptr2 = h_idx.data();
                 auto in_ptr3 = q_idx.data();
                 auto in_ptr4 = kv_idx.data();
-                {{template.generate_other_buffer("score_others", 5, 0, "len_score_other")}}
+                {{template.generate_other_buffer("score_others", 5, 0, "len_score_other", kernel.args)}}
                 accum_t* out_ptr{{score_buf_idx}} = in_ptr0;
                 {{template.modification(score_mod, score_buf_name, score_buf_idx)}}
                 }
@@ -229,7 +229,7 @@ ATTENTION_TEMPLATE = r"""
                 auto in_ptr2 = h_idx.data();
                 auto in_ptr3 = q_idx.data();
                 auto in_ptr4 = kv_idx.data();
-                {{template.generate_other_buffer("mask_others", 5, -1, "len_mask_other")}}
+                {{template.generate_other_buffer("mask_others", 5, -1, "len_mask_other", kernel.args)}}
                 std::vector<int64_t> temp = {0};
                 int64_t* out_ptr{{mask_buf_idx}} = temp.data();
                 {{template.modification(mask_mod, mask_buf_name, mask_buf_idx)}}
@@ -334,6 +334,7 @@ class CppMHATemplate(CppTemplate):
         fake_buffers,
         len_score_other,
         len_mask_other,
+        other_buffer_name_to_buffer,
     ) -> None:
         assert layout.dtype in [torch.float, torch.float16, torch.bfloat16]
         super().__init__("mha", input_nodes, layout, parallel_num_threads())
@@ -359,15 +360,39 @@ class CppMHATemplate(CppTemplate):
         self.fake_buffers = fake_buffers
         self.len_score_other = len_score_other
         self.len_mask_other = len_mask_other
+        self.other_buffer_name_to_buffer = other_buffer_name_to_buffer
+        
+        # TODO: is this needed to be set to self?
+        self.other_ptr_to_name = {}
+        
+        self.other_ptr_to_arg = {}
 
-    def generate_other_buffer(self, buf_list, start_ptr, start_offset, len_attr):
+    def generate_other_buffer(self, buf_list, start_ptr, start_offset, len_attr, kernel_args):
+        # TODO: remove duplicated code
+        def get_arg(name):
+            return self.other_buffer_name_to_buffer.get(name)
+
+        def get_arg_name(name):
+            arg = self.other_buffer_name_to_buffer.get(name)
+            return kernel_args.input_buffers.get(arg)
+        
         if self.has_other_buffer:
             if start_offset == -1:
                 start_offset = getattr(self, len_attr)
+            
+            # TODO: remove dupliacted code
+            for i in range(getattr(self, len_attr)):
+                if f"in_ptr{start_ptr + start_offset + i}" not in self.other_ptr_to_name:
+                    self.other_ptr_to_name.update({f"in_ptr{start_ptr + start_offset + i}": f"{get_arg_name(f'{buf_list}_{i}')}"})
+            
+            for i in range(getattr(self, len_attr)):
+                if f"in_ptr{start_ptr + start_offset + i}" not in self.other_ptr_to_arg:
+                    self.other_ptr_to_arg.update({f"in_ptr{start_ptr + start_offset + i}": f"{get_arg(f'{buf_list}_{i}')}"})
+
             return "\n".join(
-                f"auto in_ptr{start_ptr + start_offset + i} = {buf_list}_{i};"
-                for i in range(getattr(self, len_attr))
-            )  
+                f"auto {ptr} = {name};"
+                for ptr, name in self.other_ptr_to_name.items()
+            )
 
     def modification(self, subgraph_buffer, output_name, output_idx):
         if self.has_other_buffer:
@@ -393,8 +418,8 @@ class CppMHATemplate(CppTemplate):
         if self.has_other_buffer:
             start_ptr = 5
             kernel_input_args.update({
-                name: f"in_ptr{start_ptr + i}" 
-                for i, name in enumerate(score_other_buf_names + mask_other_buf_names)
+                name: ptr 
+                for ptr, name in self.other_ptr_to_arg.items()
             })
 
         kernel_output_args = {
@@ -455,6 +480,7 @@ class CppMHATemplate(CppTemplate):
         fake_buffers,
         len_score_other,
         len_mask_other,
+        other_buffer_name_to_buffer,
     ):
         def preprocessor(input_nodes, layout):
             return input_nodes, layout
@@ -477,6 +503,7 @@ class CppMHATemplate(CppTemplate):
             fake_buffers=fake_buffers,
             len_score_other=len_score_other,
             len_mask_other=len_mask_other,
+            other_buffer_name_to_buffer=other_buffer_name_to_buffer,
         )
         template.maybe_append_choice(choices)
         return template
