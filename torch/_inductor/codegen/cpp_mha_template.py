@@ -365,7 +365,8 @@ class CppMHATemplate(CppTemplate):
         self.len_score_other = len_score_other
         self.len_mask_other = len_mask_other
         self.other_buffer_name_to_buffer = other_buffer_name_to_buffer
-        
+        self.score_mod_other_buffers = self.input_nodes[5 + self.other_buffer_input_offset:5 + self.other_buffer_input_offset + self.len_score_other] if self.has_other_buffer else None
+        self.mask_mod_other_buffers=self.input_nodes[5 + self.other_buffer_input_offset + self.len_score_other:] if self.has_other_buffer else None
         # TODO: is this needed to be set to self?
         self.other_ptr_to_name = {}
         
@@ -571,8 +572,8 @@ class CppMHATemplate(CppTemplate):
             kv_num_blocks=self.input_nodes[3],
             kv_indices=self.input_nodes[4],
             full_kv_num_blocks=self.input_nodes[5] if not self.no_full_kv_block else None,
-            score_mod_other_buffers=self.input_nodes[5 + self.other_buffer_input_offset:5 + self.other_buffer_input_offset + self.len_score_other] if self.has_other_buffer else None,
-            mask_mod_other_buffers=self.input_nodes[5 + self.other_buffer_input_offset + self.len_score_other:] if self.has_other_buffer else None,
+            score_mod_other_buffers=self.score_mod_other_buffers,
+            mask_mod_other_buffers=self.mask_mod_other_buffers,
             scale=self.scale,
             accumulate_dtype=torch.float,
             query_dtype=query.layout.dtype,
