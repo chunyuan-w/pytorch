@@ -777,9 +777,8 @@ def flex_attention(
 
         buffer_list = placeholder_inps + list(score_mod_other_buffers) + mask_graph_placeholder_inps + list(mask_mod_other_buffers)
         for item in buffer_list:
-            # if isinstance(item, TensorBox):
-            #     fake_buffers.append(item.data.data)
-            fake_buffers.append(item.data.data)
+            if isinstance(item, TensorBox):
+                fake_buffers.append(item.data.data)
 
         (
             query,
@@ -839,14 +838,11 @@ def flex_attention(
 
             for prefix, buffers in [("score_others", score_mod_other_buffers), ("mask_others", mask_mod_other_buffers)]:
                 kernel_input_name_to_buffer.update({f"{prefix}_{i}": buf for i, buf in enumerate(buffers)})            
-            input_nodes += list(kernel_input_name_to_buffer.values())
-
-            # kernel_input_name_to_buffer.update({
-            #     f"score_others_{i}": buf.get_name() if isinstance(buf, StorageBox) else buf.name for i, buf in enumerate(score_mod_other_buffers)
-            # })
-            # kernel_input_name_to_buffer.update({
-            #     f"mask_others_{i}": buf.get_name() if isinstance(buf, StorageBox) else buf.name for i, buf in enumerate(mask_mod_other_buffers) 
-            # })            
+            input_nodes += [
+                value 
+                for value in kernel_input_name_to_buffer.values() 
+                if isinstance(value, StorageBox)
+            ]
 
         skip_mask_score = kernel_options.get("SKIP_MASK_SCORE", False)
         # Mark SPARSE_KV_BLOCK_SIZE & SPARSE_Q_BLOCK_SIZE as static shapes and add guards.

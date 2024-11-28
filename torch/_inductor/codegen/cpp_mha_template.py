@@ -2,6 +2,7 @@
 import re
 import contextlib
 import logging
+import sympy
 from typing import List, Optional
 from unittest.mock import patch
 
@@ -128,14 +129,14 @@ ATTENTION_TEMPLATE = r"""
   {%- set acc_reduced_buf_name = "buf_reduced" %}
       {{ kernel.define_buffer(acc_reduced_buf_name, ["num_thread", "qSplitSize", "kvSplitSize"], dtype=query_dtype)}}
 
-  // TODO: fix me find corret buffer with offset
-  //const scalar_t* q_data = value;
-  //const scalar_t* k_data = value+512;
-  //const scalar_t* v_data = value+1024;
+  // TODO: fix me find corret buffer with offset  
+  const scalar_t* q_data = value;
+  const scalar_t* k_data = value+512;
+  const scalar_t* v_data = value+1024;
 
-  const scalar_t* q_data = query;
-  const scalar_t* k_data = key;
-  const scalar_t* v_data = value;
+  //const scalar_t* q_data = query;
+  //const scalar_t* k_data = key;
+  //const scalar_t* v_data = value;
 
   scalar_t* out_data = output;
 
@@ -374,18 +375,24 @@ class CppMHATemplate(CppTemplate):
         self.other_ptr_data = {}
 
     def update_kernel_args(self, kernel_args):
-        kernel_args.update(self.kernel_input_name_to_buffer)
+        kernel_args.update({
+            key: value 
+            for key, value in self.kernel_input_name_to_buffer.items()
+            if isinstance(value, ir.StorageBox)
+        })        
         return kernel_args
 
     def generate_other_buffer(self, buf_list, start_ptr, start_offset, len_attr, kernel_args):
         kernel_input_name_to_buffer_name = {
-            key: value.get_name() for key, value in self.kernel_input_name_to_buffer.items()
+            key: value.get_name() if isinstance(value, ir.StorageBox) else value for key, value in self.kernel_input_name_to_buffer.items()
         }
         
         def get_arg(name):
             return kernel_input_name_to_buffer_name.get(name)
 
         def get_arg_name(name):
+            if isinstance(get_arg(name), sympy.Symbol):
+                return kernel_args.sizevars.get(get_arg(name))
             return kernel_args.input_buffers.get(get_arg(name))
         
         if not self.has_other_buffer:
@@ -410,10 +417,6 @@ class CppMHATemplate(CppTemplate):
         )
 
     def modification(self, subgraph_buffer, output_name, output_idx):
-        if self.has_other_buffer:
-            score_other_buf_names = [item.get_name() for item in self.score_mod_other_buffers]
-            mask_other_buf_names = [item.get_name() for item in self.mask_mod_other_buffers]
-
         assert isinstance(subgraph_buffer, ir.ComputedBuffer)
         subgraph_buffer_data = subgraph_buffer.data
         from ..loop_body import LoopBody
