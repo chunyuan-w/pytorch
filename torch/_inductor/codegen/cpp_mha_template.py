@@ -21,17 +21,7 @@ ATTENTION_TEMPLATE = r"""
 #include <ATen/native/CPUBlas.h>
 
 {%- set kernel_args = {"query": query, "key": key, "value": value, "kv_num_blocks": kv_num_blocks, "kv_indices": kv_indices, "full_kv_num_blocks": full_kv_num_blocks} %}
-{%- if score_mod_other_buffers is not none %}
-{%- for i in range(score_mod_other_buffers | length) %}
-{%- set _ = kernel_args.update({"score_others_" ~ i: score_mod_other_buffers[i]}) %}
-{%- endfor %}
-{%- endif %}
-
-{%- if mask_mod_other_buffers is not none %}
-{%- for i in range(mask_mod_other_buffers | length) %}
-{%- set _ = kernel_args.update({"mask_others_" ~ i: mask_mod_other_buffers[i]}) %}
-{%- endfor %}
-{%- endif %}
+{%- set kernel_args = template.update_kernel_args(kernel_args) %}
 {{kernel.def_kernel(inputs=kernel_args, outputs={"output": output})}}
 {
   int64_t kvBlockSize = {{kvBlockSize}};
@@ -137,6 +127,11 @@ ATTENTION_TEMPLATE = r"""
       {{kernel.define_buffer(acc_buf_name, ["num_thread", "_size_per_thread"], dtype=accumulate_dtype)}}
   {%- set acc_reduced_buf_name = "buf_reduced" %}
       {{ kernel.define_buffer(acc_reduced_buf_name, ["num_thread", "qSplitSize", "kvSplitSize"], dtype=query_dtype)}}
+
+  // TODO: fix me find corret buffer with offset
+  //const scalar_t* q_data = value;
+  //const scalar_t* k_data = value+512;
+  //const scalar_t* v_data = value+1024;
 
   const scalar_t* q_data = query;
   const scalar_t* k_data = key;
@@ -347,7 +342,7 @@ class CppMHATemplate(CppTemplate):
         fake_buffers,
         len_score_other,
         len_mask_other,
-        other_buffer_name_to_buffer,
+        kernel_input_name_to_buffer,
     ) -> None:
         assert layout.dtype in [torch.float, torch.float16, torch.bfloat16]
         super().__init__("mha", input_nodes, layout, parallel_num_threads())
@@ -373,7 +368,10 @@ class CppMHATemplate(CppTemplate):
         self.fake_buffers = fake_buffers
         self.len_score_other = len_score_other
         self.len_mask_other = len_mask_other
-        self.other_buffer_name_to_buffer = other_buffer_name_to_buffer
+        self.kernel_input_name_to_buffer = kernel_input_name_to_buffer
+        self.kernel_input_name_to_buffer_name = {
+            key: value.get_name() for key, value in kernel_input_name_to_buffer.items()
+        }
         self.score_mod_other_buffers = self.input_nodes[5 + self.other_buffer_input_offset:5 + self.other_buffer_input_offset + self.len_score_other] if self.has_other_buffer else None
         self.mask_mod_other_buffers=self.input_nodes[5 + self.other_buffer_input_offset + self.len_score_other:] if self.has_other_buffer else None
         # TODO: is this needed to be set to self?
@@ -381,13 +379,17 @@ class CppMHATemplate(CppTemplate):
         
         self.other_ptr_to_arg = {}
 
+    def update_kernel_args(self, kernel_args):
+        kernel_args.update(self.kernel_input_name_to_buffer)
+        return kernel_args
+
     def generate_other_buffer(self, buf_list, start_ptr, start_offset, len_attr, kernel_args):
         # TODO: remove duplicated code
         def get_arg(name):
-            return self.other_buffer_name_to_buffer.get(name)
+            return self.kernel_input_name_to_buffer_name.get(name)
 
         def get_arg_name(name):
-            arg = self.other_buffer_name_to_buffer.get(name)
+            arg = self.kernel_input_name_to_buffer_name.get(name)
             return kernel_args.input_buffers.get(arg)
         
         if self.has_other_buffer:
@@ -495,7 +497,7 @@ class CppMHATemplate(CppTemplate):
         fake_buffers,
         len_score_other,
         len_mask_other,
-        other_buffer_name_to_buffer,
+        kernel_input_name_to_buffer,
     ):
         def preprocessor(input_nodes, layout):
             return input_nodes, layout
@@ -518,7 +520,7 @@ class CppMHATemplate(CppTemplate):
             fake_buffers=fake_buffers,
             len_score_other=len_score_other,
             len_mask_other=len_mask_other,
-            other_buffer_name_to_buffer=other_buffer_name_to_buffer,
+            kernel_input_name_to_buffer=kernel_input_name_to_buffer,
         )
         template.maybe_append_choice(choices)
         return template
