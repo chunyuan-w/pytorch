@@ -369,14 +369,9 @@ class CppMHATemplate(CppTemplate):
         self.len_score_other = len_score_other
         self.len_mask_other = len_mask_other
         self.kernel_input_name_to_buffer = kernel_input_name_to_buffer
-        self.kernel_input_name_to_buffer_name = {
-            key: value.get_name() for key, value in kernel_input_name_to_buffer.items()
-        }
         self.score_mod_other_buffers = self.input_nodes[5 + self.other_buffer_input_offset:5 + self.other_buffer_input_offset + self.len_score_other] if self.has_other_buffer else None
         self.mask_mod_other_buffers=self.input_nodes[5 + self.other_buffer_input_offset + self.len_score_other:] if self.has_other_buffer else None
-        # TODO: is this needed to be set to self?
         self.other_ptr_to_name = {}
-        
         self.other_ptr_to_arg = {}
 
     def update_kernel_args(self, kernel_args):
@@ -384,33 +379,35 @@ class CppMHATemplate(CppTemplate):
         return kernel_args
 
     def generate_other_buffer(self, buf_list, start_ptr, start_offset, len_attr, kernel_args):
-        # TODO: remove duplicated code
+        kernel_input_name_to_buffer_name = {
+            key: value.get_name() for key, value in self.kernel_input_name_to_buffer.items()
+        }
+        
         def get_arg(name):
-            return self.kernel_input_name_to_buffer_name.get(name)
+            return kernel_input_name_to_buffer_name.get(name)
 
         def get_arg_name(name):
-            arg = self.kernel_input_name_to_buffer_name.get(name)
-            return kernel_args.input_buffers.get(arg)
+            return kernel_args.input_buffers.get(get_arg(name))
         
-        if self.has_other_buffer:
-            if start_offset == -1:
-                start_offset = getattr(self, len_attr)
-            
-            # TODO: remove dupliacted code
-            for i in range(getattr(self, len_attr)):
-                if f"in_ptr{start_ptr + start_offset + i}" not in self.other_ptr_to_name:
-                    self.other_ptr_to_name.update({f"in_ptr{start_ptr + start_offset + i}": f"{get_arg_name(f'{buf_list}_{i}')}"})
-            
-            for i in range(getattr(self, len_attr)):
-                if f"in_ptr{start_ptr + start_offset + i}" not in self.other_ptr_to_arg:
-                    self.other_ptr_to_arg.update({f"in_ptr{start_ptr + start_offset + i}": f"{get_arg(f'{buf_list}_{i}')}"})
-
-            return "\n".join(
-                f"auto {ptr} = {name};"
-                for ptr, name in self.other_ptr_to_name.items()
-            )
-        else:
+        if not self.has_other_buffer:
             return ""
+        
+        if start_offset == -1:
+            start_offset = getattr(self, len_attr)
+        
+        length = getattr(self, len_attr)
+        for i in range(length):
+            pointer = f"in_ptr{start_ptr + start_offset + i}"
+            buffer_key = f"{buf_list}_{i}"
+            if pointer not in self.other_ptr_to_name:
+                self.other_ptr_to_name[pointer] = get_arg_name(buffer_key)
+            if pointer not in self.other_ptr_to_arg:
+                self.other_ptr_to_arg[pointer] = get_arg(buffer_key)
+        
+        return "\n".join(
+            f"auto {ptr} = {name};"
+            for ptr, name in self.other_ptr_to_name.items()
+        )
 
     def modification(self, subgraph_buffer, output_name, output_idx):
         if self.has_other_buffer:
