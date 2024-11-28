@@ -129,14 +129,9 @@ ATTENTION_TEMPLATE = r"""
   {%- set acc_reduced_buf_name = "buf_reduced" %}
       {{ kernel.define_buffer(acc_reduced_buf_name, ["num_thread", "qSplitSize", "kvSplitSize"], dtype=query_dtype)}}
 
-  // TODO: fix me find corret buffer with offset  
-  const scalar_t* q_data = value;
-  const scalar_t* k_data = value+512;
-  const scalar_t* v_data = value+1024;
-
-  //const scalar_t* q_data = query;
-  //const scalar_t* k_data = key;
-  //const scalar_t* v_data = value;
+  const scalar_t* q_data = {{template.generate_qkv(query, kernel.args)}};
+  const scalar_t* k_data = {{template.generate_qkv(key, kernel.args)}};
+  const scalar_t* v_data = {{template.generate_qkv(value, kernel.args)}};
 
   scalar_t* out_data = output;
 
@@ -373,14 +368,30 @@ class CppMHATemplate(CppTemplate):
         self.score_mod_other_buffers = self.input_nodes[5 + self.other_buffer_input_offset:5 + self.other_buffer_input_offset + self.len_score_other] if self.has_other_buffer else None
         self.mask_mod_other_buffers=self.input_nodes[5 + self.other_buffer_input_offset + self.len_score_other:] if self.has_other_buffer else None
         self.other_ptr_data = {}
+        self.original_kernel_args = {}
 
     def update_kernel_args(self, kernel_args):
         kernel_args.update({
             key: value 
             for key, value in self.kernel_input_name_to_buffer.items()
             if isinstance(value, ir.StorageBox)
-        })        
+        })
+        self.original_kernel_args = kernel_args
         return kernel_args
+
+    def generate_qkv(self, data, kernel_args):
+        new_name = None
+        for name, buf in self.original_kernel_args.items():
+            if buf.data == data.data:
+                for arg_name, input_buffer_name in kernel_args.input_buffers.items():
+                    if input_buffer_name == name:
+                        new_name = name
+        assert new_name is not None
+
+        # TODO: what if not an interprete view??
+        if data.layout.offset == 0:
+            return new_name
+        return f"{new_name} + {data.layout.offset}"
 
     def generate_other_buffer(self, buf_list, start_ptr, start_offset, len_attr, kernel_args):
         kernel_input_name_to_buffer_name = {
