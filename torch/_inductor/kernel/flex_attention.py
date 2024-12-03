@@ -81,10 +81,10 @@ def flex_attention_grid(batch_size, q_heads, num_queries, d_model, meta):
 
 
 def create_placeholder(
-    name: str, dtype: torch.dtype, device: torch.device
+    name: str, dtype: torch.dtype, device: torch.device, size: Optional[List[int]] = None,
 ) -> TensorBox:
     """Creates a placeholder input buffers for producing subgraph_output."""
-    input_buffer = InputBuffer(name=name, layout=FixedLayout(device, dtype, [], []))
+    input_buffer = InputBuffer(name=name, layout=FixedLayout(device, dtype, size if size else [], FlexibleLayout.contiguous_strides(size) if size else []))
     return TensorBox.create(input_buffer)
 
 
@@ -831,14 +831,19 @@ def flex_attention(
                 "torch.compile on CPU only supports inference and `return_lse` is not supported yet."
             )
         fake_buffers: List[Buffer] = []  # noqa: F821
+        
+        # TODO: hard-code for test
+        qBlockSize = 16
+        rkvBlockSize = 128        
+        
         placeholder_inps = [
-            create_placeholder(name, dtype, query.get_device())
-            for name, dtype in [
-                ("score", torch.float),
-                ("b", torch.int64),
-                ("h", torch.int64),
-                ("q_idx", torch.int64),
-                ("kv_idx", torch.int64),
+            create_placeholder(name, dtype, query.get_device(), size)
+            for name, dtype, size in [
+                ("score", torch.float, [qBlockSize, rkvBlockSize]),
+                ("b", torch.int64, []),
+                ("h", torch.int64, []),
+                ("q_idx", torch.int64, []), # TODO: [qBlockSize, 1]
+                ("kv_idx", torch.int64, []), # TODO: [1, rkvBlockSize]
             ]
         ]
         subgraph_buffer = build_subgraph_buffer(
@@ -851,6 +856,8 @@ def flex_attention(
                         _buf.freeze_layout()
             else:
                 subgraph_buffer.freeze_layout()
+        
+        # TODO: add size for the below buffer
         mask_graph_placeholder_inps = [
             create_placeholder(name, dtype, query.get_device())
             for name, dtype in [

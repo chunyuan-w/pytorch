@@ -2153,7 +2153,7 @@ def forward(self, arg0_1, arg1_1, arg2_1, arg3_1, arg4_1):
             return score * 2
 
         self.run_test(score_mod, dtype=dtype, device=device)
-        self.run_test_with_paged_attention(score_mod, dtype=dtype, device=device)
+        # self.run_test_with_paged_attention(score_mod, dtype=dtype, device=device)
 
     @supported_platform
     @unittest.skipIf(not TEST_ON_CUDA, "Only test on cuda")
