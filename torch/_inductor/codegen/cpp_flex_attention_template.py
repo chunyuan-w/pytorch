@@ -489,7 +489,7 @@ class CppFlexAttentionTemplate(CppTemplate):
 
         if vec:
             # TODO: hard-code for test
-            qBlockSize = 16
+            qBlockSize = 256
             rkvBlockSize = 128
             dst_size = [qBlockSize, rkvBlockSize]
             

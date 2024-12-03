@@ -833,7 +833,7 @@ def flex_attention(
         fake_buffers: List[Buffer] = []  # noqa: F821
         
         # TODO: hard-code for test
-        qBlockSize = 16
+        qBlockSize = 256
         rkvBlockSize = 128        
         
         placeholder_inps = [
