@@ -1781,6 +1781,8 @@ class Kernel(CodeGen):
         if mask:
             cond = f"({cond}) | ~({mask})"
 
+        if cond_print == '0 <= tmp48 < 2048L':
+            print("hit")
         return f'{self.assert_function}({cond}, "index out of bounds: {cond_print}")'
 
     def check_bounds(
@@ -1946,6 +1948,11 @@ class Kernel(CodeGen):
 
                     var = self.cse.generate(self.compute, stm, bounds=new_bounds)
 
+                # TODO: this line calles into indirect_indexing again
+                # the first time: self is CppVecKernel
+                # the second time it calls into this function, self becomes CppTemplateKernel
+                # CppTemplateKernel generates a scalar version assert_function
+                # CppVecKernel generates a vec version assert_function
                 sympy_var = parent_handler.indirect_indexing(var, size, check)
                 if generate_assert(check):
                     assert_lower = not (var.bounds.lower >= 0)

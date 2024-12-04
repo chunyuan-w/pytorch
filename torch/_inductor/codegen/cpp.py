@@ -3108,6 +3108,9 @@ class CppVecKernel(CppKernel):
                 f", ({cond}), {cexpr_index(self.tail_size)})"
             )
         cond = f"({cond}).all_masked()"
+        if cond_print == '0 <= tmp48 < 2048L':
+            print("hit")
+
         return f'{self.assert_function}({cond}, "index out of bounds: {cond_print}")'
 
     def get_to_dtype_expr(self, src, dtype, src_dtype):
