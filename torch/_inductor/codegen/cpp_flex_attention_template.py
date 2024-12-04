@@ -218,7 +218,11 @@ FLEX_ATTENTION_TEMPLATE = r"""
         int64_t cur_kvSplitSize_tmp = 128;
         std::vector<int64_t> kv_idx(cur_kvSplitSize_tmp);
         for (int64_t i = 0; i < cur_kvSplitSize_tmp; ++i) {
-            kv_idx[i] = n + i;
+            if (use_kv_indice) {
+                kv_idx[i] = *kv_logical_data * kvBlockSize + i;
+            } else {
+                kv_idx[i] = n + i;
+            }
         }
 
         std::vector<int64_t> b_idx = {i};
