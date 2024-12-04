@@ -205,8 +205,31 @@ FLEX_ATTENTION_TEMPLATE = r"""
         //printf("my rkvBlockSize :%ld  ", cur_kvSplitSize);
 {%- if score_mod and mask_mod %}
         // apply score mod function
-        
+
+
+
+        int64_t qBlockSize_tmp = 256; // Example size of the vector
+
+        std::vector<int64_t> q_idx(qBlockSize_tmp);
+        for (int64_t i = 0; i < qBlockSize_tmp; ++i) {
+            q_idx[i] = m + i;
+        }
+
+        int64_t cur_kvSplitSize_tmp = 128;
+        std::vector<int64_t> kv_idx(cur_kvSplitSize_tmp);
+        for (int64_t i = 0; i < cur_kvSplitSize_tmp; ++i) {
+            kv_idx[i] = n + i;
+        }
+
+
+
         accum_t* in_ptr0 = qk_data;
+
+
+        auto in_ptr3 = q_idx.data();
+        auto in_ptr4 = kv_idx.data();
+
+
         accum_t* out_ptr0 = in_ptr0;
         {{ template.modification(score_mod, score_buf_name, score_buf_idx) }}
         

@@ -842,8 +842,8 @@ def flex_attention(
                 ("score", torch.float, [qBlockSize, rkvBlockSize]),
                 ("b", torch.int64, []),
                 ("h", torch.int64, []),
-                ("q_idx", torch.int64, []), # TODO: [qBlockSize, 1]
-                ("kv_idx", torch.int64, []), # TODO: [1, rkvBlockSize]
+                ("q_idx", torch.int64, [qBlockSize, 1]),
+                ("kv_idx", torch.int64, [1, rkvBlockSize]),
             ]
         ]
         subgraph_buffer = build_subgraph_buffer(
