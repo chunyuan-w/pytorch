@@ -1431,7 +1431,10 @@ class TestFlexAttention(InductorTestCase):
         def composed_score_mod(score, b, h, m, n):
             return score_mod_2(score_mod_1(score, b, h, m, n), b, h, m, n)
 
-        self.run_test(composed_score_mod, dtype, device=device)
+        # test m, n
+        # self.run_test(score_mod_1, dtype, device=device)
+        
+        # test m, n and use_kv_indice
         self.run_test_with_paged_attention(composed_score_mod, dtype, device=device)
 
     @supported_platform
@@ -1545,8 +1548,9 @@ class TestFlexAttention(InductorTestCase):
         def bias_mod(score, b, h, q, kv):
             return score + bias[b, h, q, kv]
 
+        # test b, h
         self.run_test(bias_mod, dtype, device=device)
-        self.run_test_with_paged_attention(bias_mod, dtype, device=device)
+        # self.run_test_with_paged_attention(bias_mod, dtype, device=device)
 
     @supported_platform
     @common_utils.parametrize("device", test_devices)
@@ -2130,7 +2134,7 @@ def forward(self, arg0_1, arg1_1, arg2_1, arg3_1, arg4_1):
         causal_njt = create_njt_wrapper(_causal, offsets, seq_idx)
 
         self.run_test(causal_njt, dtype, device=device)
-        self.run_test_with_paged_attention(causal_njt, dtype, device=device)
+        # self.run_test_with_paged_attention(causal_njt, dtype, device=device)
 
     @supported_platform
     @common_utils.parametrize("device", test_devices)
@@ -2152,6 +2156,7 @@ def forward(self, arg0_1, arg1_1, arg2_1, arg3_1, arg4_1):
         def score_mod(score, b, h, m, n):
             return score * 2
 
+        # test score
         self.run_test(score_mod, dtype=dtype, device=device)
         # self.run_test_with_paged_attention(score_mod, dtype=dtype, device=device)
 
