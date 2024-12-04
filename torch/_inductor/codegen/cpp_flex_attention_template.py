@@ -221,15 +221,17 @@ FLEX_ATTENTION_TEMPLATE = r"""
             kv_idx[i] = n + i;
         }
 
-
+        std::vector<int64_t> b_idx = {i};
+        std::vector<int64_t> h_idx = {j};
 
         accum_t* in_ptr0 = qk_data;
 
-
+        auto in_ptr1 = b_idx.data();
+        auto in_ptr2 = h_idx.data();
         auto in_ptr3 = q_idx.data();
         auto in_ptr4 = kv_idx.data();
 
-
+        {{ template.generate_other_buffer("score_others", 5, 0, "len_score_other", kernel.args) }}
         accum_t* out_ptr0 = in_ptr0;
         {{ template.modification(score_mod, score_buf_name, score_buf_idx) }}
         

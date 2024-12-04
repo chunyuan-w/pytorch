@@ -840,8 +840,8 @@ def flex_attention(
             create_placeholder(name, dtype, query.get_device(), size)
             for name, dtype, size in [
                 ("score", torch.float, [qBlockSize, rkvBlockSize]),
-                ("b", torch.int64, []),
-                ("h", torch.int64, []),
+                ("b", torch.int64, [1, 1]), # TODO: check if [] or [1] works
+                ("h", torch.int64, [1, 1]), # TODO: check if [] or [1] works
                 ("q_idx", torch.int64, [qBlockSize, 1]),
                 ("kv_idx", torch.int64, [1, rkvBlockSize]),
             ]
