@@ -867,6 +867,34 @@ def flex_attention(
                 ("kv_idx", torch.int64),
             ]
         ]
+        
+        graph = mask_graph.graph_module.graph
+        # Add qk_data as a new input
+        with graph.inserting_before(next(iter(graph.nodes))):
+            qk_data_node = graph.placeholder('qk_data')  
+        
+        # Find the node that returns the mask
+        for node in graph.nodes:
+            if node.op == 'output':
+                output_node = node
+                break
+        mask_node = output_node.args[0]
+        # Create a new node for torch.full_like
+        with graph.inserting_after(mask_node):
+            full_like_node = graph.call_function(
+                torch.full_like, args=(qk_data_node, float("inf"))
+            )
+        # Create a new node for torch.where
+        with graph.inserting_after(full_like_node):
+            where_node = graph.call_function(
+                torch.where, args=(mask_node, qk_data_node, full_like_node)
+            )
+        output_node.args = (where_node,)
+        graph.lint()
+        new_traced = torch.fx.GraphModule(mask_graph.graph_module, graph)
+        print(new_traced.code)
+                
+        
         mask_graph_buffer = build_subgraph_buffer(
             mask_graph_placeholder_inps + list(mask_mod_other_buffers), mask_graph
         )
