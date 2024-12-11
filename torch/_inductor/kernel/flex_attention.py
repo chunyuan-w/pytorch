@@ -154,7 +154,7 @@ def zeros_and_scatter_lowering(shape: List[int], indices, values):
 SubgraphResults = Union[List[Optional[ComputedBuffer]], Optional[ComputedBuffer]]
 
 
-def build_subgraph_buffer(args: List[TensorBox], subgraph: Subgraph) -> SubgraphResults:
+def build_subgraph_buffer(args: List[TensorBox], subgraph: torch.fx.GraphModule) -> SubgraphResults:
     """This function's goal is to take in the required args and produce the subgraph buffer
     The subgraph buffer is a ComputedBuffer that will be inlined into the triton template
 
@@ -165,7 +165,7 @@ def build_subgraph_buffer(args: List[TensorBox], subgraph: Subgraph) -> Subgraph
     from ..subgraph_lowering import PointwiseSubgraphLowering
 
     pw_subgraph = PointwiseSubgraphLowering(
-        subgraph.graph_module,
+        subgraph,
         root_graph_lowering=V.graph,
         allowed_mutations={torch.ops.flex_lib.zeros_and_scatter.default},
         additional_lowerings={
@@ -847,7 +847,7 @@ def flex_attention(
             ]
         ]
         subgraph_buffer = build_subgraph_buffer(
-            placeholder_inps + list(score_mod_other_buffers), subgraph
+            placeholder_inps + list(score_mod_other_buffers), subgraph.graph_module
         )
         if subgraph_buffer is not None:
             if isinstance(subgraph_buffer, list):
@@ -859,44 +859,60 @@ def flex_attention(
         
         # TODO: add size for the below buffer
         mask_graph_placeholder_inps = [
-            create_placeholder(name, dtype, query.get_device())
-            for name, dtype in [
-                ("b", torch.int64),
-                ("h", torch.int64),
-                ("q_idx", torch.int64),
-                ("kv_idx", torch.int64),
+            create_placeholder(name, dtype, query.get_device(), size)
+            for name, dtype, size in [
+                ("score", torch.float, [qBlockSize, rkvBlockSize]),
+                ("b", torch.int64, [1, 1]),
+                ("h", torch.int64, [1, 1]),
+                ("q_idx", torch.int64, [qBlockSize, 1]),
+                ("kv_idx", torch.int64, [1, rkvBlockSize]),
             ]
         ]
         
         graph = mask_graph.graph_module.graph
-        # Add qk_data as a new input
+        # Add qk_data as the first input
         with graph.inserting_before(next(iter(graph.nodes))):
-            qk_data_node = graph.placeholder('qk_data')  
-        
+            qk_data_node = graph.placeholder('qk_data')
+
         # Find the node that returns the mask
         for node in graph.nodes:
             if node.op == 'output':
                 output_node = node
                 break
+
+        # Get the mask node
         mask_node = output_node.args[0]
-        # Create a new node for torch.full_like
+
+        # Create a new node for torch.size
+        # TODO: aten.size not supported in subgraph, (missing lowering)
+        size_node = [qBlockSize, rkvBlockSize]
+        # with graph.inserting_after(qk_data_node):
+        #     size_node = graph.call_function(torch.ops.aten.size, args=(qk_data_node,))
+
+        # Create a new node for torch.full
         with graph.inserting_after(mask_node):
-            full_like_node = graph.call_function(
-                torch.full_like, args=(qk_data_node, float("inf"))
+            # TODO: dtype is hard-coded to torch.float
+            full_node = graph.call_function(
+                torch.full, args=(size_node, -float("inf")), kwargs={'dtype': torch.float}
             )
+
         # Create a new node for torch.where
-        with graph.inserting_after(full_like_node):
+        with graph.inserting_after(full_node):
             where_node = graph.call_function(
-                torch.where, args=(mask_node, qk_data_node, full_like_node)
+                torch.ops.aten.where, args=(mask_node, qk_data_node, full_node)
             )
+
+        # Update the output node to return the result of torch.where
         output_node.args = (where_node,)
+
+        # Recompile the graph
         graph.lint()
         new_traced = torch.fx.GraphModule(mask_graph.graph_module, graph)
         print(new_traced.code)
                 
         
         mask_graph_buffer = build_subgraph_buffer(
-            mask_graph_placeholder_inps + list(mask_mod_other_buffers), mask_graph
+            mask_graph_placeholder_inps + list(mask_mod_other_buffers), new_traced
         )
 
         buffer_list = (
@@ -1042,7 +1058,7 @@ def flex_attention(
         ]
     ]
     subgraph_buffer = build_subgraph_buffer(
-        placeholder_inps + list(score_mod_other_buffers), subgraph
+        placeholder_inps + list(score_mod_other_buffers), subgraph.graph_module
     )
 
     mask_graph_placeholder_inps = [
@@ -1055,7 +1071,7 @@ def flex_attention(
         ]
     ]
     mask_graph_buffer = build_subgraph_buffer(
-        mask_graph_placeholder_inps + list(mask_mod_other_buffers), mask_graph
+        mask_graph_placeholder_inps + list(mask_mod_other_buffers), mask_graph.graph_module
     )
 
     kernel_options = dict(kernel_options)
@@ -2140,7 +2156,7 @@ def flex_attention_backward(*args, **kwargs):
         ]
     ]
     fw_subgraph_buffer = build_subgraph_buffer(
-        fwd_placeholder_inps + list(score_mod_other_buffers), fw_graph
+        fwd_placeholder_inps + list(score_mod_other_buffers), fw_graph.graph_module
     )
 
     joint_placeholder_inps = fwd_placeholder_inps + [
@@ -2155,7 +2171,7 @@ def flex_attention_backward(*args, **kwargs):
 
     all_joint_outputs = build_subgraph_buffer(
         joint_placeholder_inps + list(score_mod_other_buffers),
-        joint_graph,
+        joint_graph.graph_module,
     )
 
     joint_outputs = process_joint_outputs(
@@ -2172,7 +2188,7 @@ def flex_attention_backward(*args, **kwargs):
         ]
     ]
     mask_graph_buffer = build_subgraph_buffer(
-        mask_graph_placeholder_inps + list(mask_mod_other_buffers), mask_graph
+        mask_graph_placeholder_inps + list(mask_mod_other_buffers), mask_graph.graph_module
     )
 
     mask_graph_buffer = mask_graph_buffer

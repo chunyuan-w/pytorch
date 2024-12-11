@@ -239,37 +239,13 @@ FLEX_ATTENTION_TEMPLATE = r"""
         accum_t* out_ptr0 = in_ptr0;
         {{ template.modification(score_mod, score_buf_name, score_buf_idx) }}
         
+        
+        {{ template.generate_other_buffer("mask_others", 5, -1, "len_mask_other", kernel.args) }}
+        accum_t* out_ptr1 = in_ptr0;
+        {{ template.modification(mask_mod, mask_buf_name, mask_buf_idx, vec=True) }}
+        
 
-        
-        
-        
-        
-        
-        // Apply block mask, fill unused with -inf
-        for (int64_t row = 0; row < cur_qSplitSize; ++row) {
-          for (int64_t col = 0; col < cur_kvSplitSize; col++) {
-            std::vector<int64_t> b_idx = {i};
-            std::vector<int64_t> h_idx = {j};
-            std::vector<int64_t> q_idx = {m+row};
-            int64_t phisical_kv_idx = n+col;
-            if(use_kv_indice){
-                phisical_kv_idx= *kv_logical_data * kvBlockSize + col;
-            }
-            std::vector<int64_t> kv_idx = {phisical_kv_idx};
-            accum_t* qk_block = qk_data + row * cur_kvSplitSize + col;
-            auto in_ptr1 = b_idx.data();
-            auto in_ptr2 = h_idx.data();
-            auto in_ptr3 = q_idx.data();
-            auto in_ptr4 = kv_idx.data();
-            {{ template.generate_other_buffer("mask_others", 5, -1, "len_mask_other", kernel.args) }}
-            std::vector<int64_t> temp = {0};
-            int64_t* out_ptr{{mask_buf_idx}} = temp.data();
-            {{ template.modification(mask_mod, mask_buf_name, mask_buf_idx, vec=False) }}
-            *qk_block = *out_ptr{{mask_buf_idx}} != 0
-                            ? *qk_block
-                            : -std::numeric_limits<accum_t>::infinity();
-          }
-        }
+ 
 {%- endif %}
         // Update coefficients with Softmax
         accum_t tmp_max = 0, tmp_sum = 0, exp_tmp = 0;
