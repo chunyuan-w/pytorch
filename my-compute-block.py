@@ -12,12 +12,21 @@ def get_cur_kvSplitSize(kvSplitSize, kvSize, n, kvTail):
 
 
 query = torch.randn(10, 100, 20, 30)  # Example tensor
-# TODO: how to get k and qSize?
+
+# This is a loop variable
 k = 2
+
+# This could be a symbol
 qSize = query.shape[1]
+
 def get_cur_qSplitSize(qSize, k):
+    # qSize could be a symbol
     qSplitSize = compute_qSplitSize(qSize)
+    
+    # This is a variable since k changes in the loop
     m = k * qSplitSize
+    
+    # One kernel for qSplitSize, another one for qSize - m?
     cur_qSplitSize = min(qSplitSize, qSize - m)
     return cur_qSplitSize
 
@@ -39,38 +48,31 @@ def compute_kvSplitSize(qSize, kvBlockSize):
         kvSplitSize = kvBlockSize
     return kvSplitSize
 
-def compute_use_kv_indice(kv_indices, block_num_kvi, batchSize_k):
-    """
-    Compute the value of use_kv_indice based on kv_indices, block_num_kvi, and batchSize_k.
+def compute_block_num_kv_count_and_zero_flag(kv_indices):
+    # This function reads the content of kv_indices
+    block_num_kv_count = 0
+    has_block_indice_zero = True
+    for kv_count in range(len(kv_indices)):
+        if kv_indices[kv_count] > 0:
+            block_num_kv_count += 1
+        elif kv_indices[kv_count] == 0:
+            if has_block_indice_zero:
+                has_block_indice_zero = False
+                block_num_kv_count += 1
+            else:
+                break
 
-    Parameters:
-    kv_indices (numpy.ndarray): The kv indices tensor.
-    block_num_kvi (int): The number of kv blocks.
-    batchSize_k (int): The batch size for the key tensor.
+    return block_num_kv_count, has_block_indice_zero
 
-    Returns:
-    bool: The value of use_kv_indice.
-    """
-    block_num_kv_count, _ = compute_block_num_kv_count_and_zero_flag(kv_indices, block_num_kvi)
-
+def compute_use_kv_indice(block_num_kvi, batchSize_k, block_num_kv_count):
     use_kv_indice = False
     if block_num_kvi != block_num_kv_count and batchSize_k == 1:
         use_kv_indice = True
 
     return use_kv_indice
 
-def compute_block_num_kv_count(kv_indices, block_num_kvi):
-    """
-    Compute the value of block_num_kv_count based on kv_indices and block_num_kvi.
-
-    Parameters:
-    kv_indices (numpy.ndarray): The kv indices tensor.
-    block_num_kvi (int): The number of kv blocks.
-
-    Returns:
-    int: The value of block_num_kv_count.
-    """
-    block_num_kv_count, _ = compute_block_num_kv_count_and_zero_flag(kv_indices, block_num_kvi)
+def compute_block_num_kv_count(kv_indices):
+    block_num_kv_count, _ = compute_block_num_kv_count_and_zero_flag(kv_indices)
     return block_num_kv_count
 
 def compute_kvSize(use_kv_indice, block_num_kv_count, kvBlockSize, kSize):
@@ -78,6 +80,9 @@ def compute_kvSize(use_kv_indice, block_num_kv_count, kvBlockSize, kSize):
         return block_num_kv_count * kvBlockSize
     else:
         return kSize
+
+
+# kvBlockSize = kv_block_size=SPARSE_KV_BLOCK_SIZE which is static
 
 key = torch.randn(10, 512, 20, 30)  # Example tensor
 batchSize_k = key.shape[0]
@@ -88,9 +93,8 @@ def get_cur_kvSplitSize(kvBlockSize, qSize, kSize, batchSize_k, kv_indices, n):
     kvBlockSize = min(kvBlockSize, kSize)
     kvSplitSize = compute_kvSplitSize(qSize, kvBlockSize)
         
-    block_num_kvi = len(kv_indices)
-    block_num_kv_count = compute_block_num_kv_count(kv_indices, block_num_kvi)
-    use_kv_indice = compute_use_kv_indice(kv_indices, block_num_kvi, batchSize_k)    
+    block_num_kv_count = compute_block_num_kv_count(kv_indices)
+    use_kv_indice = compute_use_kv_indice(len(kv_indices), batchSize_k, block_num_kv_count)    
     
     kvSize = compute_kvSize(use_kv_indice, block_num_kv_count, kvBlockSize, kSize)
     kvTail = (kvSize - 1) % kvSplitSize + 1
