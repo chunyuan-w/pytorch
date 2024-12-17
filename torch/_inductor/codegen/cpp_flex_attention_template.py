@@ -492,10 +492,15 @@ class CppFlexAttentionTemplate(CppTemplate):
         var_sizes = tuple([])  # type: ignore[var-annotated]  # noqa: C409
         output_index = 0
 
+        from ..utils import sympy_index_symbol_with_prefix
+        # TODO: how to set the name to avoid duplication with existing symbol names in the code
+        var_q = sympy_index_symbol_with_prefix(SymT.INDEX, 10)
+        var_kv = sympy_index_symbol_with_prefix(SymT.INDEX, 11)
+        
         if vec:
             # TODO: hard-code for test
-            qBlockSize = 256
-            rkvBlockSize = 128
+            qBlockSize = var_q
+            rkvBlockSize = var_kv
             dst_size = [qBlockSize, rkvBlockSize]
             
             var_sizes = (tuple(dst_size))
@@ -539,7 +544,11 @@ class CppFlexAttentionTemplate(CppTemplate):
 
         cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
         kernel_group.finalize_kernel(cpp_kernel_proxy, [])
-        return kernel_group.loops_code.getvalue()
+        output_code = kernel_group.loops_code.getvalue()
+        
+        output_code = output_code.replace("i10", "cur_qSplitSize")
+        output_code = output_code.replace("i11", "cur_kvSplitSize")
+        return output_code
 
     @staticmethod
     def add_choices(

@@ -833,8 +833,16 @@ def flex_attention(
         fake_buffers: List[Buffer] = []  # noqa: F821
         
         # TODO: hard-code for test
-        qBlockSize = 256
-        rkvBlockSize = 128        
+        from ..utils import sympy_index_symbol_with_prefix, SymT
+        # TODO: seems we're not able to set the symbol name here and it won't impact the generated code
+        var_q = sympy_index_symbol_with_prefix(SymT.INDEX, 10)
+        var_kv = sympy_index_symbol_with_prefix(SymT.INDEX, 11)        
+        var_q = 256
+        var_kv = 128
+        
+        
+        qBlockSize = var_q
+        rkvBlockSize = var_kv        
         
         placeholder_inps = [
             create_placeholder(name, dtype, query.get_device(), size)
