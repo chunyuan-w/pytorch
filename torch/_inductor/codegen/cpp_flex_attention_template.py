@@ -235,15 +235,17 @@ FLEX_ATTENTION_TEMPLATE = r"""
         auto in_ptr3 = q_idx.data();
         auto in_ptr4 = kv_idx.data();
 
-        {{ template.generate_other_buffer("score_others", 5, 0, "len_score_other", kernel.args) }}
-        accum_t* out_ptr0 = in_ptr0;
-        {{ template.modification(score_mod, score_buf_name, score_buf_idx) }}
+        {
+            {{ template.generate_other_buffer("score_others", 5, 0, "len_score_other", kernel.args) }}
+            accum_t* out_ptr0 = in_ptr0;
+            {{ template.modification(score_mod, score_buf_name, score_buf_idx) }}
+        }
         
-        
-        {{ template.generate_other_buffer("mask_others", 5, -1, "len_mask_other", kernel.args) }}
-        accum_t* out_ptr1 = in_ptr0;
-        {{ template.modification(mask_mod, mask_buf_name, mask_buf_idx, vec=True) }}
-        
+        {
+            {{ template.generate_other_buffer("mask_others", 5, -1, "len_mask_other", kernel.args) }}
+            accum_t* out_ptr1 = in_ptr0;
+            {{ template.modification(mask_mod, mask_buf_name, mask_buf_idx, vec=True) }}
+        }
 
  
 {%- endif %}
