@@ -496,8 +496,9 @@ class CppFlexAttentionTemplate(CppTemplate):
 
         from ..utils import sympy_index_symbol_with_prefix
         # TODO: how to set the name to avoid duplication with existing symbol names in the code
-        var_q = sympy_index_symbol_with_prefix(SymT.INDEX, 10)
-        var_kv = sympy_index_symbol_with_prefix(SymT.INDEX, 11)
+        # We put a placeholder here and it will be replaced later
+        var_q = sympy.Symbol("_var_q")
+        var_kv = sympy.Symbol("_var_kv")
         
         if vec:
             # TODO: hard-code for test
@@ -548,8 +549,8 @@ class CppFlexAttentionTemplate(CppTemplate):
         kernel_group.finalize_kernel(cpp_kernel_proxy, [])
         output_code = kernel_group.loops_code.getvalue()
         
-        output_code = output_code.replace("i10", "cur_qSplitSize")
-        output_code = output_code.replace("i11", "cur_kvSplitSize")
+        output_code = output_code.replace("_var_q", "cur_qSplitSize")
+        output_code = output_code.replace("_var_kv", "cur_kvSplitSize")
         return output_code
 
     @staticmethod
