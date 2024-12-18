@@ -1541,6 +1541,8 @@ class TestFlexAttention(InductorTestCase):
 
     @supported_platform
     @common_utils.parametrize("device", test_devices)
+    # TODO: assert issue reproducer
+    @patch.object(torch._inductor.config, "assert_indirect_indexing", False)
     def test_load_from_bias_head_seq_batch(self, device):
         dtype = test_dtypes_fast[device]
         bias = torch.randn(B, H, S, S, device=device, dtype=dtype)

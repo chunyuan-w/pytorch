@@ -1540,8 +1540,8 @@ class CSE:
                         line = f"{expr}{self.suffix}"
                     # TODO: tmp48 is a vec but the check is generated twice,
                     # 1 for scalar version and 1 for vec version. Check how to remove the below scalar version.
-                    if line != 'AOTI_TORCH_CHECK((0 <= tmp48) & (tmp48 < 2048L), "index out of bounds: 0 <= tmp48 < 2048L");' and line != 'AOTI_TORCH_CHECK((0 <= tmp28) & (tmp28 < 112L), "index out of bounds: 0 <= tmp28 < 112L");' and line != 'AOTI_TORCH_CHECK((0 <= tmp78) & (tmp78 < 2048L), "index out of bounds: 0 <= tmp78 < 2048L");':
-                        buffer.writeline(line)
+                    # if line != 'AOTI_TORCH_CHECK((0 <= tmp48) & (tmp48 < 2048L), "index out of bounds: 0 <= tmp48 < 2048L");' and line != 'AOTI_TORCH_CHECK((0 <= tmp28) & (tmp28 < 112L), "index out of bounds: 0 <= tmp28 < 112L");' and line != 'AOTI_TORCH_CHECK((0 <= tmp78) & (tmp78 < 2048L), "index out of bounds: 0 <= tmp78 < 2048L");':
+                    buffer.writeline(line)
         else:
             var.bounds = var.bounds.tighten(bounds)
             var.use_count += 1
