@@ -38,6 +38,9 @@ def wrap_with_tensorbox(node) -> ir.TensorBox:
 
 
 class CppTemplateKernel(CppKernel):
+    def __enter__(self):
+        return self
+    
     def __init__(self, kernel_name, num_threads):
         super().__init__(None, num_threads)
         self.kernel_name = kernel_name
