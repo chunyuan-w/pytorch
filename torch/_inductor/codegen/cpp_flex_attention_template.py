@@ -620,53 +620,45 @@ extern "C"
         {{kernel.kernel_name}}_mul_scale_kernel<accum_t>(qk_data, scaling_factor, cur_qSplitSize*cur_kvSplitSize);
 
 {%- if score_mod and mask_mod %}
-        // TODO: vectorization optimization for below score and mask codegen functions
+        // TODO: how to initialize q_idx and kv_idx once
+        std::vector<int64_t> q_idx(cur_qSplitSize);
+        for (int64_t i = 0; i < cur_qSplitSize; ++i) {
+            q_idx[i] = m + i;
+        }
+
+        std::vector<int64_t> kv_idx(cur_kvSplitSize);
+        for (int64_t i = 0; i < cur_kvSplitSize; ++i) {
+            if (use_kv_indice) {
+                kv_idx[i] = *kv_logical_data * kvBlockSize + i;
+            } else {
+                kv_idx[i] = n + i;
+            }
+        }
+
+        std::vector<int64_t> b_idx = {i};
+        std::vector<int64_t> h_idx = {j};
+
+        accum_t* in_ptr0 = qk_data;
+
+        auto in_ptr1 = b_idx.data();
+        auto in_ptr2 = h_idx.data();
+        auto in_ptr3 = q_idx.data();
+        auto in_ptr4 = kv_idx.data();
+
         // apply score mod function
-        for (int64_t row = 0; row < cur_qSplitSize; ++row) {
-          for (int64_t col = 0; col < cur_kvSplitSize; col++) {
-            std::vector<int64_t> b_idx = {i};
-            std::vector<int64_t> h_idx = {j};
-            std::vector<int64_t> q_idx = {m+row};
-            int64_t phisical_kv_idx = n+col;
-            if (use_kv_indice) {
-                phisical_kv_idx= *kv_logical_data * kvBlockSize + col;
-            }
-            std::vector<int64_t> kv_idx = {phisical_kv_idx};
-            accum_t* in_ptr0 = qk_data + row * cur_kvSplitSize + col;
-            auto in_ptr1 = b_idx.data();
-            auto in_ptr2 = h_idx.data();
-            auto in_ptr3 = q_idx.data();
-            auto in_ptr4 = kv_idx.data();
+        {
             {{ template.generate_other_buffer("score_others", 0, "len_score_other", kernel.args) }}
-            accum_t* out_ptr{{score_buf_idx}} = in_ptr0;
+            accum_t* out_ptr0 = in_ptr0;
             {{ template.modification(score_mod, score_buf_name, score_buf_idx) }}
-          }
         }
+
         // Apply block mask, fill unused with -inf
-        for (int64_t row = 0; row < cur_qSplitSize; ++row) {
-          for (int64_t col = 0; col < cur_kvSplitSize; col++) {
-            std::vector<int64_t> b_idx = {i};
-            std::vector<int64_t> h_idx = {j};
-            std::vector<int64_t> q_idx = {m+row};
-            int64_t phisical_kv_idx = n+col;
-            if (use_kv_indice) {
-                phisical_kv_idx= *kv_logical_data * kvBlockSize + col;
-            }
-            std::vector<int64_t> kv_idx = {phisical_kv_idx};
-            accum_t* qk_block = qk_data + row * cur_kvSplitSize + col;
-            auto in_ptr1 = b_idx.data();
-            auto in_ptr2 = h_idx.data();
-            auto in_ptr3 = q_idx.data();
-            auto in_ptr4 = kv_idx.data();
+        {
             {{ template.generate_other_buffer("mask_others", -1, "len_mask_other", kernel.args) }}
-            std::vector<int64_t> temp = {0};
-            int64_t* out_ptr{{mask_buf_idx}} = temp.data();
+            accum_t* out_ptr1 = in_ptr0;
             {{ template.modification(mask_mod, mask_buf_name, mask_buf_idx) }}
-            *qk_block = *out_ptr{{mask_buf_idx}} != 0
-                            ? *qk_block
-                            : -std::numeric_limits<accum_t>::infinity();
-          }
         }
+
 {%- endif %}
         // Update coefficients with Softmax
         accum_t tmp_max = 0, tmp_sum = 0, exp_tmp = 0;
@@ -935,12 +927,28 @@ class CppFlexAttentionTemplate(CppTemplate):
         bodies = []
         var_sizes_list = []
 
-        var_sizes = tuple([])  # type: ignore[var-annotated]  # noqa: C409
-        output_index = 0
+        # TODO: how to set the name to avoid duplication with existing symbol names in the code
+        # We put a placeholder here and it will be replaced later
+        var_q = sympy.Symbol("_var_q")
+        var_kv = sympy.Symbol("_var_kv")
+        qBlockSize = var_q
+        rkvBlockSize = var_kv
+        dst_size = [qBlockSize, rkvBlockSize]
+
+        var_sizes = tuple(dst_size)
+
         var_ranges = {
             sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
             for i, sz in enumerate(var_sizes)
         }
+
+        # TODO: fix hard-coded device and dtype
+        device = torch.device("cpu")
+        dtype = torch.float32
+        dst_layout = ir.FixedLayout(
+            device, dtype, dst_size, ir.FlexibleLayout.contiguous_strides(dst_size)
+        )
+        output_index = dst_layout.make_indexer()(var_ranges.keys())
 
         def fn(*args):
             V.ops.store(
@@ -969,7 +977,11 @@ class CppFlexAttentionTemplate(CppTemplate):
 
         cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
         kernel_group.finalize_kernel(cpp_kernel_proxy, [])
-        return kernel_group.loops_code.getvalue()
+        output_code = kernel_group.loops_code.getvalue()
+
+        output_code = output_code.replace("_var_q", "cur_qSplitSize")
+        output_code = output_code.replace("_var_kv", "cur_kvSplitSize")
+        return output_code
 
     @staticmethod
     def add_choices(
