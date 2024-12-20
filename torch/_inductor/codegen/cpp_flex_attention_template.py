@@ -620,7 +620,7 @@ extern "C"
         {{kernel.kernel_name}}_mul_scale_kernel<accum_t>(qk_data, scaling_factor, cur_qSplitSize*cur_kvSplitSize);
 
 {%- if score_mod and mask_mod %}
-        // TODO: how to initialize q_idx and kv_idx once
+        // TODO: reduce the number of calls of q_idx and kv_idx initialization
         std::vector<int64_t> q_idx(cur_qSplitSize);
         for (int64_t i = 0; i < cur_qSplitSize; ++i) {
             q_idx[i] = m + i;
@@ -649,14 +649,14 @@ extern "C"
         {
             {{ template.generate_other_buffer("score_others", 0, "len_score_other", kernel.args) }}
             accum_t* out_ptr0 = in_ptr0;
-            {{ template.modification(score_mod, score_buf_name, score_buf_idx) }}
+            {{ template.modification(score_mod, score_buf_name, score_buf_idx)|indent(12, false) }}
         }
 
         // Apply block mask, fill unused with -inf
         {
             {{ template.generate_other_buffer("mask_others", -1, "len_mask_other", kernel.args) }}
             accum_t* out_ptr1 = in_ptr0;
-            {{ template.modification(mask_mod, mask_buf_name, mask_buf_idx) }}
+            {{ template.modification(mask_mod, mask_buf_name, mask_buf_idx)|indent(12, false) }}
         }
 
 {%- endif %}
