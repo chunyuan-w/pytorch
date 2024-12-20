@@ -891,25 +891,28 @@ def lower_cpu(
 
     fake_buffers: List[Buffer] = []  # noqa: F821
 
+    # TODO add comment for this unbacked sym value here
     var_q = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
     var_kv = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
     shape_env = V.graph.sizevars.shape_env
     assert var_q not in shape_env.var_to_range
     assert var_kv not in shape_env.var_to_range
 
-    # TODO: Mark it >=1 for now
+    # TODO: Mark them > 1 since eq(var, 1) is evaluated during the broadcast lowering
+    # Check the case where they're equal to 1.
     shape_env.var_to_range[var_q] = ValueRanges(2, int_oo)
     shape_env.var_to_range[var_kv] = ValueRanges(2, int_oo)
 
     qBlockSize = var_q
     rkvBlockSize = var_kv
 
+    score_dtype = torch.float
     placeholder_inps = [
         create_placeholder(name, dtype, query.get_device(), size)
         for name, dtype, size in [
-            ("score", torch.float, [qBlockSize, rkvBlockSize]),
-            ("b", torch.int64, [1, 1]),  # TODO: check if [] or [1] works
-            ("h", torch.int64, [1, 1]),  # TODO: check if [] or [1] works
+            ("score", score_dtype, [qBlockSize, rkvBlockSize]),
+            ("b", torch.int64, [1]),
+            ("h", torch.int64, [1]),
             ("q_idx", torch.int64, [qBlockSize, 1]),
             ("kv_idx", torch.int64, [1, rkvBlockSize]),
         ]
@@ -927,14 +930,28 @@ def lower_cpu(
     mask_graph_placeholder_inps = [
         create_placeholder(name, dtype, query.get_device(), size)
         for name, dtype, size in [
-            ("score", torch.float, [qBlockSize, rkvBlockSize]),
-            ("b", torch.int64, [1, 1]),
-            ("h", torch.int64, [1, 1]),
+            ("score", score_dtype, [qBlockSize, rkvBlockSize]),
+            ("b", torch.int64, [1]),
+            ("h", torch.int64, [1]),
             ("q_idx", torch.int64, [qBlockSize, 1]),
             ("kv_idx", torch.int64, [1, rkvBlockSize]),
         ]
     ]
 
+    # The original mask_graph works on a scalar and only includes
+    # the logic of calculating the mask value。
+    # We need to add the logic of applying the mark to the qk_data tensor
+    # into the graph for the later codegen of this part.
+    # Example:
+    #   mask_graph:
+    #   def mask_fn(b, h, q_idx, kv_idx):
+    #       mask = q_idx >= kv_idx
+    #       return mask
+    #   The converted_mask_graph should be:
+    #   def converted_mask_fn(qk_data, b, h, q_idx, kv_idx):
+    #       mask = q_idx >= kv_idx
+    #       qk_data = torch.where(mask, qk_data, torch.full_like(qk_data, -float("inf")))
+    #       return qk_data
     def convert_mask_graph_module(mask_graph):
         graph = mask_graph.graph_module.graph
         # Add qk_data as the first input
@@ -952,19 +969,13 @@ def lower_cpu(
         assert output_node is not None
         mask_node = output_node.args[0]
 
-        # Create a new node for torch.size
-        # TODO: aten.size not supported in subgraph, (missing lowering)
         size_node = [qBlockSize, rkvBlockSize]
-        # with graph.inserting_after(qk_data_node):
-        #     size_node = graph.call_function(torch.ops.aten.size, args=(qk_data_node,))
-
         # Create a new node for torch.full
         with graph.inserting_after(mask_node):
-            # TODO: dtype is hard-coded to torch.float
             full_node = graph.call_function(
                 torch.full,
                 args=(size_node, -float("inf")),
-                kwargs={"dtype": torch.float},
+                kwargs={"dtype": score_dtype},
             )
 
         # Create a new node for torch.where
@@ -976,7 +987,6 @@ def lower_cpu(
         # Update the output node to return the result of torch.where
         output_node.args = (where_node,)
 
-        # Recompile the graph
         graph.lint()
         converted = torch.fx.GraphModule(mask_graph.graph_module, graph)
         return converted

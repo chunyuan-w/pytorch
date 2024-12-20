@@ -931,7 +931,6 @@ class CppFlexAttentionTemplate(CppTemplate):
         bodies = []
         var_sizes_list = []
 
-
         var_sizes = tuple(subgraph_buffer.get_size())
 
         var_ranges = {
@@ -972,6 +971,7 @@ class CppFlexAttentionTemplate(CppTemplate):
         output_code = kernel_group.loops_code.getvalue()
 
         var_q_str, var_kv_str = self.block_var_q, self.block_var_kv
+        # TODO: add comment for the replacement here
         if var_q_str in kernel_group.args.sizevars:
             output_code = output_code.replace(
                 kernel_group.args.sizevars[var_q_str], "cur_qSplitSize"
