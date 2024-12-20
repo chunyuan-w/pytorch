@@ -13,6 +13,8 @@ import torch
 from torch._inductor.virtualized import V
 from torch.utils._ordered_set import OrderedSet
 from torch.utils._pytree import tree_map
+from torch.utils._sympy.numbers import int_oo
+from torch.utils._sympy.value_ranges import ValueRanges
 
 from .. import config
 from ..ir import (
@@ -889,9 +891,15 @@ def lower_cpu(
 
     fake_buffers: List[Buffer] = []  # noqa: F821
 
-    # TODO: how to set the value here? Or maybe we don't need to set it?
-    var_q = 256
-    var_kv = 128
+    var_q = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
+    var_kv = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
+    shape_env = V.graph.sizevars.shape_env
+    assert var_q not in shape_env.var_to_range
+    assert var_kv not in shape_env.var_to_range
+
+    # TODO: Mark it >=1 for now
+    shape_env.var_to_range[var_q] = ValueRanges(2, int_oo)
+    shape_env.var_to_range[var_kv] = ValueRanges(2, int_oo)
 
     qBlockSize = var_q
     rkvBlockSize = var_kv
@@ -1091,6 +1099,8 @@ def lower_cpu(
         len_score_other=len(score_mod_other_buffers),
         len_mask_other=len(mask_mod_other_buffers),
         kernel_input_name_to_buffer=kernel_input_name_to_buffer,
+        block_var_q=var_q,
+        block_var_kv=var_kv,
     )
     inputs_for_autotuning = [
         query,

@@ -783,6 +783,8 @@ class CppFlexAttentionTemplate(CppTemplate):
         len_score_other,
         len_mask_other,
         kernel_input_name_to_buffer,
+        block_var_q,
+        block_var_kv,
     ) -> None:
         assert layout.dtype in [torch.float, torch.bfloat16]
         super().__init__("flex_attention", input_nodes, layout, parallel_num_threads())
@@ -815,6 +817,8 @@ class CppFlexAttentionTemplate(CppTemplate):
         self.len_score_other = len_score_other
         self.len_mask_other = len_mask_other
         self.kernel_input_name_to_buffer = kernel_input_name_to_buffer
+        self.block_var_q = block_var_q
+        self.block_var_kv = block_var_kv
         self.extra_sizevars = list(
             OrderedSet(
                 val
@@ -981,6 +985,17 @@ class CppFlexAttentionTemplate(CppTemplate):
 
         output_code = output_code.replace("_var_q", "cur_qSplitSize")
         output_code = output_code.replace("_var_kv", "cur_kvSplitSize")
+
+        var_q_str, var_kv_str = self.block_var_q, self.block_var_kv
+        if var_q_str in kernel_group.args.sizevars:
+            output_code = output_code.replace(
+                kernel_group.args.sizevars[var_q_str], "cur_qSplitSize"
+            )
+        if var_kv_str in kernel_group.args.sizevars:
+            output_code = output_code.replace(
+                kernel_group.args.sizevars[var_kv_str], "cur_kvSplitSize"
+            )
+
         return output_code
 
     @staticmethod
@@ -998,6 +1013,8 @@ class CppFlexAttentionTemplate(CppTemplate):
         len_score_other,
         len_mask_other,
         kernel_input_name_to_buffer,
+        block_var_q,
+        block_var_kv,
     ):
         def preprocessor(input_nodes, layout):
             return input_nodes, layout
@@ -1021,6 +1038,8 @@ class CppFlexAttentionTemplate(CppTemplate):
             len_score_other=len_score_other,
             len_mask_other=len_mask_other,
             kernel_input_name_to_buffer=kernel_input_name_to_buffer,
+            block_var_q=block_var_q,
+            block_var_kv=block_var_kv,
         )
         template.maybe_append_choice(choices)
         return template
