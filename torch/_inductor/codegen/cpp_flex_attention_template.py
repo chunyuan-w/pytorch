@@ -551,6 +551,10 @@ class CppFlexAttentionTemplate(CppTemplate):
         
         output_code = output_code.replace("_var_q", "cur_qSplitSize")
         output_code = output_code.replace("_var_kv", "cur_kvSplitSize")
+        
+        
+        # TODO: check this: why it's ks1
+        output_code = output_code.replace("ks0", "cur_kvSplitSize")
         return output_code
 
     @staticmethod

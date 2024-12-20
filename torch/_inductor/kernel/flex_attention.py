@@ -835,10 +835,27 @@ def flex_attention(
         # TODO: hard-code for test
         from ..utils import sympy_index_symbol_with_prefix, SymT
         # TODO: seems we're not able to set the symbol name here and it won't impact the generated code
-        var_q = sympy_index_symbol_with_prefix(SymT.INDEX, 10)
-        var_kv = sympy_index_symbol_with_prefix(SymT.INDEX, 11)        
-        var_q = 256
-        var_kv = 128
+        # var_q = sympy_index_symbol_with_prefix(SymT.INDEX, 10)
+        # var_kv = sympy_index_symbol_with_prefix(SymT.INDEX, 11)        
+        # var_q = 256
+        # var_kv = 128
+        
+        # Use unbacked int to avoid issues when building the graph
+        # TODO: avoid conflict with existing symbols
+        var_q = sympy.Symbol("u10")
+        var_kv = sympy.Symbol("u11")
+        
+        from ..virtualized import V
+        from torch.utils._sympy.value_ranges import ValueRanges
+        from torch.utils._sympy.numbers import int_oo
+        
+        shape_env = V.graph.sizevars.shape_env
+        assert var_q not in shape_env.var_to_range
+        assert var_kv not in shape_env.var_to_range
+        
+        # TODO: Mark it >=1 for now
+        shape_env.var_to_range[var_q] = ValueRanges(2, int_oo)
+        shape_env.var_to_range[var_kv] = ValueRanges(2, int_oo)
         
         
         qBlockSize = var_q
@@ -895,7 +912,7 @@ def flex_attention(
         # TODO: aten.size not supported in subgraph, (missing lowering)
         size_node = [qBlockSize, rkvBlockSize]
         # with graph.inserting_after(qk_data_node):
-        #     size_node = graph.call_function(torch.ops.aten.size, args=(qk_data_node,))
+            # size_node = graph.call_function(torch.ops.aten.size, args=(qk_data_node,))
 
         # Create a new node for torch.full
         with graph.inserting_after(mask_node):
