@@ -952,7 +952,7 @@ class CppFlexAttentionTemplate(CppTemplate):
         dst_layout = ir.FixedLayout(
             device, dtype, dst_size, ir.FlexibleLayout.contiguous_strides(dst_size)
         )
-        output_index = dst_layout.make_indexer()(var_ranges.keys())
+        output_index = dst_layout.make_indexer()([*var_ranges.keys()])
 
         def fn(*args):
             V.ops.store(

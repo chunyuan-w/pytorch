@@ -942,12 +942,14 @@ def lower_cpu(
             qk_data_node = graph.placeholder("qk_data")
 
         # Find the node that returns the mask
+        output_node = None
         for node in graph.nodes:
             if node.op == "output":
                 output_node = node
                 break
 
         # Get the mask node
+        assert output_node is not None
         mask_node = output_node.args[0]
 
         # Create a new node for torch.size
