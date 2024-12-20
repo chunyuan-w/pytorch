@@ -552,9 +552,10 @@ class CppFlexAttentionTemplate(CppTemplate):
         output_code = output_code.replace("_var_q", "cur_qSplitSize")
         output_code = output_code.replace("_var_kv", "cur_kvSplitSize")
         
-        
-        # TODO: check this: why it's ks1
-        output_code = output_code.replace("ks0", "cur_kvSplitSize")
+        if sympy.Symbol("u10") in kernel_group.args.sizevars:
+            output_code = output_code.replace(kernel_group.args.sizevars[sympy.Symbol("u10")], "cur_qSplitSize")
+        if sympy.Symbol("u11") in kernel_group.args.sizevars:
+            output_code = output_code.replace(kernel_group.args.sizevars[sympy.Symbol("u11")], "cur_kvSplitSize")
         return output_code
 
     @staticmethod
