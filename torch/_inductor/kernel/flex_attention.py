@@ -891,7 +891,10 @@ def lower_cpu(
 
     fake_buffers: List[Buffer] = []  # noqa: F821
 
-    # TODO add comment for this unbacked sym value here
+    # The value of cur_qSplitSize and cur_kvSplitSize are decided during runtime.
+    # We use symbols to represent them during the compilation here.
+    # They'll be replaced by the string "cur_qSplitSize" and "cur_kvSplitSize" in
+    # the modification function of the CppFlexAttentionTemplate class.
     var_q = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
     var_kv = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
     shape_env = V.graph.sizevars.shape_env
@@ -903,18 +906,18 @@ def lower_cpu(
     shape_env.var_to_range[var_q] = ValueRanges(2, int_oo)
     shape_env.var_to_range[var_kv] = ValueRanges(2, int_oo)
 
-    qBlockSize = var_q
-    rkvBlockSize = var_kv
+    cur_qSplitSize = var_q
+    cur_kvSplitSize = var_kv
 
     score_dtype = torch.float
     placeholder_inps = [
         create_placeholder(name, dtype, query.get_device(), size)
         for name, dtype, size in [
-            ("score", score_dtype, [qBlockSize, rkvBlockSize]),
+            ("score", score_dtype, [cur_qSplitSize, cur_kvSplitSize]),
             ("b", torch.int64, [1]),
             ("h", torch.int64, [1]),
-            ("q_idx", torch.int64, [qBlockSize, 1]),
-            ("kv_idx", torch.int64, [1, rkvBlockSize]),
+            ("q_idx", torch.int64, [cur_qSplitSize, 1]),
+            ("kv_idx", torch.int64, [1, cur_kvSplitSize]),
         ]
     ]
     subgraph_buffer = build_subgraph_buffer(
@@ -930,11 +933,11 @@ def lower_cpu(
     mask_graph_placeholder_inps = [
         create_placeholder(name, dtype, query.get_device(), size)
         for name, dtype, size in [
-            ("score", score_dtype, [qBlockSize, rkvBlockSize]),
+            ("score", score_dtype, [cur_qSplitSize, cur_kvSplitSize]),
             ("b", torch.int64, [1]),
             ("h", torch.int64, [1]),
-            ("q_idx", torch.int64, [qBlockSize, 1]),
-            ("kv_idx", torch.int64, [1, rkvBlockSize]),
+            ("q_idx", torch.int64, [cur_qSplitSize, 1]),
+            ("kv_idx", torch.int64, [1, cur_kvSplitSize]),
         ]
     ]
 
@@ -969,7 +972,7 @@ def lower_cpu(
         assert output_node is not None
         mask_node = output_node.args[0]
 
-        size_node = [qBlockSize, rkvBlockSize]
+        size_node = [cur_qSplitSize, cur_kvSplitSize]
         # Create a new node for torch.full
         with graph.inserting_after(mask_node):
             full_node = graph.call_function(

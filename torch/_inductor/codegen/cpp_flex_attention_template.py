@@ -970,15 +970,18 @@ class CppFlexAttentionTemplate(CppTemplate):
         kernel_group.finalize_kernel(cpp_kernel_proxy, [])
         output_code = kernel_group.loops_code.getvalue()
 
-        var_q_str, var_kv_str = self.block_var_q, self.block_var_kv
-        # TODO: add comment for the replacement here
-        if var_q_str in kernel_group.args.sizevars:
+        var_q_symbol, var_kv_symbol = self.block_var_q, self.block_var_kv
+        # We don't know the value of qBlockSize and rkvBlockSize during compilation time
+        # thus we've represented them by symbols.
+        # We change the symbol strings back to "cur_qSplitSize" and "cur_kvSplitSize"
+        # in the generated code thus they'll be filled with the real value during runtime.
+        if var_q_symbol in kernel_group.args.sizevars:
             output_code = output_code.replace(
-                kernel_group.args.sizevars[var_q_str], "cur_qSplitSize"
+                kernel_group.args.sizevars[var_q_symbol], "cur_qSplitSize"
             )
-        if var_kv_str in kernel_group.args.sizevars:
+        if var_kv_symbol in kernel_group.args.sizevars:
             output_code = output_code.replace(
-                kernel_group.args.sizevars[var_kv_str], "cur_kvSplitSize"
+                kernel_group.args.sizevars[var_kv_symbol], "cur_kvSplitSize"
             )
 
         return output_code
