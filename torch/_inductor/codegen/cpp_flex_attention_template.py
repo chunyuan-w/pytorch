@@ -931,27 +931,15 @@ class CppFlexAttentionTemplate(CppTemplate):
         bodies = []
         var_sizes_list = []
 
-        # TODO: how to set the name to avoid duplication with existing symbol names in the code
-        # We put a placeholder here and it will be replaced later
-        var_q = sympy.Symbol("_var_q")
-        var_kv = sympy.Symbol("_var_kv")
-        qBlockSize = var_q
-        rkvBlockSize = var_kv
-        dst_size = [qBlockSize, rkvBlockSize]
 
-        var_sizes = tuple(dst_size)
+        var_sizes = tuple(subgraph_buffer.get_size())
 
         var_ranges = {
             sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
             for i, sz in enumerate(var_sizes)
         }
 
-        # TODO: fix hard-coded device and dtype
-        device = torch.device("cpu")
-        dtype = torch.float32
-        dst_layout = ir.FixedLayout(
-            device, dtype, dst_size, ir.FlexibleLayout.contiguous_strides(dst_size)
-        )
+        dst_layout = subgraph_buffer.get_layout()
         output_index = dst_layout.make_indexer()([*var_ranges.keys()])
 
         def fn(*args):
@@ -982,9 +970,6 @@ class CppFlexAttentionTemplate(CppTemplate):
         cpp_kernel_proxy.codegen_loop_bodies(bodies, var_sizes_list)
         kernel_group.finalize_kernel(cpp_kernel_proxy, [])
         output_code = kernel_group.loops_code.getvalue()
-
-        output_code = output_code.replace("_var_q", "cur_qSplitSize")
-        output_code = output_code.replace("_var_kv", "cur_kvSplitSize")
 
         var_q_str, var_kv_str = self.block_var_q, self.block_var_kv
         if var_q_str in kernel_group.args.sizevars:
