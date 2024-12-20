@@ -783,8 +783,7 @@ class CppFlexAttentionTemplate(CppTemplate):
         len_score_other,
         len_mask_other,
         kernel_input_name_to_buffer,
-        block_var_q,
-        block_var_kv,
+        block_vars,
     ) -> None:
         assert layout.dtype in [torch.float, torch.bfloat16]
         super().__init__("flex_attention", input_nodes, layout, parallel_num_threads())
@@ -817,8 +816,7 @@ class CppFlexAttentionTemplate(CppTemplate):
         self.len_score_other = len_score_other
         self.len_mask_other = len_mask_other
         self.kernel_input_name_to_buffer = kernel_input_name_to_buffer
-        self.block_var_q = block_var_q
-        self.block_var_kv = block_var_kv
+        self.block_vars = block_vars
         self.extra_sizevars = list(
             OrderedSet(
                 val
@@ -930,9 +928,7 @@ class CppFlexAttentionTemplate(CppTemplate):
         cpp_kernel_proxy = CppKernelProxy(kernel_group)
         bodies = []
         var_sizes_list = []
-
         var_sizes = tuple(subgraph_buffer.get_size())
-
         var_ranges = {
             sympy_index_symbol_with_prefix(SymT.INDEX, i): sz
             for i, sz in enumerate(var_sizes)
@@ -970,7 +966,7 @@ class CppFlexAttentionTemplate(CppTemplate):
         kernel_group.finalize_kernel(cpp_kernel_proxy, [])
         output_code = kernel_group.loops_code.getvalue()
 
-        var_q_symbol, var_kv_symbol = self.block_var_q, self.block_var_kv
+        var_q_symbol, var_kv_symbol = self.block_vars
         # We don't know the value of qBlockSize and rkvBlockSize during compilation time
         # thus we've represented them by symbols.
         # We change the symbol strings back to "cur_qSplitSize" and "cur_kvSplitSize"
@@ -1001,8 +997,7 @@ class CppFlexAttentionTemplate(CppTemplate):
         len_score_other,
         len_mask_other,
         kernel_input_name_to_buffer,
-        block_var_q,
-        block_var_kv,
+        block_vars,
     ):
         def preprocessor(input_nodes, layout):
             return input_nodes, layout
@@ -1026,8 +1021,7 @@ class CppFlexAttentionTemplate(CppTemplate):
             len_score_other=len_score_other,
             len_mask_other=len_mask_other,
             kernel_input_name_to_buffer=kernel_input_name_to_buffer,
-            block_var_q=block_var_q,
-            block_var_kv=block_var_kv,
+            block_vars=block_vars,
         )
         template.maybe_append_choice(choices)
         return template

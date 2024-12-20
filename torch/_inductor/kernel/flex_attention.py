@@ -895,19 +895,20 @@ def lower_cpu(
     # We use symbols to represent them during the compilation here.
     # They'll be replaced by the string "cur_qSplitSize" and "cur_kvSplitSize" in
     # the modification function of the CppFlexAttentionTemplate class.
-    var_q = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
-    var_kv = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
+    cur_qSplitSize = sympy.Symbol(
+        str(V.graph.sizevars.shape_env.create_unbacked_symint())
+    )
+    cur_kvSplitSize = sympy.Symbol(
+        str(V.graph.sizevars.shape_env.create_unbacked_symint())
+    )
     shape_env = V.graph.sizevars.shape_env
-    assert var_q not in shape_env.var_to_range
-    assert var_kv not in shape_env.var_to_range
+    assert cur_qSplitSize not in shape_env.var_to_range
+    assert cur_kvSplitSize not in shape_env.var_to_range
 
     # TODO: Mark them > 1 since eq(var, 1) is evaluated during the broadcast lowering
     # Check the case where they're equal to 1.
-    shape_env.var_to_range[var_q] = ValueRanges(2, int_oo)
-    shape_env.var_to_range[var_kv] = ValueRanges(2, int_oo)
-
-    cur_qSplitSize = var_q
-    cur_kvSplitSize = var_kv
+    shape_env.var_to_range[cur_qSplitSize] = ValueRanges(2, int_oo)
+    shape_env.var_to_range[cur_kvSplitSize] = ValueRanges(2, int_oo)
 
     score_dtype = torch.float
     placeholder_inps = [
@@ -1114,8 +1115,7 @@ def lower_cpu(
         len_score_other=len(score_mod_other_buffers),
         len_mask_other=len(mask_mod_other_buffers),
         kernel_input_name_to_buffer=kernel_input_name_to_buffer,
-        block_var_q=var_q,
-        block_var_kv=var_kv,
+        block_vars=(cur_qSplitSize, cur_kvSplitSize),
     )
     inputs_for_autotuning = [
         query,
