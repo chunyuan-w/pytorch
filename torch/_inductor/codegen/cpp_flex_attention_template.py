@@ -347,6 +347,8 @@ class CppFlexAttentionTemplate(CppTemplate):
         fake_buffers,
         len_score_other,
         len_mask_other,
+        block_var_q,
+        block_var_kv,        
         kernel_input_name_to_buffer,
     ) -> None:
         assert layout.dtype in [torch.float, torch.float16, torch.bfloat16]
@@ -379,6 +381,8 @@ class CppFlexAttentionTemplate(CppTemplate):
         self.fake_buffers = fake_buffers
         self.len_score_other = len_score_other
         self.len_mask_other = len_mask_other
+        self.block_var_q = block_var_q
+        self.block_var_kv = block_var_kv
         self.kernel_input_name_to_buffer = kernel_input_name_to_buffer
         self.extra_sizevars = {
             val
@@ -552,10 +556,11 @@ class CppFlexAttentionTemplate(CppTemplate):
         output_code = output_code.replace("_var_q", "cur_qSplitSize")
         output_code = output_code.replace("_var_kv", "cur_kvSplitSize")
         
-        if sympy.Symbol("u10") in kernel_group.args.sizevars:
-            output_code = output_code.replace(kernel_group.args.sizevars[sympy.Symbol("u10")], "cur_qSplitSize")
-        if sympy.Symbol("u11") in kernel_group.args.sizevars:
-            output_code = output_code.replace(kernel_group.args.sizevars[sympy.Symbol("u11")], "cur_kvSplitSize")
+        var_q_str, var_kv_str = self.block_var_q, self.block_var_kv
+        if var_q_str in kernel_group.args.sizevars:
+            output_code = output_code.replace(kernel_group.args.sizevars[var_q_str], "cur_qSplitSize")
+        if var_kv_str in kernel_group.args.sizevars:
+            output_code = output_code.replace(kernel_group.args.sizevars[var_kv_str], "cur_kvSplitSize")
         return output_code
 
     @staticmethod
@@ -572,6 +577,8 @@ class CppFlexAttentionTemplate(CppTemplate):
         fake_buffers,
         len_score_other,
         len_mask_other,
+        block_var_q,
+        block_var_kv,        
         kernel_input_name_to_buffer,
     ):
         def preprocessor(input_nodes, layout):
@@ -595,6 +602,8 @@ class CppFlexAttentionTemplate(CppTemplate):
             fake_buffers=fake_buffers,
             len_score_other=len_score_other,
             len_mask_other=len_mask_other,
+            block_var_q=block_var_q,
+            block_var_kv=block_var_kv,            
             kernel_input_name_to_buffer=kernel_input_name_to_buffer,
         )
         template.maybe_append_choice(choices)

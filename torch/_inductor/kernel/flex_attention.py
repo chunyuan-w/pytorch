@@ -840,12 +840,12 @@ def flex_attention(
         # var_q = 256
         # var_kv = 128
         
-        # Use unbacked int to avoid issues when building the graph
-        # TODO: avoid conflict with existing symbols
-        var_q = sympy.Symbol("u10")
-        var_kv = sympy.Symbol("u11")
-        
+        # Use unbacked int to avoid GuardOnDataDependent error
         from ..virtualized import V
+        
+        var_q = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
+        var_kv = sympy.Symbol(str(V.graph.sizevars.shape_env.create_unbacked_symint()))
+        
         from torch.utils._sympy.value_ranges import ValueRanges
         from torch.utils._sympy.numbers import int_oo
         
@@ -1056,6 +1056,8 @@ def flex_attention(
             fake_buffers=fake_buffers,
             len_score_other=len(score_mod_other_buffers),
             len_mask_other=len(mask_mod_other_buffers),
+            block_var_q=var_q,
+            block_var_kv=var_kv,            
             kernel_input_name_to_buffer=kernel_input_name_to_buffer,
         )
         inputs_for_autotuning = [
