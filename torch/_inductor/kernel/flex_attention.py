@@ -924,15 +924,9 @@ def lower_cpu(
     # We use symbols to represent them during the compilation here.
     # They'll be replaced by the string "cur_qSplitSize" and "cur_kvSplitSize" in
     # the modification function of the CppFlexAttentionTemplate class.
-    cur_qSplitSize = sympy.Symbol(
-        str(V.graph.sizevars.shape_env.create_unbacked_symint())
-    )
-    cur_kvSplitSize = sympy.Symbol(
-        str(V.graph.sizevars.shape_env.create_unbacked_symint())
-    )
+    cur_qSplitSize = V.graph.sizevars.shape_env.create_unbacked_symint().node.expr
+    cur_kvSplitSize = V.graph.sizevars.shape_env.create_unbacked_symint().node.expr
     shape_env = V.graph.sizevars.shape_env
-    assert cur_qSplitSize not in shape_env.var_to_range
-    assert cur_kvSplitSize not in shape_env.var_to_range
 
     # We don't know the concret value of cur_qSplitSize and cur_kvSplitSize during the compilation.
     # Mark symbols > 1 to ensure broadcasting is always applied.
