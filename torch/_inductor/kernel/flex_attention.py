@@ -939,8 +939,8 @@ def lower_cpu(
         create_placeholder(name, dtype, query.get_device(), size)
         for name, dtype, size in [
             ("score", score_dtype, [cur_qSplitSize, cur_kvSplitSize]),
-            ("b", torch.int64, [1]),
-            ("h", torch.int64, [1]),
+            ("b", torch.int64, []),
+            ("h", torch.int64, []),
             ("q_idx", torch.int64, [cur_qSplitSize, 1]),
             ("kv_idx", torch.int64, [1, cur_kvSplitSize]),
         ]
@@ -959,8 +959,8 @@ def lower_cpu(
         create_placeholder(name, dtype, query.get_device(), size)
         for name, dtype, size in [
             ("score", score_dtype, [cur_qSplitSize, cur_kvSplitSize]),
-            ("b", torch.int64, [1]),
-            ("h", torch.int64, [1]),
+            ("b", torch.int64, []),
+            ("h", torch.int64, []),
             ("q_idx", torch.int64, [cur_qSplitSize, 1]),
             ("kv_idx", torch.int64, [1, cur_kvSplitSize]),
         ]
