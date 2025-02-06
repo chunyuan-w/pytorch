@@ -1389,6 +1389,7 @@ class TestFlexAttention(InductorTestCase):
 
     @supported_platform
     @common_utils.parametrize("dtype", test_dtypes_fast)
+    # @patch.object(torch._inductor.config, "assert_indirect_indexing", False) # fix me!!
     def test_index_multiple(self, dtype):
         bias = torch.randn(B, S, device=self.device)
 
