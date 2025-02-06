@@ -982,6 +982,9 @@ class CppFlexAttentionTemplate(CppTemplate):
                 kernel_group.args.sizevars[var_kv_symbol], "cur_kvSplitSize"
             )
 
+        # TODO: can we clear it earlier?
+        shape_env = V.graph.sizevars.shape_env
+        shape_env.pending_fresh_unbacked_symbols.clear()
         return output_code
 
     @staticmethod
