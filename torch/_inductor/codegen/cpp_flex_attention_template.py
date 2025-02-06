@@ -983,8 +983,8 @@ class CppFlexAttentionTemplate(CppTemplate):
             )
 
         # TODO: can we clear it earlier?
-        shape_env = V.graph.sizevars.shape_env
-        shape_env.pending_fresh_unbacked_symbols.clear()
+        pending = V.graph.sizevars.shape_env.pending_fresh_unbacked_symbols
+        V.graph.sizevars.shape_env.pending_fresh_unbacked_symbols = [x for x in pending if x not in self.block_vars]
         return output_code
 
     @staticmethod
