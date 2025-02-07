@@ -1026,6 +1026,9 @@ def lower_cpu(
         mask_graph_placeholder_inps + list(mask_mod_other_buffers),
         converted_mask_graph_module,
     )
+    
+    pending = V.graph.sizevars.shape_env.pending_fresh_unbacked_symbols
+    V.graph.sizevars.shape_env.pending_fresh_unbacked_symbols = [x for x in pending if x not in (cur_qSplitSize, cur_kvSplitSize)]    
 
     buffer_list = (
         placeholder_inps

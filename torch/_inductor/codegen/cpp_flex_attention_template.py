@@ -981,10 +981,6 @@ class CppFlexAttentionTemplate(CppTemplate):
             output_code = output_code.replace(
                 kernel_group.args.sizevars[var_kv_symbol], "cur_kvSplitSize"
             )
-
-        # TODO: can we clear it earlier?
-        pending = V.graph.sizevars.shape_env.pending_fresh_unbacked_symbols
-        V.graph.sizevars.shape_env.pending_fresh_unbacked_symbols = [x for x in pending if x not in self.block_vars]
         return output_code
 
     @staticmethod
